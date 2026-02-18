@@ -96,6 +96,16 @@ const instructions = `## 强制技能激活流程（必须执行）
 - sms-mail: 短信/邮件/SMS/验证码/通知/SMS4j/MailUtils/邮件发送/短信发送
 - social-login: 第三方登录/微信登录/QQ登录/OAuth/OAuth2/JustAuth/社交登录/扫码登录/授权登录
 - tenant-management: 多租户/租户隔离/TenantEntity/TenantHelper/租户ID/tenantId/跨租户/动态租户/SaaS
+- openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new/创建变更
+- openspec-ff-change: 快速推进/快速生成所有制品/opsx:ff/openspec ff/fast-forward
+- openspec-apply-change: 实现任务/开始实现/opsx:apply/openspec apply/执行变更
+- openspec-continue-change: 继续变更/创建下一个制品/opsx:continue/openspec continue
+- openspec-archive-change: 归档变更/完成变更/opsx:archive/openspec archive/归档
+- openspec-bulk-archive-change: 批量归档/批量完成/opsx:bulk-archive/批量变更
+- openspec-explore: 探索模式/思维伙伴/opsx:explore/openspec explore/探索问题
+- openspec-onboard: 新手引导/学习工作流/opsx:onboard/openspec onboard/入门教程
+- openspec-sync-specs: 同步规格/同步spec/opsx:sync/openspec sync/delta同步
+- openspec-verify-change: 验证变更/检查实现/opsx:verify/openspec verify/验证规格
 
 ### 步骤 2 - 激活（逐个调用，等待每个完成）
 

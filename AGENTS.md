@@ -99,6 +99,24 @@
 | `performance-doctor` | 性能优化、慢查询、缓存 |
 | `add-skill` | 添加技能、创建技能文档 |
 
+### OpenSpec 规格驱动开发技能（SDD）
+
+> 基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的规格驱动开发工作流，需安装 `openspec` CLI。
+> 完整工作流：`/opsx:new` → `/opsx:ff` → `/opsx:apply` → `/opsx:archive`
+
+| 技能名称 | 触发条件 |
+|---------|---------|
+| `openspec-onboard` | 新手引导、学习 OpenSpec 工作流、/opsx:onboard |
+| `openspec-explore` | 探索模式、思维伙伴、探索问题设计、/opsx:explore |
+| `openspec-new-change` | 新建变更、开始新功能、/opsx:new |
+| `openspec-ff-change` | 快速推进所有制品、/opsx:ff、fast-forward |
+| `openspec-continue-change` | 继续变更、创建下一个制品、/opsx:continue |
+| `openspec-apply-change` | 实现任务、开始编码、/opsx:apply |
+| `openspec-verify-change` | 验证实现、检查规格匹配、/opsx:verify |
+| `openspec-sync-specs` | 同步规格到主 spec、/opsx:sync |
+| `openspec-archive-change` | 归档变更、完成收尾、/opsx:archive |
+| `openspec-bulk-archive-change` | 批量归档多个变更、/opsx:bulk-archive |
+
 ---
 
 ## 🚨 强制执行规则
