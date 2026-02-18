@@ -1,0 +1,26 @@
+{
+  "name": "ai-engineering-init",
+  "version": "1.0.0",
+  "description": "RuoYi Vue Plus AI 工程化配置初始化工具 — 一键为 Claude Code、OpenAI Codex 等 AI 工具初始化 Skills 和项目规范",
+  "keywords": ["ruoyi", "claude-code", "codex", "ai-engineering", "skills", "init"],
+  "homepage": "https://github.com/xujiajun/ai-engineering-init",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xujiajun/ai-engineering-init.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "ai-engineering-init": "./bin/index.js"
+  },
+  "files": [
+    "bin/",
+    ".claude/",
+    ".codex/",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "init.sh"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "社交媒体图",
+  "description": "Instagram/微博等社交平台方图",
+  "prompt_template": "Create a visually appealing social media post image about {{subject}}. Modern, clean aesthetic with good composition. Suitable for Instagram feed. {{style}}",
+  "defaults": {
+    "model_tier": "flash",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "enable_grounding": false
+  },
+  "placeholders": {
+    "subject": {
+      "description": "图片主题",
+      "example": "morning coffee with a cozy atmosphere"
+    },
+    "style": {
+      "description": "风格说明（可选）",
+      "example": "Minimalist, warm tones, lifestyle photography style.",
+      "optional": true
+    }
+  }
+}

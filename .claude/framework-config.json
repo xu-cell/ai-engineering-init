@@ -1,0 +1,73 @@
+{
+  "framework": {
+    "description": "框架模块配置 - 这些模块是框架的一部分，不参与业务进度统计",
+    "backend": {
+      "modules": [
+        "ruoyi-common",
+        "ruoyi-admin"
+      ],
+      "systemModules": [
+        "ruoyi-modules/ruoyi-system",
+        "ruoyi-modules/ruoyi-generator"
+      ],
+      "description": "后端框架模块，包含通用工具、系统管理、代码生成器等"
+    },
+    "systemFeatures": [
+      "用户管理",
+      "角色管理",
+      "菜单管理",
+      "部门管理",
+      "岗位管理",
+      "字典管理",
+      "参数配置",
+      "通知公告",
+      "操作日志",
+      "登录日志",
+      "在线用户",
+      "定时任务",
+      "代码生成器",
+      "租户管理",
+      "租户套餐",
+      "客户端管理",
+      "OSS配置",
+      "OSS对象存储"
+    ]
+  },
+  "business": {
+    "description": "业务模块配置 - 这些是需要统计进度的业务代码",
+    "backend": {
+      "modulePattern": "ruoyi-modules/ruoyi-*",
+      "excludeModules": [
+        "ruoyi-modules/ruoyi-system",
+        "ruoyi-modules/ruoyi-generator",
+        "ruoyi-modules/ruoyi-demo",
+        "ruoyi-modules/ruoyi-job",
+        "ruoyi-modules/ruoyi-workflow"
+      ],
+      "description": "业务模块位于 ruoyi-modules/ 下，以 ruoyi- 开头但不包括框架自带模块（system、generator、demo、job、workflow）"
+    }
+  },
+  "scanRules": {
+    "backend": {
+      "requiredFiles": [
+        "Entity (domain/*.java)",
+        "BO (domain/bo/*Bo.java)",
+        "VO (domain/vo/*Vo.java)",
+        "Controller (*Controller.java)",
+        "Service (I*Service.java)",
+        "ServiceImpl (impl/*ServiceImpl.java)",
+        "Mapper (*Mapper.java)"
+      ],
+      "completenessFormula": "存在文件数 / 7 * 100%"
+    },
+    "todoPatterns": [
+      "TODO:",
+      "FIXME:",
+      "XXX:",
+      "HACK:",
+      "NOTE:"
+    ]
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-24"
+}

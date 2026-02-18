@@ -1,0 +1,10 @@
+# banana-image skill Python dependencies
+# Python 3.9+ required
+# Used for template processing and batch preparation scripts
+
+# No external dependencies - uses standard library only
+# - json
+# - csv
+# - argparse
+# - pathlib
+# - re
