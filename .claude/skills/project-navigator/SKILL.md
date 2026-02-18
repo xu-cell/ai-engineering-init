@@ -176,6 +176,16 @@ ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/
 | MyBatis 扩展 | `ruoyi-common/ruoyi-common-mybatis/` |
 | Redis 工具 | `ruoyi-common/ruoyi-common-redis/` |
 | 权限认证 | `ruoyi-common/ruoyi-common-satoken/` |
+| **前端项目根目录** | `/Users/xujiajun/Developer/frontProj/web/src/` |
+| 前端 API 接口定义 | `/Users/xujiajun/Developer/frontProj/web/src/api/` |
+| 前端 Mixin 文件 | `/Users/xujiajun/Developer/frontProj/web/src/mixins/` |
+| 前端路由配置 | `/Users/xujiajun/Developer/frontProj/web/src/router/` |
+| 前端路由守卫 | `/Users/xujiajun/Developer/frontProj/web/src/permission.js` |
+| 前端请求封装 | `/Users/xujiajun/Developer/frontProj/web/src/utils/request.js` |
+| 前端 Token/租户工具 | `/Users/xujiajun/Developer/frontProj/web/src/utils/auth.js` |
+| 前端视图页面 | `/Users/xujiajun/Developer/frontProj/web/src/leniuview/` |
+| 前端业务组件 | `/Users/xujiajun/Developer/frontProj/web/src/leniu-components/` |
+| 前端 Vuex Store | `/Users/xujiajun/Developer/frontProj/web/src/store/` |
 
 ---
 
