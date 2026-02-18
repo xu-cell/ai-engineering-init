@@ -1,120 +1,53 @@
 ---
 name: store-pc
 description: |
-  PC 端（plus-ui）状态管理与 Hooks 指南。包含 Pinia Store、Hooks 组合式函数的创建和使用规范。
+  前端状态管理指南。包含 Vuex Store 的创建和使用规范。
 
   触发场景：
-  - 在 PC 后台创建/使用 Store
-  - Pinia 状态管理
-  - 跨组件数据共享（PC端）
-  - 持久化存储（useStorage）
-  - 权限判断
-  - 字典数据管理
+  - 创建/使用 Vuex Store
+  - Vuex 状态管理
+  - 跨组件数据共享
+  - 全局状态管理
 
-  触发词：PC Store、Pinia、defineStore、useUserStore、useDictStore、PC状态管理、useStorage、持久化、状态管理
+  触发词：Vuex、store、mapState、mapActions、commit、dispatch、状态管理
 
-  适用目录：plus-ui/**
+  适用目录：src/**
 ---
 
-# PC 端状态管理指南
+# 前端状态管理指南
 
-> **适用于**: `plus-ui/` 目录下的 PC 后台管理系统
+> **适用于**: 腾云智慧食堂管理系统前端项目（Vue 2 + Vuex）
 
-## 自动导入说明
+---
 
-以下内容**无需手动 import**（通过 unplugin-auto-import 自动导入）：
+## 目录结构
 
-```typescript
-// Vue APIs
-ref, reactive, computed, watch, watchEffect, watchPostEffect, watchSyncEffect
-onMounted, onUnmounted, onBeforeMount, onBeforeUnmount, onBeforeUpdate, onUpdated
-onActivated, onDeactivated, onErrorCaptured, onRenderTracked, onRenderTriggered
-onServerPrefetch
-nextTick, toRefs, toRef, unref, isRef, isReactive, isReadonly, isProxy
-provide, inject, defineProps, defineEmits, defineExpose, defineOptions, defineSlots
-withDefaults, useSlots, useAttrs, useCssModule, useCssVars
-shallowRef, shallowReactive, shallowReadonly, triggerRef, customRef, toRaw, markRaw
-effectScope, getCurrentScope, onScopeDispose
-
-// Pinia
-defineStore, storeToRefs, acceptHMRUpdate, createPinia, setActivePinia, getActivePinia
-mapStores, mapState, mapWritableState, mapActions
-
-// Vue Router
-useRouter, useRoute, useLink, onBeforeRouteLeave, onBeforeRouteUpdate
-
-// @vueuse/core
-useStorage, useLocalStorage, useSessionStorage, useMouse, useWindowSize
-// ... 以及其他 @vueuse/core 导出的函数
-
-// Element Plus
-ElMessage, ElMessageBox, ElNotification, ElLoading
-// ... 以及其他 Element Plus 组件和函数
 ```
-
-**需要手动 import 的**：
-
-```typescript
-// Stores（需要手动导入）
-import { useUserStore } from '@/store/modules/user'
-import { useDictStore } from '@/store/modules/dict'
-import { usePermissionStore } from '@/store/modules/permission'
-import { useAppStore } from '@/store/modules/app'
-import { useSettingsStore } from '@/store/modules/settings'
-import { useTagsViewStore } from '@/store/modules/tagsView'
-import { useNoticeStore } from '@/store/modules/notice'
-
-// Hooks（需要手动导入）
-import useDialog from '@/hooks/useDialog'
-
-// 工具函数（需要手动导入）
-import { getToken, setToken, removeToken } from '@/utils/auth'
+src/store/
+├── index.js           # Store 入口
+├── getters.js         # 全局 getters
+└── modules/           # Store 模块（~28个）
+    ├── user.js        # 用户状态
+    ├── app.js         # 应用状态
+    ├── permission.js  # 权限状态
+    └── ...
 ```
 
 ---
 
 ## 已有 Store 清单
 
-| Store | 文件 | 用途 | 关键方法 |
-|-------|------|------|---------|
-| `useUserStore` | `store/modules/user.ts` | 用户认证、权限 | login, logout, getInfo, setAvatar |
-| `useDictStore` | `store/modules/dict.ts` | 字典数据缓存 | getDict, setDict, removeDict, cleanDict |
-| `usePermissionStore` | `store/modules/permission.ts` | 路由权限 | generateRoutes, setRoutes, setSidebarRouters |
-| `useAppStore` | `store/modules/app.ts` | 应用配置（侧边栏、语言、尺寸） | toggleSideBar, closeSideBar, changeLanguage, setSize |
-| `useSettingsStore` | `store/modules/settings.ts` | 布局设置 | setTitle |
-| `useTagsViewStore` | `store/modules/tagsView.ts` | 标签页管理 | addView, delView, delAllViews, delOthersViews |
-| `useNoticeStore` | `store/modules/notice.ts` | 通知消息 | addNotice, removeNotice, readAll, clearNotice |
-
----
-
-## Hooks 清单
-
-> Hooks 是可复用的组合式函数，封装了特定业务逻辑。
-
-### 已有 Hooks
-
-| Hook | 文件 | 用途 | 关键方法/属性 |
-|------|------|------|--------------|
-| `useDialog` | `hooks/useDialog.ts` | 弹窗控制 | visible, title, openDialog, closeDialog |
-
-### useDialog 使用示例
-
-```typescript
-import useDialog from '@/hooks/useDialog'
-
-// 在组件中使用
-const { visible, title, openDialog, closeDialog } = useDialog({ title: '编辑用户' })
-
-// 打开弹窗
-const handleEdit = () => {
-  openDialog()
-}
-
-// 关闭弹窗
-const handleClose = () => {
-  closeDialog()
-}
-```
+| Store | 文件 | 用途 |
+|-------|------|------|
+| `user` | `store/modules/user.js` | 用户信息、登录状态 |
+| `app` | `store/modules/app.js` | 应用状态（侧边栏、设备类型） |
+| `permission` | `store/modules/permission.js` | 权限路由管理 |
+| `tagsView` | `store/modules/tagsView.js` | 标签页管理 |
+| `settings` | `store/modules/settings.js` | 系统设置 |
+| `marketing` | `store/modules/marketing.js` | 营销状态 |
+| `order` | `store/modules/order.js` | 订单状态 |
+| `stock` | `store/modules/stock.js` | 库存状态 |
+| `reportcenter` | `store/modules/reportcenter.js` | 报表状态 |
 
 ---
 
@@ -122,259 +55,197 @@ const handleClose = () => {
 
 ### 标准模板
 
-```typescript
-// store/modules/xxx.ts
-// ✅ defineStore、ref、computed 已自动导入，无需手动 import
+```javascript
+// src/store/modules/xxx.js
+import { getList, getDetail } from '@/api/xxx'
 
-export const useXxxStore = defineStore('xxx', () => {
-  // ========== 状态 ==========
-  const list = ref<XxxVo[]>([])
-  const loading = ref(false)
-  const current = ref<XxxVo | null>(null)
+const state = {
+  list: [],
+  current: null,
+  loading: false,
+  total: 0
+}
 
-  // ========== 计算属性 ==========
-  const count = computed(() => list.value.length)
-  const isEmpty = computed(() => list.value.length === 0)
-  const hasSelected = computed(() => current.value !== null)
+const mutations = {
+  SET_LIST: (state, list) => {
+    state.list = list
+  },
+  SET_CURRENT: (state, current) => {
+    state.current = current
+  },
+  SET_LOADING: (state, loading) => {
+    state.loading = loading
+  },
+  SET_TOTAL: (state, total) => {
+    state.total = total
+  }
+}
 
-  // ========== 方法 ==========
-
+const actions = {
   /**
    * 获取列表
    */
-  const fetchList = async (params?: XxxQuery) => {
-    loading.value = true
+  async fetchList({ commit }, params) {
+    commit('SET_LOADING', true)
     try {
-      const res = await pageXxxs(params)
-      list.value = res.data.records
-    } catch (error) {
-      console.error('获取列表失败:', error)
+      const res = await getList(params)
+      commit('SET_LIST', res.rows || [])
+      commit('SET_TOTAL', res.total || 0)
+      return res
     } finally {
-      loading.value = false
+      commit('SET_LOADING', false)
     }
-  }
+  },
 
   /**
-   * 设置当前选中项
+   * 获取详情
    */
-  const setCurrent = (item: XxxVo | null) => {
-    current.value = item
-  }
+  async fetchDetail({ commit }, id) {
+    const res = await getDetail(id)
+    commit('SET_CURRENT', res.data)
+    return res
+  },
 
   /**
    * 重置状态
    */
-  const reset = () => {
-    list.value = []
-    current.value = null
-    loading.value = false
+  reset({ commit }) {
+    commit('SET_LIST', [])
+    commit('SET_CURRENT', null)
+    commit('SET_TOTAL', 0)
   }
+}
 
-  // ========== 返回 ==========
-  return {
-    // 状态
-    list,
-    loading,
-    current,
-    // 计算属性
-    count,
-    isEmpty,
-    hasSelected,
-    // 方法
-    fetchList,
-    setCurrent,
-    reset
-  }
-})
+const getters = {
+  list: state => state.list,
+  current: state => state.current,
+  loading: state => state.loading,
+  total: state => state.total
+}
+
+export default {
+  namespaced: true,
+  state,
+  mutations,
+  actions,
+  getters
+}
 ```
 
 ---
 
 ## 使用 Store
 
-### 基本用法
+### 方式 1：直接访问
 
-```typescript
-import { useXxxStore } from '@/store/modules/xxx'
-
-const xxxStore = useXxxStore()
-
-// 访问状态（非响应式）
-console.log(xxxStore.list)
-console.log(xxxStore.count)
-
-// 调用方法
-await xxxStore.fetchList()
-xxxStore.setCurrent(item)
-xxxStore.reset()
+```javascript
+export default {
+  computed: {
+    list() {
+      return this.$store.state.xxx.list
+    },
+    loading() {
+      return this.$store.state.xxx.loading
+    }
+  },
+  methods: {
+    getData() {
+      this.$store.dispatch('xxx/fetchList', this.queryParams)
+    }
+  }
+}
 ```
 
-### 响应式解构
+### 方式 2：mapState / mapGetters / mapActions
 
-```typescript
-import { useXxxStore } from '@/store/modules/xxx'
+```javascript
+import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 
-const xxxStore = useXxxStore()
+export default {
+  computed: {
+    // mapState
+    ...mapState('xxx', ['list', 'loading', 'total']),
 
-// ✅ 正确：使用 storeToRefs 解构状态
-const { list, loading, current } = storeToRefs(xxxStore)
+    // mapGetters
+    ...mapGetters('xxx', ['current'])
+  },
+  methods: {
+    // mapActions
+    ...mapActions('xxx', ['fetchList', 'fetchDetail', 'reset']),
 
-// ✅ 正确：方法直接解构（方法不需要响应式）
-const { fetchList, setCurrent, reset } = xxxStore
+    // mapMutations
+    ...mapMutations('xxx', ['SET_CURRENT']),
 
-// ❌ 错误：直接解构状态会丢失响应式
-// const { list, loading } = xxxStore
+    // 使用
+    async getData() {
+      await this.fetchList(this.queryParams)
+    }
+  },
+  mounted() {
+    this.getData()
+  }
+}
 ```
 
 ### 在模板中使用
 
 ```vue
 <template>
-  <div v-loading="xxxStore.loading">
-    <div v-for="item in xxxStore.list" :key="item.id">
+  <div v-loading="loading">
+    <div v-for="item in list" :key="item.id">
       {{ item.name }}
     </div>
-    <div v-if="xxxStore.isEmpty">暂无数据</div>
+    <div v-if="list.length === 0">暂无数据</div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { useXxxStore } from '@/store/modules/xxx'
+<script>
+import { mapState, mapActions } from 'vuex'
 
-const xxxStore = useXxxStore()
-
-onMounted(() => {
-  xxxStore.fetchList()
-})
+export default {
+  computed: {
+    ...mapState('xxx', ['list', 'loading'])
+  },
+  methods: {
+    ...mapActions('xxx', ['fetchList'])
+  },
+  mounted() {
+    this.fetchList()
+  }
+}
 </script>
 ```
 
 ---
 
-## 持久化存储
+## 全局 Getters
 
-> ⚠️ **重要**：本项目使用 `@vueuse/core` 的 `useStorage` 实现持久化存储，而不是 pinia-plugin-persist 插件。
-
-### useStorage 说明
-
-```typescript
-// useStorage 已自动导入，无需手动 import
-// 基于 localStorage
-const data = useStorage('key', defaultValue)
-
-// 基于 sessionStorage
-const data = useSessionStorage('key', defaultValue)
-
-// 基于 localStorage（显式指定）
-const data = useLocalStorage('key', defaultValue)
+```javascript
+// src/store/getters.js
+const getters = {
+  token: state => state.user.token,
+  avatar: state => state.user.avatar,
+  name: state => state.user.name,
+  roles: state => state.user.roles,
+  permissions: state => state.user.permissions
+}
+export default getters
 ```
 
-### useStorage API
+### 使用全局 Getters
 
-```typescript
-// 设置值（自动保存到 localStorage）
-const token = useStorage('token', '')
-token.value = 'new-token'  // 自动保存
+```javascript
+export default {
+  computed: {
+    // 方式 1
+    token() {
+      return this.$store.getters.token
+    },
 
-// 获取值
-console.log(token.value)
-
-// 删除值
-token.value = null
-
-// 带类型的存储
-const user = useStorage<UserInfo>('user', null)
-user.value = { name: 'admin', age: 18 }
-```
-
-### 在 Store 中使用 useStorage
-
-```typescript
-// store/modules/app.ts 示例
-import { defineStore } from 'pinia'
-import { useStorage } from '@vueuse/core'
-
-export const useAppStore = defineStore('app', () => {
-  // ✅ 使用 useStorage 实现持久化
-  const sidebarStatus = useStorage('sidebarStatus', '1')
-  const size = useStorage<'large' | 'default' | 'small'>('size', 'default')
-  const language = useStorage('language', 'zh_CN')
-
-  // 状态会自动持久化到 localStorage
-  const sidebar = reactive({
-    opened: sidebarStatus.value ? !!+sidebarStatus.value : true,
-    withoutAnimation: false,
-    hide: false
-  })
-
-  const toggleSideBar = (withoutAnimation: boolean) => {
-    sidebar.opened = !sidebar.opened
-    sidebar.withoutAnimation = withoutAnimation
-    // ✅ 修改 sidebarStatus 会自动保存到 localStorage
-    sidebarStatus.value = sidebar.opened ? '1' : '0'
+    // 方式 2
+    ...mapGetters(['token', 'name', 'roles'])
   }
-
-  return {
-    sidebar,
-    size,
-    language,
-    toggleSideBar
-  }
-})
-```
-
-### Token 管理示例
-
-```typescript
-// utils/auth.ts 示例
-import { useStorage } from '@vueuse/core'
-
-const TokenKey = 'Admin-Token'
-const tokenStorage = useStorage<null | string>(TokenKey, null)
-
-export const getToken = () => tokenStorage.value
-
-export const setToken = (access_token: string) => (tokenStorage.value = access_token)
-
-export const removeToken = () => (tokenStorage.value = null)
-```
-
-### 在 useUserStore 中使用
-
-```typescript
-// store/modules/user.ts 示例
-import { defineStore } from 'pinia'
-import { getToken, setToken, removeToken } from '@/utils/auth'
-
-export const useUserStore = defineStore('user', () => {
-  // ✅ token 通过 utils/auth.ts 中的 useStorage 持久化
-  const token = ref(getToken())
-  const roles = ref<Array<string>>([])
-  const permissions = ref<Array<string>>([])
-
-  const login = async (userInfo: LoginData): Promise<void> => {
-    const res = await loginApi(userInfo)
-    const data = res.data
-    setToken(data.access_token)  // ✅ 自动保存到 localStorage
-    token.value = data.access_token
-  }
-
-  const logout = async (): Promise<void> => {
-    await logoutApi()
-    token.value = ''
-    roles.value = []
-    permissions.value = []
-    removeToken()  // ✅ 自动从 localStorage 删除
-  }
-
-  return {
-    token,
-    roles,
-    permissions,
-    login,
-    logout
-  }
-})
+}
 ```
 
 ---
@@ -388,75 +259,64 @@ export const useUserStore = defineStore('user', () => {
 | 多个页面/组件共享的数据 | ✅ 使用 |
 | 用户登录状态、权限 | ✅ 使用 |
 | 全局配置、主题设置 | ✅ 使用 |
-| 字典数据缓存 | ✅ 使用 |
-| 页面内部状态 | ❌ 用 ref/reactive |
-| 组件内部状态 | ❌ 用 ref/reactive |
+| 页面内部状态 | ❌ 用 data |
+| 组件内部状态 | ❌ 用 data |
 | 父子组件传值 | ❌ 用 props/emit |
-| 兄弟组件通信（简单） | ❌ 用 provide/inject |
+| 兄弟组件通信（简单） | ❌ 用 eventBus |
 
 ### 2. Store 命名规范
 
-```typescript
-// ✅ 正确：use + 业务名 + Store
-export const useUserStore = defineStore('user', ...)
-export const useCartStore = defineStore('cart', ...)
-export const useDictStore = defineStore('dict', ...)
+```javascript
+// ✅ 正确：小写字母，用 - 分隔
+export default {
+  namespaced: true,
+  // ...
+}
 
-// ❌ 错误：不规范的命名
-export const userStore = defineStore('user', ...)
-export const useUser = defineStore('user', ...)
+// Store 文件命名：xxx.js（小写）
 ```
 
-### 3. 避免循环依赖
+### 3. Mutation 命名规范
 
-```typescript
-// ❌ 避免 Store 之间循环引用
-// userStore.ts
-import { useOrderStore } from './order'  // orderStore 又引用 userStore
-
-// ✅ 正确做法：在组件层协调，或使用事件
-```
-
-### 4. 重置 Store（登出时）
-
-```typescript
-// 在 useUserStore 中
-const logout = async () => {
-  // 重置所有相关 Store
-  const dictStore = useDictStore()
-  const permissionStore = usePermissionStore()
-
-  // 重置当前 Store
-  token.value = ''
-  roles.value = []
-  permissions.value = []
-  removeToken()
-
-  // 重置其他 Store
-  dictStore.cleanDict()
-
-  // 跳转登录页
-  router.push('/login')
+```javascript
+// ✅ 正确：大写字母，下划线分隔（常量风格）
+const mutations = {
+  SET_LIST: (state, list) => { state.list = list },
+  SET_LOADING: (state, loading) => { state.loading = loading },
+  ADD_ITEM: (state, item) => { state.list.push(item) }
 }
 ```
 
-### 5. 使用 Setup Syntax
+### 4. Action 命名规范
 
-```typescript
-// ✅ 推荐：使用 Setup 语法（Composition API）
-export const useXxxStore = defineStore('xxx', () => {
-  const state = ref(0)
-  const increment = () => state.value++
-  return { state, increment }
-})
+```javascript
+// ✅ 正确：小驼峰命名
+const actions = {
+  fetchList: async ({ commit }, params) => { /* ... */ },
+  fetchDetail: async ({ commit }, id) => { /* ... */ },
+  addItem: async ({ commit }, item) => { /* ... */ }
+}
+```
 
-// ❌ 不推荐：使用 Options API
-export const useXxxStore = defineStore('xxx', {
-  state: () => ({ count: 0 }),
-  actions: {
-    increment() { this.count++ }
+### 5. 重置 Store（登出时）
+
+```javascript
+// 在 user store 中
+const actions = {
+  async logout({ commit, dispatch }) {
+    // 重置当前 Store
+    commit('SET_TOKEN', '')
+    commit('SET_ROLES', [])
+    commit('SET_PERMISSIONS', [])
+
+    // 重置其他 Store
+    dispatch('permission/reset', null, { root: true })
+    dispatch('tagsView/delAllViews', null, { root: true })
+
+    // 跳转登录页
+    router.push('/login')
   }
-})
+}
 ```
 
 ---
@@ -465,27 +325,24 @@ export const useXxxStore = defineStore('xxx', {
 
 ### Stores
 
-- Store 目录：`plus-ui/src/store/modules/`
-- 用户 Store：`plus-ui/src/store/modules/user.ts`
-- 字典 Store：`plus-ui/src/store/modules/dict.ts`
-- 权限 Store：`plus-ui/src/store/modules/permission.ts`
-- 应用 Store：`plus-ui/src/store/modules/app.ts`
-- 设置 Store：`plus-ui/src/store/modules/settings.ts`
-- 标签页 Store：`plus-ui/src/store/modules/tagsView.ts`
-- 通知 Store：`plus-ui/src/store/modules/notice.ts`
+- Store 目录：`src/store/modules/`
+- 用户 Store：`src/store/modules/user.js`
+- 权限 Store：`src/store/modules/permission.js`
+- 应用 Store：`src/store/modules/app.js`
+- 设置 Store：`src/store/modules/settings.js`
+- 标签页 Store：`src/store/modules/tagsView.js`
 
-### Hooks
+### 入口文件
 
-- Hooks 目录：`plus-ui/src/hooks/`
-- 弹窗控制：`plus-ui/src/hooks/useDialog.ts`
+- Store 入口：`src/store/index.js`
+- 全局 Getters：`src/store/getters.js`
 
-### 工具类
-
-- Token 管理：`plus-ui/src/utils/auth.ts`（使用 useStorage）
-
-### 配置文件
-
-- 自动导入配置：`plus-ui/vite/plugins/auto-import.ts`
-- Vite 配置：`plus-ui/vite.config.ts`
 ---
 
+## 注意事项
+
+1. **本项目使用 Vuex**，非 Pinia
+2. **Store 模块必须设置 `namespaced: true`**
+3. **异步操作放在 Actions 中**
+4. **同步操作放在 Mutations 中**
+5. **不要在 Mutations 中进行异步操作**

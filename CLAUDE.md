@@ -7,13 +7,24 @@
 | 术语 | 含义 | 对应目录 |
 |------|------|---------|
 | **后端** | Java 服务 | `ruoyi-modules/` |
-| **前端** | PC 管理端 | `plus-ui/`（如存在） |
+| **前端** | PC 管理端 | `plus-ui/`（Vue 3）或独立前端项目 |
 | **系统模块** | 系统管理功能 | `ruoyi-modules/ruoyi-system/` |
 | **业务模块** | 自定义业务 | `ruoyi-modules/ruoyi-xxx/` |
 
 > **前端代码检测**：
 > - 如果存在 `plus-ui/` 目录 → 包含 PC 端前端代码（Vue 3 + Element Plus）
 > - 如果不存在 `plus-ui/` 目录 → 纯后端项目，前端需单独获取
+
+## 前端技术栈
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Vue | 2.7+ 或 3.x | 根据项目选择 |
+| Element UI / Element Plus | 2.15 / 2.x | UI 组件库 |
+| Vuex / Pinia | 3.x / 2.x | 状态管理 |
+| Vue Router | 3.x / 4.x | 路由管理 |
+
+> **前端开发技能**：`ui-pc`（组件库）、`store-pc`（状态管理）
 
 ## MCP 工具触发
 
@@ -34,7 +45,7 @@
 
 **Skills 位置**：`.claude/skills/[skill-name]/SKILL.md`
 
-> **前端开发技能**（`ui-pc`、`store-pc`）需 `plus-ui/` 目录存在才可用。
+> **前端开发技能**（`ui-pc`、`store-pc`）可用于前端开发场景。
 
 ---
 
