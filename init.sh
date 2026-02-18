@@ -2,7 +2,7 @@
 # =============================================================================
 # AI Engineering 初始化脚本
 # 用法: ./init.sh [--tool claude|codex|all] [--dir <目标目录>] [--force]
-# 远程: bash <(curl -fsSL https://raw.githubusercontent.com/xujiajun/ai-engineering-init/main/init.sh)
+# 远程: bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh)
 # =============================================================================
 set -e
 
@@ -16,7 +16,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ── 常量 ──────────────────────────────────────────────────────────────────────
-REPO_URL="https://github.com/xujiajun/ai-engineering-init"
+REPO_URL="https://github.com/xu-cell/ai-engineering-init"
 BRANCH="main"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "${PWD}")"
 

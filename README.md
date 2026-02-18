@@ -20,16 +20,16 @@ npx ai-engineering-init --tool all      # 初始化全部
 
 ```bash
 # 交互式
-bash <(curl -fsSL https://raw.githubusercontent.com/xujiajun/ai-engineering-init/main/init.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh)
 
 # 直接指定工具
-bash <(curl -fsSL https://raw.githubusercontent.com/xujiajun/ai-engineering-init/main/init.sh) --tool claude
+bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh) --tool claude
 ```
 
 ### 方式三：克隆后初始化
 
 ```bash
-git clone https://github.com/xujiajun/ai-engineering-init
+git clone https://github.com/xu-cell/ai-engineering-init
 cd ai-engineering-init
 ./init.sh --tool claude
 ```

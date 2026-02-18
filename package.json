@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "AI 工程化配置初始化工具 — 一键为 Claude Code、OpenAI Codex 等 AI 工具初始化 Skills 和项目规范",
   "keywords": ["claude-code", "codex", "ai-engineering", "skills", "init"],
-  "homepage": "https://github.com/xujiajun/ai-engineering-init",
+  "homepage": "https://github.com/xu-cell/ai-engineering-init",
   "repository": {
     "type": "git",
-    "url": "https://github.com/xujiajun/ai-engineering-init.git"
+    "url": "https://github.com/xu-cell/ai-engineering-init.git"
   },
   "license": "MIT",
   "bin": {
