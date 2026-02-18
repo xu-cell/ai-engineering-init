@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# RuoYi AI Engineering 初始化脚本
+# AI Engineering 初始化脚本
 # 用法: ./init.sh [--tool claude|codex|all] [--dir <目标目录>] [--force]
 # 远程: bash <(curl -fsSL https://raw.githubusercontent.com/xujiajun/ai-engineering-init/main/init.sh)
 # =============================================================================
@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "${
 # ── Banner ────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}${BLUE}┌─────────────────────────────────────────┐${NC}"
-echo -e "${BOLD}${BLUE}│   RuoYi AI Engineering 初始化工具  v1.0  │${NC}"
+echo -e "${BOLD}${BLUE}│      AI Engineering 初始化工具  v1.0      │${NC}"
 echo -e "${BOLD}${BLUE}└─────────────────────────────────────────┘${NC}"
 echo ""
 

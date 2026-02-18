@@ -1,6 +1,6 @@
-# RuoYi AI Engineering Init
+# AI Engineering Init
 
-> 一键为 RuoYi Vue Plus 项目初始化 AI 工程化配置，支持 Claude Code、OpenAI Codex 等主流 AI 开发工具。
+> 一键初始化 AI 工程化配置，支持 Claude Code、OpenAI Codex 等主流 AI 开发工具。
 
 ## 快速开始
 

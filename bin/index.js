@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * RuoYi AI Engineering 初始化 CLI
+ * AI Engineering 初始化 CLI
  * 用法:
  *   npx ai-engineering-init              # 交互式
  *   npx ai-engineering-init --tool claude
@@ -24,7 +24,7 @@ const fmt = (color, text) => `${c[color]}${text}${c.reset}`;
 // ── Banner ─────────────────────────────────────────────────────────────────
 console.log('');
 console.log(fmt('blue', fmt('bold', '┌─────────────────────────────────────────┐')));
-console.log(fmt('blue', fmt('bold', '│   RuoYi AI Engineering 初始化工具  v1.0  │')));
+console.log(fmt('blue', fmt('bold', '│      AI Engineering 初始化工具  v1.0      │')));
 console.log(fmt('blue', fmt('bold', '└─────────────────────────────────────────┘')));
 console.log('');
 
