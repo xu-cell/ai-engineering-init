@@ -96,6 +96,26 @@ const instructions = `## 强制技能激活流程（必须执行）
 - sms-mail: 短信/邮件/SMS/验证码/通知/SMS4j/MailUtils/邮件发送/短信发送
 - social-login: 第三方登录/微信登录/QQ登录/OAuth/OAuth2/JustAuth/社交登录/扫码登录/授权登录
 - tenant-management: 多租户/租户隔离/TenantEntity/TenantHelper/租户ID/tenantId/跨租户/动态租户/SaaS
+- java-amount-handling: 金额/分转元/元转分/Long金额/money/fen/金额字段/AmountConverter
+- java-code-optimizer: 代码优化/性能优化/重构/坏味道/循环优化/策略模式/卫语句/代码改进
+- java-code-quality: 代码质量/代码检查/代码审查/质量评分/SQL注入检查/空指针检查/代码评级
+- java-code-style: 代码风格/命名规范/类命名/方法命名/包结构/注解使用/依赖注入/驼峰命名
+- java-concurrent: 并发/CompletableFuture/线程池/ThreadPool/并发安全/锁/synchronized/volatile/原子类
+- java-controller: Controller/@RestController/接口路径/@RequestMapping/@GetMapping/@PostMapping/API接口
+- java-database: 建表/数据库设计/SQL规范/Flyway/迁移脚本/字段命名/索引设计/CREATE TABLE/审计字段
+- java-entity: Entity/VO/DTO/Param/实体类/@TableName/@TableField/@JsonFormat/字段映射/@NotNull/@NotBlank
+- java-exception: 异常处理/Exception/NPE/NullPointerException/finally/try-catch/Optional/异常链
+- java-export: 导出/Export/Excel导出/异步导出/分页导出/@ExcelProperty/FastExcel/EasyExcel
+- java-logging: 日志/@Slf4j/log.info/log.error/log.debug/log.warn/日志级别/日志格式/logging
+- java-mq: 消息队列/MQ/RocketMQ/消息发送/消息消费/延迟消息/消息重试/事务消息/@RocketMQMessageListener
+- java-multitenant: 多租户/租户隔离/TenantEntity/TenantHelper/tenantId/跨租户/@TenantIgnore/租户上下文
+- java-mybatis: MyBatis/MyBatisPlus/Mapper/LambdaQueryWrapper/LambdaQuery/XML映射/动态SQL/selectPage/BaseMapper
+- java-quality: 代码质量/空指针防护/参数校验/并发安全/事务边界/资源关闭/集合安全/返回值兜底
+- java-report-query-param: 报表查询/Param类/查询入参/分页参数/时间范围/组织筛选/导出列配置/BaseReportParam
+- java-security: 安全规范/SQL注入/XSS/CSRF/权限控制/数据脱敏/输入验证/@SaCheckPermission/@SaCheckRole
+- java-service: Service层/@Service/@Transactional/事务管理/业务逻辑/分页查询/ServiceImpl/服务层
+- java-task: 定时任务/XXL-Job/任务调度/@JobHandler/@XxlJob/任务日志/任务监控/cron
+- java-total-line: 合计行/Total Line/报表合计/合计查询/合计SQL/SUM合计/needTotalLine/totalLine/汇总行
 - openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new/创建变更
 - openspec-ff-change: 快速推进/快速生成所有制品/opsx:ff/openspec ff/fast-forward
 - openspec-apply-change: 实现任务/开始实现/opsx:apply/openspec apply/执行变更

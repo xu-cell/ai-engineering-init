@@ -74,6 +74,31 @@
 | `social-login` | 第三方登录、OAuth、JustAuth |
 | `websocket-sse` | WebSocket、SSE、实时推送 |
 
+### Java 专项技能（细粒度编码规范）
+
+| 技能名称 | 触发条件 |
+|---------|---------|
+| `java-amount-handling` | 金额处理、分转元、Long金额字段、AmountConverter |
+| `java-code-optimizer` | 代码优化、重构、坏味道、策略模式、卫语句 |
+| `java-code-quality` | 代码质量检查、代码审查、质量评分、代码评级 |
+| `java-code-style` | 代码风格、命名规范、类命名、方法命名、包结构 |
+| `java-concurrent` | 并发处理、CompletableFuture、线程池、并发安全 |
+| `java-controller` | Controller层、@RestController、接口路径设计 |
+| `java-database` | 建表规范、Flyway迁移脚本、字段命名、索引设计 |
+| `java-entity` | 实体类、VO、DTO、Param、@TableName、@TableField |
+| `java-exception` | 异常捕获、NPE防护、try-catch、Optional、异常链 |
+| `java-export` | 数据导出、Excel导出、异步导出、FastExcel |
+| `java-logging` | 日志规范、@Slf4j、日志级别、日志格式 |
+| `java-mq` | 消息队列、RocketMQ、延迟消息、事务消息 |
+| `java-multitenant` | 多租户代码规范、@TenantIgnore、租户上下文 |
+| `java-mybatis` | MyBatis Plus、LambdaQueryWrapper、XML映射 |
+| `java-quality` | 代码质量必检项、空指针防护、事务边界、资源关闭 |
+| `java-report-query-param` | 报表查询入参、Param类、时间范围、组织筛选 |
+| `java-security` | SQL注入、XSS/CSRF防护、@SaCheckPermission |
+| `java-service` | Service层规范、@Transactional、事务管理 |
+| `java-task` | XXL-Job、@JobHandler、任务调度、定时任务 |
+| `java-total-line` | 合计行、报表合计、needTotalLine、合计SQL |
+
 ### 前端开发技能（需 plus-ui 目录存在）
 
 | 技能名称 | 触发条件 |
