@@ -7,24 +7,26 @@
 | 术语 | 含义 | 对应目录 |
 |------|------|---------|
 | **后端** | Java 服务 | `ruoyi-modules/` |
-| **前端** | PC 管理端 | `plus-ui/`（Vue 3）或独立前端项目 |
+| **前端** | PC 管理端 | `/Users/xujiajun/Developer/frontProj/web`（Vue 2 独立项目） |
 | **系统模块** | 系统管理功能 | `ruoyi-modules/ruoyi-system/` |
 | **业务模块** | 自定义业务 | `ruoyi-modules/ruoyi-xxx/` |
 
-> **前端代码检测**：
-> - 如果存在 `plus-ui/` 目录 → 包含 PC 端前端代码（Vue 3 + Element Plus）
-> - 如果不存在 `plus-ui/` 目录 → 纯后端项目，前端需单独获取
-
 ## 前端技术栈
+> **前端项目路径**：`/Users/xujiajun/Developer/frontProj/web`（独立项目）
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Vue | 2.7+ 或 3.x | 根据项目选择 |
-| Element UI / Element Plus | 2.15 / 2.x | UI 组件库 |
-| Vuex / Pinia | 3.x / 2.x | 状态管理 |
-| Vue Router | 3.x / 4.x | 路由管理 |
+| 技术 | 版本 | 关键点 |
+|------|------|--------|
+| Vue | 2.7.16 | Options API，非 Composition API |
+| Element UI | 2.15.9 | `el-` 前缀组件 |
+| Vuex | 3.4.0 | 28个模块，namespaced:true |
+| Vue Router | 3.2.0 | Hash 路由，动态权限路由 |
+| vue-i18n | 7.3.2 | 中英文，`$t('key')` |
 
-> **前端开发技能**：`ui-pc`（组件库）、`store-pc`（状态管理）
+**前端关键机制**：Token=`Admin-Token`（localStorage）、租户=`MERCHANT-ID`（请求头）、成功码=`10000`、金额=分（`money()` 转元）、权限=`v-hasPerm`、加密=SM4国密
+
+**前端 src 结构**：`api/`(65个接口) | `leniuview/`(35个业务模块) | `leniu-components/`(业务组件) | `components/`(公共组件~87) | `store/`(30个模块) | `utils/request.js`(请求封装) | `permission.js`(路由守卫)
+
+> **前端开发技能**：`ui-pc`（组件/API/权限）、`store-pc`（Vuex状态管理）
 
 ## MCP 工具触发
 
@@ -57,109 +59,67 @@
 | **三层架构** | Controller → Service（buildQueryWrapper）→ Mapper |
 | **对象转换** | `MapstructUtils.convert()` |
 | **Entity基类** | `TenantEntity`（多租户版本） |
-| **BO/VO映射** | `@AutoMappers` 注解 |
+| **BO/VO映射** | `@AutoMapper` 注解 |
 | **主键策略** | 雪花ID（不用 AUTO_INCREMENT） |
 | **Controller基类** | `extends BaseController` |
 
 ### 模块与表前缀对应
 
-| 模块 | 表前缀 | 包路径 | 示例 |
-|------|--------|--------|------|
-| system | `sys_` | `org.dromara.system` | `sys_user`, `sys_menu` |
-| demo | `test_` | `org.dromara.demo` | `test_demo`, `test_tree` |
-| workflow | `flow_` | `org.dromara.workflow` | `flow_category`, `flow_spel` |
-| 自定义 | 自定义 | `org.dromara.xxx` | 按业务定义 |
+| 模块 | 表前缀 | 包路径 |
+|------|--------|--------|
+| system | `sys_` | `org.dromara.system` |
+| demo | `test_` | `org.dromara.demo` |
+| workflow | `flow_` | `org.dromara.workflow` |
+| 自定义 | 自定义 | `org.dromara.xxx` |
 
 ---
 
 ## 绝对禁止的写法
 
-### 后端禁止项
-
 ```java
 // ❌ 禁止1: 错误包名
 package com.ruoyi.xxx;  // 必须是 org.dromara.xxx
 
-// ❌ 禁止2: 使用 Map 传递业务数据
-public Map<String, Object> getXxx(Long id) { ... }  // 禁止！必须用 VO
+// ❌ 禁止2: 使用 Map 传递业务数据（必须用 VO）
 
-// ❌ 禁止3: 使用完整类型引用
-public org.dromara.common.core.domain.R<XxxVo> getXxx()  // ❌ 禁止！
-// ✅ 正确：先 import，再使用短类名
-import org.dromara.common.core.domain.R;
-public R<XxxVo> getXxx()
+// ❌ 禁止3: 使用完整类型引用（先 import 再用短类名）
 
-// ❌ 禁止4: 使用 BeanUtil
-BeanUtil.copyProperties(bo, entity);  // 禁止！用 MapstructUtils.convert()
+// ❌ 禁止4: 使用 BeanUtil（用 MapstructUtils.convert()）
 
-// ❌ 禁止5: 数据库使用自增ID
-id BIGINT(20) AUTO_INCREMENT  // 禁止！本项目用雪花ID
+// ❌ 禁止5: 数据库使用自增ID（用雪花ID）
 ```
 
 ---
 
 ## API 路径规范
 
-| 操作 | HTTP方法 | 路径格式 | 示例 |
-|------|---------|---------|------|
-| 分页查询 | GET | `/list` | `@GetMapping("/list")` |
-| 获取详情 | GET | `/{id}` | `@GetMapping("/{id}")` |
-| 新增 | POST | `/` (空) | `@PostMapping` |
-| 修改 | PUT | `/` (空) | `@PutMapping` |
-| 删除 | DELETE | `/{ids}` | `@DeleteMapping("/{ids}")` |
-| 导出 | POST | `/export` | `@PostMapping("/export")` |
+| 操作 | HTTP方法 | 路径 |
+|------|---------|------|
+| 分页查询 | GET | `/list` |
+| 获取详情 | GET | `/{id}` |
+| 新增 | POST | `/` |
+| 修改 | PUT | `/` |
+| 删除 | DELETE | `/{ids}` |
+| 导出 | POST | `/export` |
 
 ---
 
-## 后端代码结构
-
-### 三层架构（无 DAO 层）
-
-```
-Controller → Service → Mapper
-     ↓           ↓         ↓
-  接收请求    业务逻辑    数据访问
-  参数校验    查询构建    MyBatis
-```
-
-### 标准模块结构
+## 后端标准模块结构
 
 ```
 ruoyi-modules/ruoyi-xxx/src/main/java/org/dromara/xxx/
-├── controller/
-│   └── XxxController.java          # 控制器（extends BaseController）
-├── service/
-│   ├── IXxxService.java            # 服务接口
-│   └── impl/
-│       └── XxxServiceImpl.java     # 服务实现（不继承基类）
-├── mapper/
-│   └── XxxMapper.java              # Mapper 接口（extends BaseMapperPlus）
-└── domain/
-    ├── Xxx.java                    # 实体类（extends TenantEntity）
-    ├── bo/
-    │   └── XxxBo.java              # 业务对象（@AutoMapper）
-    └── vo/
-        └── XxxVo.java              # 视图对象
+├── controller/XxxController.java     # extends BaseController
+├── service/IXxxService.java + impl/  # 含 buildQueryWrapper()
+├── mapper/XxxMapper.java             # extends BaseMapperPlus
+└── domain/Xxx.java + bo/ + vo/       # extends TenantEntity
 ```
-
----
 
 ## 数据库设计规范
 
 ```sql
-CREATE TABLE xxx_table (
-    id           BIGINT(20)   NOT NULL COMMENT '主键ID',
-    tenant_id    VARCHAR(20)  DEFAULT '000000' COMMENT '租户ID',
-    xxx_name     VARCHAR(100) NOT NULL COMMENT '名称',
-    status       CHAR(1)      DEFAULT '0' COMMENT '状态(0正常 1停用)',
-    create_dept  BIGINT(20)   DEFAULT NULL COMMENT '创建部门',
-    create_by    BIGINT(20)   DEFAULT NULL COMMENT '创建人',
-    create_time  DATETIME     DEFAULT CURRENT_TIMESTAMP,
-    update_by    BIGINT(20)   DEFAULT NULL COMMENT '更新人',
-    update_time  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    del_flag     CHAR(1)      DEFAULT '0' COMMENT '删除标志',
-    PRIMARY KEY (id)
-) ENGINE=InnoDB COMMENT='xxx表';
+-- 必须字段：id(雪花) + tenant_id + 业务字段 + 审计字段 + del_flag
+id BIGINT(20) NOT NULL,  tenant_id VARCHAR(20) DEFAULT '000000',
+create_dept/create_by/create_time/update_by/update_time, del_flag CHAR(1)
 ```
 
 ---
@@ -172,8 +132,6 @@ CREATE TABLE xxx_table (
 | `StringUtils` | 字符串处理 | `isBlank()`, `isNotBlank()` |
 | `ServiceException` | 业务异常 | `throw new ServiceException("msg")` |
 
----
-
 ## 参考代码位置
 
 | 类型 | 位置 |
@@ -181,8 +139,6 @@ CREATE TABLE xxx_table (
 | Controller 示例 | `ruoyi-system/.../controller/system/SysNoticeController.java` |
 | Service 示例 | `ruoyi-system/.../service/impl/SysNoticeServiceImpl.java` |
 | Entity 示例 | `ruoyi-system/.../domain/SysNotice.java` |
-
----
 
 ## 快速命令
 
