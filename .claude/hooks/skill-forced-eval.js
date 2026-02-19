@@ -116,6 +116,9 @@ const instructions = `## 强制技能激活流程（必须执行）
 - java-service: Service层/@Service/@Transactional/事务管理/业务逻辑/分页查询/ServiceImpl/服务层
 - java-task: 定时任务/XXL-Job/任务调度/@JobHandler/@XxlJob/任务日志/任务监控/cron
 - java-total-line: 合计行/Total Line/报表合计/合计查询/合计SQL/SUM合计/needTotalLine/totalLine/汇总行
+- mealtime: 餐次/mealtime/mealtimeType/早餐/午餐/晚餐/下午茶/夜宵/AllocMealtimeTypeEnum/MealtimeTypeConverter/正餐
+- marketing-price-rule-customizer: 营销计费/price规则/计价规则/RulePriceHandler/折扣规则/满减规则/限额规则/补贴规则/营销规则定制
+- marketing-recharge-rule-customizer: 营销充值/recharge规则/充值规则/RuleRechargeHandler/满赠规则/充值赠送/充值限额/管理费规则/充值规则定制
 - openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new/创建变更
 - openspec-ff-change: 快速推进/快速生成所有制品/opsx:ff/openspec ff/fast-forward
 - openspec-apply-change: 实现任务/开始实现/opsx:apply/openspec apply/执行变更

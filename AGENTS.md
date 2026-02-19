@@ -99,6 +99,14 @@
 | `java-task` | XXL-Job、@JobHandler、任务调度、定时任务 |
 | `java-total-line` | 合计行、报表合计、needTotalLine、合计SQL |
 
+### 业务专项技能（项目特定规范）
+
+| 技能名称 | 触发条件 |
+|---------|---------|
+| `mealtime` | 餐次处理、mealtimeType、AllocMealtimeTypeEnum、MealtimeTypeConverter |
+| `marketing-price-rule-customizer` | 营销计费规则定制、RulePriceHandler、折扣/满减/限额/补贴规则 |
+| `marketing-recharge-rule-customizer` | 营销充值规则定制、RuleRechargeHandler、满赠/按次赠送/充值限额规则 |
+
 ### 前端开发技能（需 plus-ui 目录存在）
 
 | 技能名称 | 触发条件 |
