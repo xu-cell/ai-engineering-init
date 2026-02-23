@@ -1,144 +1,200 @@
-# CLAUDE.md - RuoYi-Vue-Plus 项目
+# CLAUDE.md - leniu-tengyun-core 云食堂项目
 
 ## 语言设置
 **必须使用中文**与用户对话。
 
 ## 术语约定
-| 术语 | 含义 | 对应目录 |
-|------|------|---------|
-| **后端** | Java 服务 | `ruoyi-modules/` |
-| **前端** | PC 管理端 | `/Users/xujiajun/Developer/frontProj/web`（Vue 2 独立项目） |
-| **系统模块** | 系统管理功能 | `ruoyi-modules/ruoyi-system/` |
-| **业务模块** | 自定义业务 | `ruoyi-modules/ruoyi-xxx/` |
+
+| 术语 | 含义 | 路径 |
+|------|------|------|
+| **后端** | Java 服务 | `leniu-tengyun-core/` |
+| **前端** | PC 管理端 | `/Users/xujiajun/Developer/frontProj/web`（Vue 2） |
+| **食堂模块** | 食堂业务 | `sys-canteen/` |
+| **后场模块** | 后场厨房 | `sys-kitchen/` |
+| **供应链模块** | 供应链 | `sys-drp/` |
+| **公共模块** | 基础公共 | `core-base/`、`sys-common/` |
 
 ## 前端技术栈
-> **前端项目路径**：`/Users/xujiajun/Developer/frontProj/web`（独立项目）
 
-| 技术 | 版本 | 关键点 |
-|------|------|--------|
-| Vue | 2.7.16 | Options API，非 Composition API |
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Vue | 2.7.16 | Options API |
 | Element UI | 2.15.9 | `el-` 前缀组件 |
-| Vuex | 3.4.0 | 28个模块，namespaced:true |
-| Vue Router | 3.2.0 | Hash 路由，动态权限路由 |
-| vue-i18n | 7.3.2 | 中英文，`$t('key')` |
+| Vuex | 3.4.0 | namespaced:true |
+| Vue Router | 3.2.0 | Hash 路由 |
+| vue-i18n | 7.3.2 | `$t('key')` |
 
-**前端关键机制**：Token=`Admin-Token`（localStorage）、租户=`MERCHANT-ID`（请求头）、成功码=`10000`、金额=分（`money()` 转元）、权限=`v-hasPerm`、加密=SM4国密
+**前端关键机制**：Token=`Admin-Token`（localStorage）、租户=`MERCHANT-ID`（请求头）、成功码=`10000`、金额=分（`money()` 转元）、权限=`v-hasPerm`、加密=SM4
 
-**前端 src 结构**：`api/`(65个接口) | `leniuview/`(35个业务模块) | `leniu-components/`(业务组件) | `components/`(公共组件~87) | `store/`(30个模块) | `utils/request.js`(请求封装) | `permission.js`(路由守卫)
+**前端 src 结构**：`api/`(65个接口) | `leniuview/`(35个业务模块) | `leniu-components/`(业务组件) | `components/`(~87) | `store/`(30个模块)
 
-> **前端开发技能**：`ui-pc`（组件/API/权限）、`store-pc`（Vuex状态管理）
+> **前端技能**：`ui-pc`（组件/API/权限）、`store-pc`（Vuex）
 
 ## MCP 工具触发
 
-| 触发词 | 工具 | 用途 |
-|-------|------|------|
-| 深度分析、仔细思考、全面评估 | `sequential-thinking` | 链式推理，多步骤分析 |
-| 最佳实践、官方文档、标准写法 | `context7` | MyBatis-Plus/Sa-Token/Spring Boot 等 |
-| 打开浏览器、截图、检查元素 | `chrome-devtools` | 浏览器调试 |
+| 触发词 | 工具 |
+|-------|------|
+| 深度分析、仔细思考、全面评估 | `sequential-thinking` |
+| 最佳实践、官方文档、标准写法 | `context7` |
+| 打开浏览器、截图、检查元素 | `chrome-devtools` |
 
-## Skills 强制评估（必须遵守）
+## Skills 强制评估
 
-> **每次用户提问时，UserPromptSubmit Hook 会注入技能评估提示。必须严格遵循！**
+> UserPromptSubmit Hook 会注入评估提示，**必须严格遵循**。
 
-**流程**：
-1. **评估**：根据注入的技能列表，列出匹配的技能及理由
-2. **激活**：对每个匹配的技能调用 `Skill(技能名)`
-3. **实现**：激活完成后开始实现
+1. **评估**：列出匹配的技能
+2. **激活**：逐个调用 `Skill(技能名)`（串行，不能并行）
+3. **实现**：所有技能激活完成后开始
 
 **Skills 位置**：`.claude/skills/[skill-name]/SKILL.md`
 
-> **前端开发技能**（`ui-pc`、`store-pc`）可用于前端开发场景。
-
 ---
 
-## 核心架构（必须牢记）
+## 核心规范速查
 
 | 项目 | 规范 |
 |------|------|
-| **包名** | `org.dromara.*` |
-| **三层架构** | Controller → Service（buildQueryWrapper）→ Mapper |
-| **对象转换** | `MapstructUtils.convert()` |
-| **Entity基类** | `TenantEntity`（多租户版本） |
-| **BO/VO映射** | `@AutoMapper` 注解 |
-| **主键策略** | 雪花ID（不用 AUTO_INCREMENT） |
-| **Controller基类** | `extends BaseController` |
+| **包名** | `net.xnzn.core.*` |
+| **JDK** | 21 |
+| **框架** | pigx-framework 3.4.7 + Spring Boot 3.x |
+| **架构** | Controller → Business → Service → Mapper |
+| **请求封装** | `LeRequest<T>` |
+| **分页** | `PageDTO` + `PageVO` + PageHelper |
+| **异常** | `LeException` |
+| **国际化** | `I18n.getMessage()` |
+| **对象转换** | `BeanUtil.copyProperties()`（Hutool） |
+| **权限** | `@RequiresAuthentication` |
+| **ID** | `Id.next()`（雪花ID） |
+| **验证** | `jakarta.validation.*`（JDK 21） |
 
-### 模块与表前缀对应
+## 双库架构
 
-| 模块 | 表前缀 | 包路径 |
-|------|--------|--------|
-| system | `sys_` | `org.dromara.system` |
-| demo | `test_` | `org.dromara.demo` |
-| workflow | `flow_` | `org.dromara.workflow` |
-| 自定义 | 自定义 | `org.dromara.xxx` |
+物理分离双库，**无 tenant_id 字段**：
 
----
-
-## 绝对禁止的写法
+| 库 | 说明 | 切换方式 |
+|----|------|---------|
+| 系统库 | 全局数据（商户配置、字典） | `Executors.doInSystem()` |
+| 商户库 | 租户业务数据（订单、菜品） | 默认（请求头 `MERCHANT-ID`） |
 
 ```java
-// ❌ 禁止1: 错误包名
-package com.ruoyi.xxx;  // 必须是 org.dromara.xxx
-
-// ❌ 禁止2: 使用 Map 传递业务数据（必须用 VO）
-
-// ❌ 禁止3: 使用完整类型引用（先 import 再用短类名）
-
-// ❌ 禁止4: 使用 BeanUtil（用 MapstructUtils.convert()）
-
-// ❌ 禁止5: 数据库使用自增ID（用雪花ID）
+Executors.doInTenant(tenantId, () -> { /* 商户库 */ });
+Executors.doInSystem(() -> { /* 系统库 */ });
+Executors.doInAllTenant(tenantId -> { /* 遍历所有租户 */ });
 ```
 
----
+## 四层架构说明
 
-## API 路径规范
+| 层 | 职责 | 命名示例 |
+|----|------|---------|
+| Controller | 接收请求、参数校验、路由 | `OrderInfoWebController` |
+| **Business** | 业务编排、跨 Service 协调 | `OrderWebBusiness` |
+| Service | 单表 CRUD、事务 | `OrderInfoService` |
+| Mapper | ORM 映射（含 XML 同目录） | `OrderInfoMapper` |
 
-| 操作 | HTTP方法 | 路径 |
-|------|---------|------|
-| 分页查询 | GET | `/list` |
-| 获取详情 | GET | `/{id}` |
-| 新增 | POST | `/` |
-| 修改 | PUT | `/` |
-| 删除 | DELETE | `/{ids}` |
-| 导出 | POST | `/export` |
+> Business 层是本项目核心特色，复杂逻辑在此处编排。
 
----
-
-## 后端标准模块结构
+## 标准包结构
 
 ```
-ruoyi-modules/ruoyi-xxx/src/main/java/org/dromara/xxx/
-├── controller/XxxController.java     # extends BaseController
-├── service/IXxxService.java + impl/  # 含 buildQueryWrapper()
-├── mapper/XxxMapper.java             # extends BaseMapperPlus
-└── domain/Xxx.java + bo/ + vo/       # extends TenantEntity
+net.xnzn.core.[module]/
+├── controller/         # 按端分：web/mobile/android
+├── business/impl/      # 业务编排
+├── service/impl/       # 服务层
+├── mapper/             # Mapper + XML（同目录！）
+├── model/              # Entity
+├── vo/                 # 响应对象
+├── dto/                # 请求参数
+├── constants/          # 枚举和常量
+├── mq/                 # 消息队列
+└── task/               # 定时任务
 ```
 
-## 数据库设计规范
+> **XML 与 Mapper 同目录**（非 `resources/mapper/`），需在 pom.xml 配置资源过滤。
+
+## 多端 Controller 路由
+
+| 端 | 路由前缀 |
+|----|---------|
+| Web 管理端 | `/api/v2/web/{module}` |
+| 移动端 | `/api/v2/mobile/{module}` |
+| 设备端 | `/api/v2/android/{module}` |
+| 开放接口 | `/api/v2/open/{module}` |
+
+## Entity 审计字段
+
+| leniu 字段 | 含义 | 填充时机 |
+|-----------|------|---------|
+| `crby` | 创建人 | INSERT |
+| `crtime` | 创建时间 | INSERT |
+| `upby` | 更新人 | INSERT_UPDATE |
+| `uptime` | 更新时间 | INSERT_UPDATE |
+| `delFlag` | **1=删除，2=正常** | 手动 |
+
+## 工具类速查
+
+| 工具 | 用途 |
+|------|------|
+| `BeanUtil.copyProperties()` | 对象转换 |
+| `CollUtil.isEmpty()` | 集合判空 |
+| `ObjectUtil.isNull()` | 对象判空 |
+| `StrUtil.isBlank()` | 字符串判空 |
+| `Id.next()` | 雪花ID |
+| `LeException` | 业务异常 |
+| `I18n.getMessage()` | 国际化 |
+| `TenantContextHolder.getTenantId()` | 租户上下文 |
+| `PageMethod.startPage()` | 分页拦截 |
+
+## 绝对禁止
+
+```java
+// ❌ 错误包名
+package org.dromara.xxx;           // 必须 net.xnzn.core.xxx
+
+// ❌ 旧验证包（JDK 21 必须用 jakarta）
+import javax.validation.constraints.*;
+
+// ❌ RuoYi 工具类
+MapstructUtils.convert();          // 用 BeanUtil.copyProperties()
+throw new ServiceException("msg"); // 用 throw new LeException("msg")
+
+// ❌ 错误审计字段名
+private String createBy;           // 必须 crby
+private LocalDateTime createTime;  // 必须 crtime
+
+// ❌ Entity 加 tenant_id（双库物理隔离，不需要）
+
+// ❌ del_flag: 0=正常（leniu 是 2=正常）
+
+// ❌ Map 传递业务数据（必须用 VO/DTO）
+```
+
+## 数据库规范
 
 ```sql
--- 必须字段：id(雪花) + tenant_id + 业务字段 + 审计字段 + del_flag
-id BIGINT(20) NOT NULL,  tenant_id VARCHAR(20) DEFAULT '000000',
-create_dept/create_by/create_time/update_by/update_time, del_flag CHAR(1)
+CREATE TABLE xxx (
+    id       BIGINT    NOT NULL COMMENT '主键（雪花ID）',
+    -- 业务字段...
+    crby     VARCHAR(64) COMMENT '创建人',
+    crtime   DATETIME    COMMENT '创建时间',
+    upby     VARCHAR(64) COMMENT '更新人',
+    uptime   DATETIME    COMMENT '更新时间',
+    del_flag INT DEFAULT 2 COMMENT '删除标识(1-删除,2-正常)',
+    PRIMARY KEY (id)
+);
+-- ⚠️ 无需 tenant_id（双库物理隔离）
 ```
-
----
-
-## 后端工具类速查
-
-| 工具类 | 用途 | 常用方法 |
-|--------|------|---------|
-| `MapstructUtils` | 对象转换 | `convert(source, Target.class)` |
-| `StringUtils` | 字符串处理 | `isBlank()`, `isNotBlank()` |
-| `ServiceException` | 业务异常 | `throw new ServiceException("msg")` |
 
 ## 参考代码位置
 
-| 类型 | 位置 |
+| 类型 | 路径 |
 |------|------|
-| Controller 示例 | `ruoyi-system/.../controller/system/SysNoticeController.java` |
-| Service 示例 | `ruoyi-system/.../service/impl/SysNoticeServiceImpl.java` |
-| Entity 示例 | `ruoyi-system/.../domain/SysNotice.java` |
+| 订单 Controller | `sys-canteen/.../order/web/controller/OrderInfoWebController.java` |
+| 订单 Business | `sys-canteen/.../order/web/business/impl/OrderWebBusiness.java` |
+| 订单 Service | `sys-canteen/.../order/common/service/impl/OrderInfoService.java` |
+| 订单 Entity | `sys-canteen/.../order/common/model/OrderInfo.java` |
+| 订单枚举 | `sys-canteen/.../order/common/constants/OrderStateEnum.java` |
+| 排班 Controller | `sys-kitchen/.../attendance/scheduling/controller/BackAttendanceWorkShiftController.java` |
+| Bootstrap 配置 | `core-base/src/main/resources/bootstrap.yml` |
 
 ## 快速命令
 
