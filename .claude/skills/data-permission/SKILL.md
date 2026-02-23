@@ -588,4 +588,12 @@ List<OrderVo> selectOrderReport(@Param("bo") OrderBo bo);
 | SysRoleServiceImpl | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/service/impl/SysRoleServiceImpl.java` |
 | SysDeptMapper | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/mapper/SysDeptMapper.java` |
 
-<!-- 抓蛙师 -->
+---
+
+## 多项目适配说明
+
+
+## 注意事项
+
+- 如果需要 leniu-tengyun-core 项目的数据权限开发规范，请使用 `leniu-data-permission` skill
+- leniu-tengyun-core 使用物理库隔离架构，与 RuoYi-Vue-Plus 的逻辑隔离方式不同

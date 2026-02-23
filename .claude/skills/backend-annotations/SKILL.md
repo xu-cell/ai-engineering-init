@@ -662,3 +662,13 @@ api-decrypt:
   publicKey: your-public-key
   privateKey: your-private-key
 ```
+
+---
+
+## 相关技能
+
+| 需要了解 | 激活 Skill |
+|---------|-----------|
+| Controller 层规范 | `java-controller` |
+| 安全规范 | `security-guard` |
+| 数据权限 | `data-permission` |

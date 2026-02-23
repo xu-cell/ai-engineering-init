@@ -591,3 +591,25 @@ public org.dromara.common.core.domain.R<XxxVo> getXxx()  // 禁止！
 import org.dromara.common.core.domain.R;
 public R<XxxVo> getXxx()
 ```
+
+---
+
+## 工具类选择速查
+
+| 需求 | 推荐工具 | 说明 |
+|------|---------|------|
+| BO ↔ Entity ↔ VO 转换 | `MapstructUtils.convert()` | **必须使用** |
+| 字符串判空 | `StringUtils.isBlank()` | 推荐项目工具类 |
+| 集合判空 | `CollUtil.isEmpty()` | Hutool |
+| 对象判空 | `ObjectUtil.isNull()` | Hutool |
+| 提取集合属性 | `StreamUtils.toList()` | 项目工具类 |
+| 集合转 Map | `StreamUtils.toIdentityMap()` | 项目工具类 |
+| 分组 | `StreamUtils.groupByKey()` | 项目工具类 |
+| 构建树 | `TreeBuildUtils.build()` | 项目工具类 |
+| 日期格式化 | `DateUtils.formatDateTime()` | 项目工具类 |
+| 抛业务异常 | `throw new ServiceException()` | 项目异常类 |
+| 获取登录用户 | `LoginHelper.getUserId()` | 项目工具类 |
+| Redis 缓存 | `RedisUtils.setCacheObject()` | 项目工具类 |
+| Excel 导出 | `ExcelUtil.exportExcel()` | 项目工具类 |
+| 生成 ID | `IdUtil.getSnowflakeNextId()` | Hutool |
+| MD5/SHA | `SecureUtil.md5()` | Hutool |

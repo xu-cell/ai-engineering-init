@@ -391,3 +391,163 @@ COMMENT='用户表'                                           -- ✅ 表注释�
 - ✅ MyBatis-Plus 自动将 Java `delFlag` 映射到数据库 `del_flag`
 - ✅ `@TableLogic` 注解自动处理查询和删除操作
 
+---
+
+## 多项目适配说明
+
+### 不同项目数据库设计对比
+
+| 项目特征 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|---------|----------------|-------------------|
+| **主键类型** | 雪花 ID (Long) | 雪花 ID (Long) |
+| **逻辑删除** | `del_flag BIGINT` | `del_flag TINYINT` |
+| **审计字段** | `create_by`, `create_time` | `crby`, `crtime` |
+| **表前缀** | `sys_`, `test_`, `flow_` | 按业务命名 |
+
+### 通用数据库原则
+
+1. **主键使用雪花 ID**：不使用 AUTO_INCREMENT
+2. **必须包含审计字段**：创建人、创建时间、更新人、更新时间
+3. **逻辑删除字段**：`del_flag` 或类似字段
+4. **字段命名使用蛇形**：`user_name` 而非 `userName`
+5. **索引命名规范**：`pk_`, `uk_`, `idx_` 前缀
+6. **COMMENT 使用中文**：所有字段和表注释
+
+### 参考 java*skill
+
+更详细的规范请参考 `java-database` 技能。
+
+---
+
+## leniu-tengyun-core 数据库设计
+
+### ⚠️ 双库架构（重要差异）
+
+leniu-tengyun-core 采用**双库架构**进行租户隔离，与 RuoYi-Vue-Plus 的单库 tenant_id 方式完全不同：
+
+| 特性 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|------|----------------|-------------------|
+| **隔离方式** | 单库 + tenant_id 字段 | 双库（商户库 + 系统库） |
+| **租户字段** | Entity 包含 tenant_id | **Entity 不包含 tenant_id** |
+| **路由机制** | SQL 自动拼接 tenant_id | 请求头决定访问哪个库 |
+
+**双库架构说明**：
+- **系统库**：前端请求头**不携带**商户ID时，自动请求系统库
+- **商户库**：前端请求头**携带**商户ID时，自动请求商户库
+- **租户上下文**：通过 `TenantContextHolder.getTenantId()` 获取，而非 Entity 字段
+
+### 审计字段命名差异
+
+| 字段用途 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|---------|----------------|-------------------|
+| **创建人** | `create_by` | `crby` |
+| **创建时间** | `create_time` | `crtime` |
+| **更新人** | `update_by` | `upby` / `modby` |
+| **更新时间** | `update_time` | `uptime` / `modtime` |
+| **创建部门** | `create_dept` | 无 |
+| **租户ID** | `tenant_id` (字段) | **无字段**（双库隔离） |
+| **删除标志** | `del_flag BIGINT` | `del_flag TINYINT/INTEGER` |
+
+### Entity 类示例
+
+```java
+// leniu-tengyun-core 风格
+// ⚠️ 注意：不需要 tenant_id 字段！租户隔离通过双库架构实现
+@Data
+@TableName("leave_info")
+@ApiModel("请假信息")
+@EqualsAndHashCode(callSuper = false)
+public class LeaveInfo extends Model<LeaveInfo> {
+
+    @TableId(value = "id")  // 默认雪花ID
+    private Long id;
+
+    // ❌ 不需要 tenant_id 字段！
+    // @TableField("tenant_id")
+    // private Long tenantId;
+
+    @TableField("leave_type")
+    private String leaveType;
+
+    @TableField("start_time")
+    private LocalDateTime startTime;
+
+    @TableField("end_time")
+    private LocalDateTime endTime;
+
+    @TableField("reason")
+    private String reason;
+
+    @TableField("status")
+    private Integer status;
+
+    @TableLogic
+    @TableField("del_flag")
+    private Integer delFlag;  // 1=删除, 2=正常 (DelFlagEnum)
+
+    @TableField(value = "crby", fill = FieldFill.INSERT)
+    private String crby;        // 创建人
+
+    @TableField(value = "crtime", fill = FieldFill.INSERT)
+    private LocalDateTime crtime;  // 创建时间
+
+    @TableField(value = "upby", fill = FieldFill.UPDATE)
+    private String upby;        // 更新人
+
+    @TableField(value = "uptime", fill = FieldFill.UPDATE)
+    private LocalDateTime uptime;  // 更新时间
+}
+
+// 获取租户ID的方式（从上下文获取，而非Entity字段）
+Long tenantId = TenantContextHolder.getTenantId();
+```
+
+### 建表 SQL 对比
+
+```sql
+-- RuoYi-Vue-Plus 风格（单库 + tenant_id）
+CREATE TABLE `sys_order` (
+    `id` BIGINT(20) NOT NULL COMMENT '主键ID',
+    `tenant_id` VARCHAR(20) DEFAULT '000000' COMMENT '租户ID',
+    `order_no` VARCHAR(50) NOT NULL COMMENT '订单号',
+    `status` CHAR(1) DEFAULT '0' COMMENT '状态',
+    `create_dept` BIGINT(20) DEFAULT NULL COMMENT '创建部门',
+    `create_by` BIGINT(20) DEFAULT NULL COMMENT '创建人',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` BIGINT(20) DEFAULT NULL COMMENT '更新人',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `del_flag` BIGINT(20) DEFAULT 0 COMMENT '删除标志',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB COMMENT='订单表';
+
+-- leniu-tengyun-core 风格（双库架构，不需要 tenant_id）
+CREATE TABLE `leave_info` (
+    `id` BIGINT(20) NOT NULL COMMENT '主键ID',
+    -- ❌ 不需要 tenant_id 字段！双库架构自动隔离
+    `leave_type` VARCHAR(20) NOT NULL COMMENT '请假类型',
+    `start_time` DATETIME NOT NULL COMMENT '开始时间',
+    `end_time` DATETIME NOT NULL COMMENT '结束时间',
+    `reason` VARCHAR(500) DEFAULT NULL COMMENT '请假原因',
+    `status` INT DEFAULT 0 COMMENT '状态',
+    `crby` VARCHAR(64) DEFAULT NULL COMMENT '创建人',
+    `crtime` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `upby` VARCHAR(64) DEFAULT NULL COMMENT '更新人',
+    `uptime` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `del_flag` TINYINT DEFAULT 2 COMMENT '删除标志(1删除 2正常)',
+    PRIMARY KEY (`id`),
+    INDEX `idx_crtime` (`crtime`)
+) ENGINE=InnoDB COMMENT='请假信息表';
+```
+
+### 租户隔离方式对比
+
+| 方式 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|------|----------------|-------------------|
+| **架构** | 单库多租户 | 双库（系统库 + 商户库） |
+| **路由依据** | Entity 中的 tenant_id | 请求头中的商户ID |
+| **Entity 字段** | 需要 tenant_id | 不需要 tenant_id |
+| **获取租户** | `LoginHelper.getTenantId()` | `TenantContextHolder.getTenantId()` |
+| **跨租户查询** | `TenantHelper.dynamic()` | `Executors.readInSystem()` |
+
+详细规范请参考 `java-multitenant` 技能。
+

@@ -565,6 +565,134 @@ org.dromara.iot.alert.*
 
 ---
 
+## 多项目适配说明
+
+### 不同项目架构对比
+
+| 项目特征 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|---------|----------------|-------------------|
+| **包名前缀** | `org.dromara.*` | `net.xnzn.core.*` |
+| **JDK 版本** | 17 | 21 |
+| **请求封装** | 直接使用 BO | `LeRequest<T>` |
+| **响应封装** | `R<T>`, `TableDataInfo<T>` | `Page<T>`, `void` |
+| **异常类** | `ServiceException` | `LeException` |
+| **国际化** | `MessageUtils.message()` | `I18n.getMessage()` |
+| **权限注解** | `@SaCheckPermission` | `@RequiresAuthentication` |
+| **分页** | `PageQuery`, `TableDataInfo` | `PageDTO`, `Page<VO>` |
+
+### 通用最佳实践
+
+无论使用哪种项目架构，以下原则都是通用的：
+
+1. **三层架构**：Controller → Service → Mapper，无独立 DAO 层
+2. **分组校验**：使用 Validation Groups 区分新增/修改场景
+3. **国际化**：所有错误消息使用 i18n，不硬编码
+4. **日志规范**：关键操作记录日志，使用占位符
+5. **异常处理**：使用统一的业务异常类
+6. **分布式锁**：敏感操作使用 Redisson 分布式锁
+
+---
+
+## leniu-tengyun-core 架构详解
+
+### 项目结构
+
+```
+leniu-tengyun-core/
+├── src/main/java/net/xnzn/core/
+│   ├── api/                    # API 控制器
+│   ├── service/                # 服务层
+│   ├── domain/                 # 实体类
+│   │   ├── entity/            # 数据库实体
+│   │   ├── dto/               # 数据传输对象
+│   │   └── vo/                # 视图对象
+│   ├── mapper/                 # MyBatis Mapper
+│   ├── common/                 # 公共模块
+│   │   ├── exception/         # 异常处理
+│   │   ├── utils/             # 工具类
+│   │   └── config/            # 配置类
+│   └── Auth/                   # 认证相关
+└── src/main/resources/
+    └── application.yml
+```
+
+### JDK 21 特性利用
+
+```java
+// Record 类（不可变数据载体）
+public record UserDTO(
+    Long id,
+    String name,
+    String email
+) {}
+
+// Sealed 类（限定继承）
+public sealed interface Result permits Success, Failure {
+    record Success<T>(T data) implements Result {}
+    record Failure(String message) implements Result {}
+}
+
+// Pattern Matching
+if (obj instanceof String s && s.length() > 5) {
+    System.out.println(s.toUpperCase());
+}
+
+// Switch 表达式
+String result = switch (status) {
+    case 0 -> "待处理";
+    case 1 -> "处理中";
+    case 2 -> "已完成";
+    default -> "未知";
+};
+```
+
+### 请求响应封装
+
+```java
+// LeRequest 请求封装
+@Data
+public class LeRequest<T> {
+    @ApiModelProperty(value = "请求内容", required = true)
+    @NotNull(message = "请求内容不能为空")
+    private T content;
+}
+
+// PageDTO 分页参数
+@Data
+public class PageDTO {
+    @ApiModelProperty(value = "当前页", required = true)
+    @NotNull(message = "当前页不能为空")
+    @Min(value = 1, message = "页码必须大于0")
+    private Integer pageNum;
+
+    @ApiModelProperty(value = "每页条数", required = true)
+    @NotNull(message = "每页条数不能为空")
+    @Min(value = 1, message = "每页条数必须大于0")
+    @Max(value = 1000, message = "每页条数不能超过1000")
+    private Integer pageSize;
+}
+
+// PageVO 分页响应
+@Data
+public class PageVO<T> {
+    private List<T> records;
+    private Long total;
+    private Integer pageNum;
+    private Integer pageSize;
+
+    public static <T> PageVO<T> of(Page<T> page) {
+        PageVO<T> vo = new PageVO<>();
+        vo.setRecords(page.getRecords());
+        vo.setTotal(page.getTotal());
+        vo.setPageNum(page.getCurrent());
+        vo.setPageSize(page.getSize());
+        return vo;
+    }
+}
+```
+
+---
+
 ## 常见问题 FAQ
 
 ### Q1: 什么时候需要使用 RocketMQ？

@@ -391,3 +391,17 @@ COMMENT='用户表'                                           -- ✅ 表注释�
 - ✅ MyBatis-Plus 自动将 Java `delFlag` 映射到数据库 `del_flag`
 - ✅ `@TableLogic` 注解自动处理查询和删除操作
 
+---
+
+## 参考实现
+
+查看已有的完整实现：
+
+- **Entity 参考**: `org.dromara.demo.domain.TestDemo`
+- **表结构参考**: `script/sql/ry_vue_5.X.sql` 中的 test_demo 表
+
+**特别注意**：
+- ✅ 软删除字段类型是 `Long delFlag`（不是 CHAR(1)）
+- ✅ MyBatis-Plus 自动将 Java `delFlag` 映射到数据库 `del_flag`
+- ✅ `@TableLogic` 注解自动处理查询和删除操作
+

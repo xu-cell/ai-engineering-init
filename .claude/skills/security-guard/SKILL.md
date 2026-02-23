@@ -737,3 +737,12 @@ public class UserVo {
 - [ ] 错误页面不泄露堆栈信息？
 - [ ] 数据库端口不对外暴露？
 - [ ] Redis 设置了密码？
+
+---
+
+
+
+## 注意事项
+
+- 如果需要 leniu-tengyun-core 项目的安全开发规范，请使用 `leniu-security-guard` skill
+- leniu-tengyun-core 使用的是自研 secure 模块，注解和工具类与 RuoYi-Vue-Plus 不同

@@ -633,5 +633,17 @@ package org.dromara.demo.service;  // ✅
 
 **特别注意**：上述参考代码是本项目的标准实现，严格遵循三层架构（Service 直接调用 Mapper，无 DAO 层）。
 
+---
 
-<!-- 抓蛙师 -->
+## 参考实现
+
+查看已有的完整实现：
+
+- **Entity 参考**: `org.dromara.demo.domain.TestDemo`
+- **BO 参考**: `org.dromara.demo.domain.bo.TestDemoBo`
+- **VO 参考**: `org.dromara.demo.domain.vo.TestDemoVo`
+- **Service 参考**: `org.dromara.demo.service.impl.TestDemoServiceImpl`
+- **Mapper 参考**: `org.dromara.demo.mapper.TestDemoMapper`
+- **Controller 参考**: `org.dromara.demo.controller.TestDemoController`
+
+**特别注意**：上述参考代码是本项目的标准实现，严格遵循三层架构（Service 直接调用 Mapper，无 DAO 层）。

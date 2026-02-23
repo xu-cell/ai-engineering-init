@@ -827,3 +827,13 @@ long remaining = RedisUtils.rateLimiter(key, RateType.OVERALL, 100, 10);
 4. ⚠️ **缓存 key 要有业务含义**，便于排查问题
 5. ⚠️ **设置合理的过期时间**，避免缓存雪崩
 6. ⚠️ **返回空列表而不是 null**，防止缓存穿透
+
+---
+
+## 多项目适配说明
+
+
+## 注意事项
+
+- 如果需要 leniu-tengyun-core 项目的 Redis 开发规范，请使用 `leniu-redis-cache` skill
+- leniu-tengyun-core 的 RedisUtil 工具类方法名与 RuoYi-Vue-Plus 的 RedisUtils 不同
