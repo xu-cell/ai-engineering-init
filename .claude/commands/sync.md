@@ -4,7 +4,7 @@
 
 ---
 
-## 🎯 适用场景
+## 适用场景
 
 | 场景 | 说明 |
 |------|------|
@@ -16,38 +16,52 @@
 
 ---
 
-## 🚀 执行流程
+## 执行流程
 
 ### 第一步：扫描后端代码状态（强制执行）
 
 #### 1.1 扫描业务模块和功能完整性
 
 ```bash
-# 查找所有业务模块的 Controller
-Glob pattern: "ruoyi-modules/ruoyi-*/src/main/java/**/controller/*Controller.java"
+# 查找核心业务模块的 Controller
+Glob pattern: "sys-canteen/src/main/java/**/controller/*Controller.java"
+Glob pattern: "sys-kitchen/src/main/java/**/controller/*Controller.java"
+Glob pattern: "sys-drp/src/main/java/**/controller/*Controller.java"
+Glob pattern: "sys-common/src/main/java/**/controller/*Controller.java"
 
-# 排除框架模块（system, generator, common, demo, job, workflow）
+# 基础设施模块（不统计）：core-base、core-aggregator、sys-open、sys-logistics
 ```
 
-对每个功能检查 **7 个必需的文件**：
+对每个功能检查 **8 个必需的文件**（leniu 四层架构）：
 
 | 类型 | 文件 | 完整路径 | 必须 |
 |------|------|---------|------|
-| Entity | `Xxx.java` | `domain/Xxx.java` | ✅ |
-| BO | `XxxBo.java` | `domain/bo/XxxBo.java` | ✅ |
-| VO | `XxxVo.java` | `domain/vo/XxxVo.java` | ✅ |
-| Service 接口 | `IXxxService.java` | `service/IXxxService.java` | ✅ |
-| Service 实现 | `XxxServiceImpl.java` | `service/impl/XxxServiceImpl.java` | ✅ |
-| Mapper | `XxxMapper.java` | `mapper/XxxMapper.java` | ✅ |
-| Controller | `XxxController.java` | `controller/XxxController.java` | ✅ |
+| Entity | `XxxInfo.java` | `common/model/XxxInfo.java` | ✅ |
+| DTO | `XxxInfoDTO.java` | `web/dto/XxxInfoDTO.java` | ✅ |
+| VO | `XxxInfoVO.java` | `web/vo/XxxInfoVO.java` | ✅ |
+| Mapper | `XxxInfoMapper.java` | `common/mapper/XxxInfoMapper.java` | ✅ |
+| MapperXML | `XxxInfoMapper.xml` | `common/mapper/XxxInfoMapper.xml` | ✅ |
+| Service | `XxxInfoService.java` | `common/service/impl/XxxInfoService.java` | ✅ |
+| Business | `XxxWebBusiness.java` | `web/business/impl/XxxWebBusiness.java` | ✅ |
+| Controller | `XxxWebController.java` | `web/controller/XxxWebController.java` | ✅ |
 
 #### 1.2 扫描代码规范问题
 
 ```bash
-# 检查所有后端代码问题
-Grep pattern: "package com\.ruoyi\." path: ruoyi-modules/ output_mode: files_with_matches
-Grep pattern: "BeanUtil\.copy|BeanUtils\.copy" path: ruoyi-modules/ output_mode: files_with_matches
-Grep pattern: "@SaCheckPermission" path: ruoyi-modules/ glob: "*Controller.java" output_mode: files_with_matches
+# 检查包名问题
+Grep pattern: "package org\.dromara\.|package com\.ruoyi\." path: sys-canteen/,sys-kitchen/,sys-drp/ output_mode: files_with_matches
+
+# 检查禁止使用的工具类
+Grep pattern: "MapstructUtils|ServiceException" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*.java" output_mode: files_with_matches
+
+# 检查审计字段命名
+Grep pattern: "private.*createBy|private.*updateBy|private.*createTime|private.*updateTime" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*.java" output_mode: files_with_matches
+
+# 检查 del_flag 错误值
+Grep pattern: "delFlag.*=.*0\b|del_flag.*=.*0\b" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*.java" output_mode: files_with_matches
+
+# 检查权限注解
+Grep pattern: "@RequiresAuthentication|@RequiresGuest" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*Controller.java" output_mode: files_with_matches
 ```
 
 #### 1.3 扫描 Git 提交记录
@@ -63,26 +77,30 @@ git log -30 --oneline --format="%h %s %ad" --date=short
 
 ```bash
 # 扫描所有业务代码中的待办标记
-Grep pattern: "TODO:|FIXME:|XXX:" path: ruoyi-modules/ glob: "*.java" output_mode: content -B 1
+Grep pattern: "TODO:|FIXME:|XXX:" path: sys-canteen/,sys-kitchen/,sys-drp/,sys-common/ glob: "*.java" output_mode: content -B 1
 ```
 
 #### 1.5 生成代码扫描结果
 
 **输出格式**：
 ```markdown
-## 📊 代码扫描结果
+## 代码扫描结果
 
 ### 模块完整性分析
 | 模块 | 功能数 | 完成数 | 完成率 | 状态 |
 |------|--------|--------|--------|------|
-| [模块名] | X | X | XX% | [状态] |
+| sys-canteen | X | X | XX% | [状态] |
+| sys-kitchen | X | X | XX% | [状态] |
+| sys-drp | X | X | XX% | [状态] |
+| sys-common | X | X | XX% | [状态] |
 
 ### 代码规范检查
 | 检查项 | 通过 | 警告 | 错误 |
 |--------|------|------|------|
-| 包名规范 | ✅ | 0 | 0 |
-| 对象转换 | ⚠️ | 2 | 0 |
-| 权限注解 | ⚠️ | 3 | 0 |
+| 包名规范 (net.xnzn.core.*) | ✅ | 0 | 0 |
+| 权限注解完整度 | ⚠️ | 2 | 0 |
+| 审计字段规范 | ✅ | 0 | 0 |
+| del_flag 值语义 | ✅ | 0 | 0 |
 
 ### 待办统计
 - 🔥 FIXME (高): X 项
@@ -152,14 +170,14 @@ git log -5 --oneline
 ### 第四步：生成项目同步报告
 
 ```markdown
-# 🔄 项目代码状态同步报告
+# 项目代码状态同步报告
 
 **同步时间**：YYYY-MM-DD HH:mm
 **上次同步**：YYYY-MM-DD（距今 X 天）
 
 ---
 
-## 📈 最新进展
+## 最新进展
 
 ### Git 提交摘要
 - **最新提交**：[commit message] ([hash])
@@ -169,12 +187,15 @@ git log -5 --oneline
 ### 代码完成度
 | 模块 | 功能数 | 完成 | 进行中 | 待开发 | 完成率 |
 |------|--------|------|--------|--------|---------|
-| [模块名] | X | X | X | X | XX% [状态] |
+| sys-canteen | X | X | X | X | XX% |
+| sys-kitchen | X | X | X | X | XX% |
+| sys-drp | X | X | X | X | XX% |
+| sys-common | X | X | X | X | XX% |
 | **合计** | **X** | **X** | **X** | **X** | **XX%** |
 
 ---
 
-## ⚠️ 紧急问题（必须立即处理）
+## 紧急问题（必须立即处理）
 
 ### 高优先级 FIXME
 | 文件 | 行号 | 问题 | 影响 |
@@ -182,32 +203,33 @@ git log -5 --oneline
 | [文件名].java | [行号] | [问题描述] | [影响范围] |
 
 **处理建议**：
-```bash
 /check [模块名]  # 查看详细问题
 /next             # 获取修复建议
-```
 
 ---
 
-## 🔍 代码规范检查结果
+## 代码规范检查结果
 
 ### 总体评分
 | 维度 | 评分 | 说明 |
 |------|------|------|
-| 包名规范 | ✅ | 所有包名符合 org.dromara.* 规范 |
-| 权限注解 | ⚠️ | 3 个接口缺少 @SaCheckPermission |
-| 对象转换 | ⚠️ | 2 处使用了 BeanUtil 代替 MapstructUtils |
+| 包名规范 | ✅ | 所有包名符合 net.xnzn.core.* 规范 |
+| 权限注解 | ⚠️ | 3 个接口缺少 @RequiresAuthentication |
+| 审计字段 | ✅ | 正确使用 crby/crtime/upby/uptime |
+| del_flag 语义 | ✅ | 正确使用 2=正常，1=删除 |
+| 对象转换 | ✅ | 正确使用 BeanUtil.copyProperties() |
+| 请求封装 | ⚠️ | 2 处 POST 接口未使用 LeRequest<T> |
 
 ### 需要修复的问题
 1. **权限注解缺失**（X 项）
    - [Controller文件名].java
 
-2. **对象转换规范**（X 项）
-   - [ServiceImpl文件名].java
+2. **LeRequest<T> 封装缺失**（X 项）
+   - [Controller文件名].java
 
 ---
 
-## 📝 待办事项更新
+## 待办事项更新
 
 ### 新增待办（本次扫描发现）
 - [ ] [FIXME 描述]（高优先级）
@@ -223,7 +245,7 @@ git log -5 --oneline
 
 ---
 
-## 🎯 与其他命令的协作
+## 与其他命令的协作
 
 ### 工作流建议
 1. **日常开发** → `/update-status` 增量更新
@@ -249,17 +271,18 @@ git log -5 --oneline
 
 ---
 
-## ✅ 检查通过项
+## 检查通过项
 
-- [x] 包名规范（org.dromara.*）
-- [x] 对象转换基本正确（MapstructUtils）
-- [x] Entity 基类正确（继承 TenantEntity）
-- [x] Mapper 继承正确（BaseMapperPlus）
-- [x] Service 接口声明完整
+- [x] 包名规范（net.xnzn.core.*）
+- [x] 对象转换（BeanUtil.copyProperties()）
+- [x] 审计字段正确（crby/crtime/upby/uptime）
+- [x] del_flag 语义正确（2=正常，1=删除）
+- [x] Mapper 继承正确（BaseMapper<Entity>）
+- [x] 无 tenant_id 字段（双库物理隔离）
 
 ---
 
-## 📌 同步说明
+## 同步说明
 
 - 本报告基于当前代码扫描、Git 提交和规范检查综合生成
 - 与 `/progress` 的区别：/progress 只读查看，/sync 生成综合报告
@@ -270,7 +293,7 @@ git log -5 --oneline
 
 ---
 
-## 🔗 相关命令
+## 相关命令
 
 | 命令 | 说明 | 何时使用 |
 |------|------|---------|

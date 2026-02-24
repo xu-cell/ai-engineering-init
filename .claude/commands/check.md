@@ -1,13 +1,13 @@
 # /check - 后端代码规范检查
 
-作为代码规范检查助手，自动检测项目代码是否符合 RuoYi-Vue-Plus 后端规范。
+作为代码规范检查助手，自动检测项目代码是否符合 leniu-tengyun-core（云食堂）后端规范。
 
 ## 检查范围
 
-支持三种检查模式：
+支持三种模式：
 
-1. **全量检查**：`/check` - 检查所有代码
-2. **模块检查**：`/check system` - 检查指定模块
+1. **全量检查**：`/check` - 检查所有业务模块
+2. **模块检查**：`/check canteen` - 检查指定模块
 3. **文件检查**：`/check XxxServiceImpl.java` - 检查指定文件
 
 ---
@@ -16,16 +16,16 @@
 
 | 检查项 | 级别 | 说明 |
 |--------|------|------|
-| 包名规范 | 🔴 严重 | 必须是 `org.dromara.*` |
-| 完整类型引用 | 🔴 严重 | 禁止内联全限定名，必须 import |
-| API 路径规范 | 🔴 严重 | Controller 方法路径必须规范 |
-| 权限注解检查 | 🟡 警告 | 必须使用 @SaCheckPermission |
-| Service 接口 | 🟡 警告 | Service 接口必须有标准方法声明 |
-| Entity 基类 | 🟡 警告 | 业务实体应继承 TenantEntity |
-| BO 映射注解 | 🟡 警告 | 必须使用 @AutoMapper |
-| 对象转换 | 🟡 警告 | 必须用 MapstructUtils，禁止 BeanUtil |
-| Mapper 继承 | 🟢 建议 | 必须继承 BaseMapperPlus |
-| Map 传递数据 | 🟢 建议 | 禁止用 Map 封装业务数据 |
+| 包名规范 | 🔴 严重 | 必须是 `net.xnzn.core.*` |
+| 禁用旧工具类 | 🔴 严重 | 禁止 MapstructUtils、ServiceException |
+| 审计字段命名 | 🔴 严重 | 必须用 crby/crtime/upby/uptime |
+| del_flag 语义 | 🔴 严重 | 2=正常，1=删除（不是 0=正常） |
+| 不含 tenant_id | 🔴 严重 | 双库物理隔离，Entity 无需此字段 |
+| 禁止 Map 传业务数据 | 🔴 严重 | 必须用 VO/DTO |
+| 认证注解 | 🟡 警告 | 接口应有 @RequiresAuthentication 或 @RequiresGuest |
+| 请求封装 | 🟡 警告 | POST 请求应使用 LeRequest<T> |
+| 事务注解 | 🟡 警告 | 写操作应加 @Transactional(rollbackFor = Exception.class) |
+| 国际化异常 | 🟢 建议 | LeException 建议配合 I18n.getMessage() |
 
 ---
 
@@ -34,304 +34,137 @@
 ### 1. 包名规范 [🔴 严重]
 
 ```bash
-# 检查错误包名
-Grep pattern: "package com\.ruoyi\." path: ruoyi-modules/ output_mode: files_with_matches
-Grep pattern: "import com\.ruoyi\." path: ruoyi-modules/ output_mode: files_with_matches
+Grep pattern: "package org\.dromara\." path: [目标目录] glob: "*.java"   # ❌ 必须为 0 个
+Grep pattern: "package com\.ruoyi\." path: [目标目录] glob: "*.java"      # ❌ 必须为 0 个
+Grep pattern: "package net\.xnzn\.core\." path: [目标目录] glob: "*.java" # ✅ 应有结果
 ```
 
 ```java
 // ❌ 错误
-package com.ruoyi.system.service;
-import com.ruoyi.common.core.domain.R;
-
-// ✅ 正确
 package org.dromara.system.service;
-import org.dromara.common.core.domain.R;
-```
-
-### 2. 完整类型引用 [🔴 严重]
-
-```bash
-# 检查完整类型引用
-Grep pattern: "org\.dromara\.[a-z]+\.[A-Z][a-zA-Z]+\s" path: ruoyi-modules/ glob: "*.java" output_mode: content
-```
-
-```java
-// ❌ 错误
-public org.dromara.common.core.domain.R<XxxVo> getXxx(Long id) { ... }
 
 // ✅ 正确
-import org.dromara.common.core.domain.R;
-public R<XxxVo> getXxx(Long id) { ... }
+package net.xnzn.core.canteen.order.service;
 ```
 
-### 3. API 路径规范 [🔴 严重]
+### 2. 禁止使用 RuoYi 工具类 [🔴 严重]
 
 ```bash
-# 检查 Controller 方法的路径规范
-Grep pattern: "@(GetMapping|PostMapping|PutMapping|DeleteMapping)\(" path: ruoyi-modules/ glob: "*Controller.java" output_mode: content -C 1
+Grep pattern: "MapstructUtils" path: [目标目录] glob: "*.java"
+Grep pattern: "ServiceException" path: [目标目录] glob: "*.java"
+Grep pattern: "import javax\.validation" path: [目标目录] glob: "*.java"
 ```
 
-**规范要求**：
+| 错误写法 | 正确写法 |
+|---------|---------|
+| `MapstructUtils.convert()` | `BeanUtil.copyProperties()` |
+| `throw new ServiceException()` | `throw new LeException()` |
+| `import javax.validation.*` | `import jakarta.validation.*` |
 
-| 操作 | HTTP 方法 | 路径格式 | 示例 |
-|------|---------|--------|------|
-| 分页查询 | GET | `/list` 或 `/` 空路径 | `@GetMapping("/list")` |
-| 获取详情 | GET | `/{id}` | `@GetMapping("/{id}")` |
-| 新增 | POST | `/` 空路径 | `@PostMapping` |
-| 修改 | PUT | `/` 空路径 | `@PutMapping` |
-| 删除 | DELETE | `/{ids}` | `@DeleteMapping("/{ids}")` |
-| 导出 | POST | `/export` | `@PostMapping("/export")` |
-
-```java
-// ❌ 错误（路径不规范）
-@GetMapping("/queryList")  // 应该用 /list
-@PostMapping("/add")       // POST 应该不加路径
-@PutMapping("/update")     // PUT 应该不加路径
-
-// ✅ 正确
-@GetMapping("/list")
-@PostMapping
-@PutMapping
-@DeleteMapping("/{ids}")
-```
-
-### 4. 权限注解检查 [🟡 警告]
+### 3. 审计字段命名 [🔴 严重]
 
 ```bash
-# 检查 Controller 是否使用权限注解
-Grep pattern: "@SaCheckPermission" path: ruoyi-modules/ glob: "*Controller.java" output_mode: files_with_matches
-Grep pattern: "public.*\(.*\)\s*\{" path: ruoyi-modules/ glob: "*Controller.java" output_mode: content -B 1
+Grep pattern: "private.*createBy\|private.*updateBy\|private.*createTime\|private.*updateTime" path: [目标目录] glob: "*.java"
 ```
 
-**规范要求**：Controller 的所有公开接口都必须添加 `@SaCheckPermission` 注解
+| 错误写法 | 正确写法 | 填充时机 |
+|---------|---------|---------|
+| `createBy` | `crby` | INSERT |
+| `createTime` | `crtime` | INSERT |
+| `updateBy` | `upby` | INSERT_UPDATE |
+| `updateTime` | `uptime` | INSERT_UPDATE |
 
-```java
-// ❌ 错误（缺少权限注解）
-@GetMapping("/list")
-public TableDataInfo<XxxVo> list(XxxBo bo, PageQuery pageQuery) {
-    return service.queryPageList(bo, pageQuery);
-}
-
-// ✅ 正确
-@SaCheckPermission("xxx:list")
-@GetMapping("/list")
-public TableDataInfo<XxxVo> list(XxxBo bo, PageQuery pageQuery) {
-    return service.queryPageList(bo, pageQuery);
-}
-```
-
-### 5. Service 接口 [🟡 警告]
+### 4. del_flag 值语义 [🔴 严重]
 
 ```bash
-# 检查 Service 接口是否声明标准方法
-Grep pattern: "public interface I.*Service" path: ruoyi-modules/ glob: "*Service.java" output_mode: files_with_matches
+Grep pattern: "delFlag.*=.*0\|del_flag.*=.*0" path: [目标目录] glob: "*.java"
+Grep pattern: "DelFlag.*NORMAL.*0\|del_flag.*DEFAULT.*0" path: [目标目录]
 ```
 
-**规范要求**：Service 接口必须声明以下标准方法
+- ❌ `delFlag = 0`（RuoYi 的正常值，leniu 中是错误的）
+- ✅ `delFlag = 2`（leniu 的正常值，`1=删除，2=正常`）
 
-```java
-// ❌ 错误（缺少标准方法声明）
-public interface IXxxService {
-    // 仅有实现类，无接口声明
-}
-
-// ✅ 正确
-public interface IXxxService {
-    /**
-     * 查询单条记录
-     */
-    XxxVo queryById(Long id);
-
-    /**
-     * 分页查询列表
-     */
-    TableDataInfo<XxxVo> queryPageList(XxxBo bo, PageQuery pageQuery);
-
-    /**
-     * 查询全量列表
-     */
-    List<XxxVo> queryList(XxxBo bo);
-
-    /**
-     * 新增记录
-     */
-    Boolean insertByBo(XxxBo bo);
-
-    /**
-     * 修改记录
-     */
-    Boolean updateByBo(XxxBo bo);
-
-    /**
-     * 删除记录（带校验）
-     */
-    Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
-}
-```
-
-### 6. Service 查询条件规范 [🟡 警告]
+### 5. Entity 不含 tenant_id [🔴 严重]
 
 ```bash
-# 检查 Service 层是否规范构建查询条件
-Grep pattern: "buildQueryWrapper" path: ruoyi-modules/ glob: "*ServiceImpl.java" output_mode: files_with_matches
+Grep pattern: "tenantId\|tenant_id" path: [目标目录] glob: "*.java"
 ```
 
-```java
-// ✅ 正确（在 ServiceImpl 中封装查询条件）
-private LambdaQueryWrapper<Xxx> buildQueryWrapper(XxxBo bo) {
-    Map<String, Object> params = bo.getParams();
-    LambdaQueryWrapper<Xxx> lqw = Wrappers.lambdaQuery();
-    lqw.like(StringUtils.isNotBlank(bo.getName()), Xxx::getName, bo.getName());
-    lqw.eq(StringUtils.isNotBlank(bo.getStatus()), Xxx::getStatus, bo.getStatus());
-    return lqw;
-}
-```
+- ❌ Entity 中有 `tenantId` 字段（双库物理隔离，无需此字段）
+- ✅ 通过 `TenantContextHolder.getTenantId()` 获取当前租户
 
-### 7. Entity 基类 [🟡 警告]
+### 6. 禁止 Map 传递业务数据 [🔴 严重]
 
 ```bash
-# 检查业务实体是否继承 TenantEntity
-Grep pattern: "extends TenantEntity" path: ruoyi-modules/ glob: "*.java" output_mode: files_with_matches
-Grep pattern: "extends BaseEntity" path: ruoyi-modules/ glob: "*.java" output_mode: files_with_matches
+Grep pattern: "Map<String,\s*Object>" path: [目标目录] glob: "*.java"
 ```
 
-```java
-// ⚠️ 普通实体（非多租户）
-public class SysNotice extends BaseEntity { }
+- ❌ 返回 `Map<String, Object>` 封装业务数据
+- ✅ 创建专属 VO 类返回
 
-// ✅ 业务实体（多租户）
-public class XxxEntity extends TenantEntity { }
-```
-
-### 8. BO 映射注解 [🟡 警告]
+### 7. 认证注解 [🟡 警告]
 
 ```bash
-# 检查 BO 是否使用 @AutoMapper
-Grep pattern: "@AutoMapper" path: ruoyi-modules/ glob: "*Bo.java" output_mode: files_with_matches
+Grep pattern: "@RequiresAuthentication\|@RequiresGuest" path: [目标目录] glob: "*Controller.java"
 ```
 
-```java
-// ❌ 错误（缺少映射注解）
-public class XxxBo extends BaseEntity { }
+- Controller 中每个接口应有 `@RequiresAuthentication` 或 `@RequiresGuest` 注解
 
-// ✅ 正确（单映射目标）
-@AutoMapper(target = Xxx.class, reverseConvertGenerate = false)
-public class XxxBo extends BaseEntity { }
-
-// ✅ 正确（多映射目标，如 SysOperLogBo）
-@AutoMappers({
-    @AutoMapper(target = SysOperLog.class, reverseConvertGenerate = false),
-    @AutoMapper(target = OperLogEvent.class)
-})
-public class SysOperLogBo { }
-```
-
-### 9. 对象转换 [🟡 警告]
+### 8. 请求封装 [🟡 警告]
 
 ```bash
-# 检查是否使用 BeanUtil
-Grep pattern: "BeanUtil\.copy" path: ruoyi-modules/ output_mode: files_with_matches
-Grep pattern: "BeanUtils\.copy" path: ruoyi-modules/ output_mode: files_with_matches
+Grep pattern: "@RequestBody [^L]" path: [目标目录] glob: "*Controller.java"
 ```
 
-```java
-// ❌ 错误
-BeanUtil.copyProperties(bo, entity);
-BeanUtils.copyProperties(source, target);
+- POST/PUT 请求体建议统一用 `@RequestBody LeRequest<T>` 封装
+- `request.getContent()` 获取实际参数
 
-// ✅ 正确
-XxxVo vo = MapstructUtils.convert(entity, XxxVo.class);
-List<XxxVo> voList = MapstructUtils.convert(entityList, XxxVo.class);
-```
-
-### 10. Mapper 继承 [🟢 建议]
+### 9. 事务注解 [🟡 警告]
 
 ```bash
-Grep pattern: "extends BaseMapperPlus" path: ruoyi-modules/ output_mode: files_with_matches
+Grep pattern: "@Transactional" path: [目标目录] glob: "*ServiceImpl.java"
 ```
 
-```java
-// ✅ 正确
-public interface XxxMapper extends BaseMapperPlus<Xxx, XxxVo> { }
-```
+- 写操作（insert/update/delete）应加 `@Transactional(rollbackFor = Exception.class)`
+- 查询方法不需要加事务
 
-### 11. Map 传递数据 [🟢 建议]
+### 10. 国际化异常 [🟢 建议]
 
 ```bash
-Grep pattern: "Map<String,\s*Object>" path: ruoyi-modules/ glob: "*Service*.java" output_mode: files_with_matches
+Grep pattern: "new LeException\(\"[^\"]*[\u4e00-\u9fa5]" path: [目标目录] glob: "*.java"
 ```
 
-```java
-// ❌ 错误
-public Map<String, Object> getXxx(Long id) {
-    Map<String, Object> result = new HashMap<>();
-    result.put("id", entity.getId());
-    return result;
-}
-
-// ✅ 正确（创建 VO 类）
-public XxxVo getXxx(Long id) {
-    return MapstructUtils.convert(entity, XxxVo.class);
-}
-```
+- 建议将硬编码中文消息迁移到 `I18n.getMessage("xxx.key")` 国际化
 
 ---
 
 ## 输出格式
 
 ```markdown
-# 🔍 代码规范检查报告
+# 代码审查报告
 
-**检查时间**：YYYY-MM-DD HH:mm
-**检查范围**：[全量 / 模块名 / 文件名]
+审查范围: [文件/模块]
+审查时间: YYYY-MM-DD HH:mm
 
----
+## 严重问题（X 项）
 
-## 📋 检查结果汇总
+1. [问题类型]
+   文件: path/to/file.java:行号
+   问题: 描述
+   修复: 代码示例
 
-| 类别 | 通过 | 警告 | 错误 |
-|------|------|------|------|
-| 后端 Java | X | X | X |
-
----
-
-## 🔴 严重问题（必须修复）
-
-### 1. [问题类型]
-
-**文件**：`path/to/file.java:42`
-**问题**：包名使用了 com.ruoyi
-**代码**：
-\```java
-package com.ruoyi.system.service;
-\```
-**修复**：
-\```java
-package org.dromara.system.service;
-\```
-
----
-
-## 🟡 警告问题（建议修复）
-
-### 1. [问题类型]
+## 警告问题（X 项）
 ...
 
----
-
-## 🟢 建议优化
-
-### 1. [优化建议]
+## 通过项
+- [x] 包名规范 (net.xnzn.core.*)
+- [x] 使用 LeException
+- [x] 审计字段正确 (crby/crtime/upby/uptime)
+- [x] del_flag 语义正确 (2=正常)
+- [x] 无 tenant_id 字段
 ...
 
----
-
-## ✅ 检查通过项
-
-- [x] 包名规范
-- [x] 对象转换
-- ...
+结论: ✅ 通过 / ⚠️ 需修复 / ❌ 不通过
 ```
 
 ---
@@ -340,72 +173,38 @@ package org.dromara.system.service;
 
 ### 开发完成后必查（阻塞提交）
 
-1. 包名是否是 `org.dromara.*`
-2. 是否有完整类型引用（内联全限定名）
-3. API 路径是否规范
-4. 对象转换是否使用 MapstructUtils
-5. 权限注解是否完整
+1. 包名是否是 `net.xnzn.core.*`
+2. 审计字段是否正确（crby/crtime/upby/uptime）
+3. del_flag 值是否正确（2=正常，1=删除）
+4. 是否有 `tenantId` 字段（不应存在）
+5. 对象转换是否使用 `BeanUtil.copyProperties()`
 
 ### 代码审查建议查
 
-1. Service 接口是否有标准方法声明
-2. BO 是否有 @AutoMapper
-3. Entity 是否继承正确的基类
-4. Mapper 是否继承 BaseMapperPlus
-5. 是否有冗余的 Map 传递
+1. 所有 POST 接口是否使用 `LeRequest<T>`
+2. 认证注解是否完整
+3. 写操作是否有 `@Transactional`
+4. 是否有硬编码中文异常消息
 
 ---
 
 ## 快速修复指南
 
-### 包名错误修复
-
-```bash
-# 查找所有错误包名
-Grep pattern: "package com\.ruoyi\." path: ruoyi-modules/ output_mode: files_with_matches
-```
-
-批量替换：`com.ruoyi` → `org.dromara`
-
-### API 路径修复
-
-| 错误写法 | 正确写法 | 说明 |
-|---------|--------|------|
-| `@GetMapping("/queryList")` | `@GetMapping("/list")` | 列表查询统一用 /list |
-| `@PostMapping("/add")` | `@PostMapping` | POST 新增不加路径 |
-| `@PutMapping("/update")` | `@PutMapping` | PUT 修改不加路径 |
-| `@GetMapping` | `@GetMapping("/{id}")` | 单条查询必须加 ID 参数 |
-
-### 权限注解修复
-
-```java
-// 快速修复模板
-@SaCheckPermission("模块:功能:操作")
-@GetMapping("/list")
-public TableDataInfo<XxxVo> list(...) { ... }
-
-// 权限标识符标准格式（参考 SysNoticeController）
-// 模块:功能:list     - 分页查询（注意：不是 query）
-// 模块:功能:query    - 获取详情（单条查询）
-// 模块:功能:add      - 新增
-// 模块:功能:edit     - 修改
-// 模块:功能:remove   - 删除
-// 模块:功能:export   - 导出
-// 模块:功能:import   - 导入
-// 示例：system:notice:list, demo:demo:query
-```
-
-### 对象转换修复
-
-| 替换前 | 替换后 |
-|--------|--------|
-| `BeanUtil.copyProperties(a, b)` | `MapstructUtils.convert(a, B.class)` |
-| `BeanUtils.copyProperties(a, b)` | `MapstructUtils.convert(a, B.class)` |
-| `new HashMap<>()` (传递业务数据) | 创建专属 VO 类 |
+| 问题 | 修复方式 |
+|------|---------|
+| 包名错误 | 全局替换 `org.dromara` → `net.xnzn.core` |
+| 审计字段错误 | 全局替换 createBy→crby、createTime→crtime、updateBy→upby、updateTime→uptime |
+| del_flag=0 | 替换为 del_flag=2 |
+| MapstructUtils | 替换为 `BeanUtil.copyProperties(source, Target.class)` |
+| ServiceException | 替换为 `LeException` |
+| javax.validation | 替换为 `jakarta.validation` |
 
 ---
 
-## 参考
+## 参考代码
 
-- 正确后端代码：`ruoyi-modules/ruoyi-system/.../controller/system/SysNoticeController.java`
-- 正确 Service 代码：`ruoyi-modules/ruoyi-system/.../service/impl/SysNoticeServiceImpl.java`
+| 类型 | 路径 |
+|------|------|
+| Controller 示例 | `sys-canteen/.../order/web/controller/OrderInfoWebController.java` |
+| Service 示例 | `sys-canteen/.../order/common/service/impl/OrderInfoService.java` |
+| Entity 示例 | `sys-canteen/.../order/common/model/OrderInfo.java` |

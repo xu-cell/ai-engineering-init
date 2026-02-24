@@ -4,24 +4,25 @@
 
 ---
 
-## 🎯 第一步：检测项目类型
+## 第一步：检测项目类型
 
-### 检查根目录是否存在 `plus-ui/` 目录
+### 检查前端项目路径
 
 ```bash
-Glob pattern: "plus-ui/"
+# 检查前端项目是否存在
+Glob pattern: "/Users/xujiajun/Developer/frontProj/web/src/"
 ```
 
-**如果存在 plus-ui/**：
-> 检测到前端项目 `plus-ui/`，当前初始化仅生成后端文档。
+**如果存在前端项目**：
+> 检测到前端项目 `frontProj/web`（Vue 2 + Element UI），当前初始化仅生成后端文档。
 > 前端页面相关文档请在前端项目中管理。
 
-**如果不存在 plus-ui/**：
-> 当前为纯后端项目。如需开发前端页面，请创建 plus-ui 项目。
+**如果不存在**：
+> 当前为纯后端项目模式。
 
 ---
 
-## 🎯 第二步：询问用户选择模式
+## 第二步：询问用户选择模式
 
 **向用户展示以下选项：**
 
@@ -43,7 +44,7 @@ Glob pattern: "plus-ui/"
 
 ---
 
-## 📝 模式一：空白模板模式
+## 模式一：空白模板模式
 
 ### 执行条件
 用户选择 `1` 或 输入 `空白`、`模板`、`新项目` 等关键词
@@ -71,6 +72,9 @@ Glob pattern: "plus-ui/"
 
 **项目名称**：[项目名称]
 **项目简述**：[项目简述]
+**技术栈**：Spring Boot 3.x + pigx-framework + MyBatis-Plus + JDK 21
+**架构**：四层架构（Controller → Business → Service → Mapper）
+**双库**：系统库（全局配置）+ 商户库（租户业务数据）
 **开始时间**：[当前日期]
 **预计完成**：待定
 **当前阶段**：需求分析
@@ -87,7 +91,7 @@ Glob pattern: "plus-ui/"
 ## 里程碑
 
 - [ ] 需求文档完成
-- [ ] 技术方案评审
+- [ ] 技术方案评审（含表设计）
 - [ ] 后端接口开发完成
 - [ ] 功能测试通过
 - [ ] 上线发布
@@ -128,8 +132,8 @@ Glob pattern: "plus-ui/"
 
 | 角色 | 说明 |
 |------|------|
-| 管理员 | |
-| 普通用户 | |
+| 管理员 | 食堂管理端用户 |
+| 普通用户 | 员工/就餐人员 |
 
 ### 2.2 用户故事列表
 
@@ -142,9 +146,9 @@ Glob pattern: "plus-ui/"
 
 ### 3.1 功能列表
 
-| 功能模块 | 功能点 | 说明 | 优先级 |
-|---------|-------|------|--------|
-| | | | |
+| 功能模块 | 功能点 | 说明 | 优先级 | 所属模块 |
+|---------|-------|------|--------|---------|
+| | | | | sys-canteen/sys-kitchen/sys-drp |
 
 ### 3.2 功能详情
 
@@ -157,6 +161,8 @@ Glob pattern: "plus-ui/"
 2.
 
 **接口需求**：
+- 路由：`/api/v2/web/[module]/[feature]`
+- 端：web/mobile/android
 
 ## 4. 非功能需求
 
@@ -167,8 +173,8 @@ Glob pattern: "plus-ui/"
 
 ### 4.2 安全要求
 
-- 权限控制：
-- 数据安全：
+- 权限控制：@RequiresAuthentication
+- 数据安全：通过商户库物理隔离
 
 ## 5. 数据设计
 
@@ -176,7 +182,13 @@ Glob pattern: "plus-ui/"
 
 | 字段名 | 类型 | 说明 | 必填 |
 |-------|------|------|------|
+| id | BIGINT | 主键（雪花ID） | 是 |
 | | | | |
+| crby | VARCHAR(64) | 创建人 | 是 |
+| crtime | DATETIME | 创建时间 | 是 |
+| upby | VARCHAR(64) | 更新人 | 是 |
+| uptime | DATETIME | 更新时间 | 是 |
+| del_flag | INT | 删除标识(1-删除,2-正常) | 是 |
 
 ### 5.2 数据字典
 
@@ -190,7 +202,11 @@ Glob pattern: "plus-ui/"
 
 | 接口名称 | 方法 | 路径 | 说明 |
 |---------|------|------|------|
-| | | | |
+| 新增 | POST | /api/v2/web/{module}/{feature}/add | |
+| 修改 | POST | /api/v2/web/{module}/{feature}/update | |
+| 删除 | POST | /api/v2/web/{module}/{feature}/delete | |
+| 详情 | GET | /api/v2/web/{module}/{feature}/get/{id} | |
+| 分页 | POST | /api/v2/web/{module}/{feature}/page | |
 
 ## 7. 附录
 
@@ -198,11 +214,15 @@ Glob pattern: "plus-ui/"
 
 | 术语 | 说明 |
 |------|------|
-| | |
+| 系统库 | 全局数据（商户配置、字典） |
+| 商户库 | 租户业务数据（订单、菜品） |
+| crby | 创建人 |
+| crtime | 创建时间 |
 
 ### 7.2 参考资料
 
--
+- 订单 Controller：`sys-canteen/.../order/web/controller/OrderInfoWebController.java`
+- Bootstrap 配置：`core-base/src/main/resources/bootstrap.yml`
 ```
 
 ##### 待办清单.md（空白模板）
@@ -236,17 +256,18 @@ Glob pattern: "plus-ui/"
 
 ### 2. 技术设计阶段
 
-- [ ] 数据库表设计
-- [ ] 接口设计
+- [ ] 数据库表设计（含 crby/crtime/upby/uptime/del_flag 字段）
+- [ ] 接口设计（确认端类型：web/mobile/android）
 - [ ] 技术方案评审
 
 ### 3. 后端开发阶段
 
-- [ ] 创建数据库表
-- [ ] 创建实体类和 Mapper
-- [ ] 实现 Service 业务逻辑
+- [ ] 创建数据库表（商户库）
+- [ ] 创建 Entity + Mapper + MapperXML
+- [ ] 实现 Service 业务逻辑（单表 CRUD）
+- [ ] 实现 Business 层（业务编排）
 - [ ] 实现 Controller 接口
-- [ ] 接口测试
+- [ ] 接口测试（/check 规范检查）
 
 ### 4. 测试上线阶段
 
@@ -286,138 +307,98 @@ Glob pattern: "plus-ui/"
 
 ---
 
-## 📊 模式二：扫描现有代码模式
+## 模式二：扫描现有代码模式
 
 ### 执行条件
 用户选择 `2` 或 输入 `扫描`、`现有`、`分析` 等关键词
 
-### 执行步骤
-
-以下是扫描模式的详细步骤...
-
 ---
 
-## ⚠️ 重要：只扫描业务模块，不扫描框架
+## 重要：只扫描业务模块，不扫描基础设施
 
-**框架部分（不扫描、不统计）**:
-- ❌ `ruoyi-common/*` - 通用工具模块（20+ 子模块）
-- ❌ `ruoyi-admin` - 启动入口
-- ❌ `ruoyi-modules/ruoyi-system` - 系统管理模块
-- ❌ `ruoyi-modules/ruoyi-generator` - 代码生成器
-- ❌ `ruoyi-modules/ruoyi-demo` - 官方示例模块
-- ❌ `ruoyi-modules/ruoyi-job` - 定时任务模块
-- ❌ `ruoyi-modules/ruoyi-workflow` - 工作流引擎模块
+**基础设施部分（不扫描、不统计）**:
+- ❌ `core-base/` - 公共配置、工具类
+- ❌ `core-aggregator/` - 聚合器
+- ❌ `sys-open/` - 开放接口模块
+- ❌ `sys-logistics/` - 物流模块
 
 **业务部分（重点扫描）**:
-- ✅ `ruoyi-modules/ruoyi-*`（排除上述 6 个框架模块：system、generator、demo、job、workflow、common）
-  - 示例：`ruoyi-business/`、`ruoyi-mall/`、`ruoyi-iot/`、`ruoyi-crm/` 等
+- ✅ `sys-canteen/` - 食堂业务（订单、菜品、用户）
+- ✅ `sys-kitchen/` - 后场厨房（备餐、出餐、排班）
+- ✅ `sys-drp/` - 供应链（采购、库存、配送）
+- ✅ `sys-common/` - 公共业务（支付、通知、对接）
 
-## 你需要做的：
+## 扫描步骤：
 
 ### 1. 读取模板文件
-- `.claude/templates/项目状态模板.md`
-- `.claude/templates/需求文档模板.md`
-- `.claude/templates/待办清单模板.md`
+- `.claude/templates/项目状态模板.md`（如存在）
+- `.claude/templates/需求文档模板.md`（如存在）
+- `.claude/templates/待办清单模板.md`（如存在）
 
 ### 2. 智能识别业务模块结构
 
-#### 第一步：识别业务 Maven 模块
-**扫描路径**: `ruoyi-modules/`
+#### 第一步：识别核心业务模块
+**扫描路径**: `sys-canteen/`、`sys-kitchen/`、`sys-drp/`、`sys-common/`
 
 **识别规则**:
-1. 列出 `ruoyi-modules/` 下的所有 `ruoyi-*` 目录
-2. **排除 6 个框架模块**：
-   - ❌ `ruoyi-system` - 系统管理模块
-   - ❌ `ruoyi-generator` - 代码生成器
-   - ❌ `ruoyi-demo` - 官方示例模块
-   - ❌ `ruoyi-job` - 定时任务模块
-   - ❌ `ruoyi-workflow` - 工作流引擎模块
-   - ❌ `ruoyi-common` - 通用工具模块
-3. **业务模块示例**：
-   - ✅ `ruoyi-business` - 基础业务模块
-   - ✅ `ruoyi-iot` - IoT 设备管理模块
-   - ✅ `ruoyi-mall` - 商城模块
-   - ✅ 其他自定义业务模块
-
-**判断标准**：
-```
-业务模块特征：
-1. 位于 ruoyi-modules/ruoyi-* 目录
-2. 不在框架模块排除列表中
-3. 包含 src/main/java/org/dromara/{模块名}/ 目录
-4. 有 controller、service、mapper、domain 等包结构
-```
+1. 在每个模块下扫描 Controller 文件
+   ```
+   sys-canteen/src/main/java/net/xnzn/core/canteen/**/controller/*Controller.java
+   sys-kitchen/src/main/java/net/xnzn/core/kitchen/**/controller/*Controller.java
+   sys-drp/src/main/java/net/xnzn/core/drp/**/controller/*Controller.java
+   sys-common/src/main/java/net/xnzn/core/common/**/controller/*Controller.java
+   ```
+2. 按业务功能领域分包（如 order、dish、user 等）
+3. 统计每个功能包下的 Controller 数量
 
 **特别注意**：
-- 如果检测到 0 个业务模块 → 这是全新项目，生成空的业务文档模板
-- 提示用户："当前是全新框架，尚无业务代码。开发业务功能后再次执行本命令更新文档。"
+- 如果检测到 0 个 Controller → 这是全新项目，生成空的业务文档模板
+- 提示用户："当前是全新框架，尚无业务代码。使用 `/dev` 或 `/crud` 开发业务功能后再次执行本命令更新文档。"
 
 #### 第二步：分析每个业务模块的内部结构
 
-对每个识别出的业务模块（如 `ruoyi-business`、`ruoyi-iot`）：
+对每个识别出的功能领域（如 canteen/order）检查四层架构：
 
-##### 方式A：单层结构（直接包含 controller）
 ```
-ruoyi-iot/
-└── src/main/java/org/dromara/iot/
-    ├── controller/
-    │   ├── DeviceController.java
-    │   ├── ProductController.java
-    │   └── OtaController.java
-    ├── service/
-    ├── mapper/
-    └── domain/
+sys-canteen/src/main/java/net/xnzn/core/canteen/order/
+├── web/
+│   ├── controller/XxxWebController.java    ← Controller 层
+│   ├── business/impl/XxxWebBusiness.java   ← Business 层
+│   ├── dto/XxxInfoDTO.java                 ← 请求参数
+│   └── vo/XxxInfoVO.java                   ← 返回对象
+└── common/
+    ├── model/XxxInfo.java                  ← Entity
+    ├── mapper/XxxInfoMapper.java           ← Mapper 接口
+    ├── mapper/XxxInfoMapper.xml            ← XML（同目录）
+    └── service/impl/XxxInfoService.java    ← Service 层
 ```
-**识别方式**：直接统计 controller 数量，每个 Controller = 一个功能模块
-
-##### 方式B：多层结构（按业务领域分包）
-```
-ruoyi-business/
-└── src/main/java/org/dromara/business/
-    ├── ai/
-    │   ├── controller/
-    │   ├── service/
-    │   ├── mapper/
-    │   └── domain/
-    ├── base/
-    │   ├── controller/
-    │   └── ...
-    └── platform/
-        ├── controller/
-        └── ...
-```
-**识别方式**：
-1. 识别子包目录（ai、base、platform 等）
-2. 每个子包代表一个业务领域
-3. 统计每个子包下的 Controller 数量
-
-**自动判断使用哪种方式**：
-- 如果 `src/main/java/org/dromara/{模块名}/` 下直接有 `controller/` 目录 → 使用方式A
-- 如果下面还有子目录（如 ai/、base/），且子目录下有 `controller/` → 使用方式B
 
 #### 第三步：统计功能模块完整性
 
-对每个 Controller，检查对应的 **7 个必需文件**：
+对每个 Controller，检查对应的 **8 个必需文件**（leniu 四层架构）：
 
 | 文件类型 | 文件位置 | 必须 |
 |---------|---------|------|
-| Entity | `domain/Xxx.java` | ✅ |
-| BO | `domain/bo/XxxBo.java` | ✅ |
-| VO | `domain/vo/XxxVo.java` | ✅ |
-| Mapper | `mapper/XxxMapper.java` | ✅ |
-| Service 接口 | `service/IXxxService.java` | ✅ |
-| Service 实现 | `service/impl/XxxServiceImpl.java` | ✅ |
-| Controller | `controller/XxxController.java` | ✅ |
+| Entity | `common/model/XxxInfo.java` | ✅ |
+| DTO | `web/dto/XxxInfoDTO.java` | ✅ |
+| VO | `web/vo/XxxInfoVO.java` | ✅ |
+| Mapper | `common/mapper/XxxInfoMapper.java` | ✅ |
+| MapperXML | `common/mapper/XxxInfoMapper.xml` | ✅ |
+| Service | `common/service/impl/XxxInfoService.java` | ✅ |
+| Business | `web/business/impl/XxxWebBusiness.java` | ✅ |
+| Controller | `web/controller/XxxWebController.java` | ✅ |
 
-**完整度计算**：`存在文件数 / 7 × 100%`
+**完整度计算**：`存在文件数 / 8 × 100%`
 
 ### 3. 深度分析代码 TODO
 
 **扫描范围** (只扫描业务代码):
 ```bash
-# 后端业务模块
-ruoyi-modules/ruoyi-*/src/main/java/**/*.java
-# 排除 6 个框架模块：system、generator、demo、job、workflow、common
+# 核心业务模块
+sys-canteen/src/main/java/**/*.java
+sys-kitchen/src/main/java/**/*.java
+sys-drp/src/main/java/**/*.java
+sys-common/src/main/java/**/*.java
 ```
 
 **提取规则**:
@@ -432,100 +413,99 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 
 **输出格式**:
 ```markdown
-- [ ] 实现RAG检索逻辑
+- [ ] 完善查询条件逻辑
   - 截止日期: 待定
-  - 描述: 在ChatService中实现RAG检索和流式RAG检索
-  - 位置: ruoyi-modules/ruoyi-business/src/main/java/org/dromara/business/ai/service/impl/ChatServiceImpl.java:182
-  - 模块: ruoyi-business (AI 功能领域)
-  - 预计工作量: 3-5天
+  - 描述: 在 OrderInfoService 中完善 buildWrapper 条件
+  - 位置: sys-canteen/src/main/java/net/xnzn/core/canteen/order/common/service/impl/OrderInfoService.java:82
+  - 模块: sys-canteen（订单领域）
+  - 预计工作量: 0.5天
 ```
 
 ### 4. 智能分析 Git 提交
 
 **分析最近 20-30 条提交**:
 1. 提取提交信息、日期、修改的文件
-2. **区分框架提交 vs 业务提交**：
-   - 框架提交：修改 `ruoyi-common/`、`ruoyi-admin/` 或系统管理相关代码
-   - 业务提交：修改业务模块代码
+2. **区分基础设施提交 vs 业务提交**：
+   - 基础设施提交：修改 `core-base/`、`core-aggregator/` 或系统配置
+   - 业务提交：修改 `sys-canteen/`、`sys-kitchen/`、`sys-drp/`、`sys-common/`
 3. **提取业务功能的提交信息**：
    - 识别关键词：`feat`、`fix`、`update`、`add`、`implement`
    - 提取功能描述
 4. **计算开发耗时**：
-   - 根据同一模块的首次提交和最后提交计算
+   - 根据同一功能的首次提交和最后提交计算
 5. **识别最近开发的模块**：
    - 按提交频率排序
    - 标注最活跃的业务模块
 
 ### 5. 生成高质量文档到 `docs/` 目录
 
-#### 📊 项目状态文档 (`docs/项目状态.md`)
+#### 项目状态文档 (`docs/项目状态.md`)
 
 **必须包含的内容**:
 
 ##### 1. 项目概况
 ```markdown
-## 📊 当前状态
+## 当前状态
 - 项目阶段: 开发中/测试中/已上线
-- **业务进度**: X% (只统计业务模块)
-- **框架状态**: ✅ 已完成（系统管理 + 通用工具 + 代码生成 + 定时任务 + 工作流）
+- **业务进度**: X% (只统计 sys-canteen/sys-kitchen/sys-drp/sys-common)
+- **技术栈**: Spring Boot 3.x + pigx-framework 3.4.7 + JDK 21
+- **架构**: 四层（Controller → Business → Service → Mapper）
+- **双库**: 系统库（全局配置）+ 商户库（租户业务数据）
 - 下一步计划: [从待办事项中提取优先级最高的 3 项]
 
-## 📦 框架模块（已完成，不统计进度）
-- ✅ 系统管理：用户、角色、菜单、字典、参数配置等
-- ✅ 代码生成器：支持单表、树表、主子表代码生成
-- ✅ 通用工具库：20+ 子模块（MyBatis、Redis、Sa-Token、OSS 等）
-- ✅ 定时任务：SnailJob 分布式任务调度
-- ✅ 工作流引擎：WarmFlow 审批流程
+## 基础设施模块（已完成，不统计进度）
+- ✅ core-base：公共配置、工具类、框架扩展
+- ✅ core-aggregator：模块聚合器
+- ✅ sys-open：开放接口（第三方对接）
+- ✅ sys-logistics：物流模块
 
 详见：CLAUDE.md
 ```
 
-**如果检测到 0 个业务模块（全新项目）**：
+**如果检测到 0 个业务 Controller（全新项目）**：
 ```markdown
-## 📊 当前状态
+## 当前状态
 - 项目阶段: 初始化
 - **业务进度**: 0% (尚未开发业务功能)
 - **框架状态**: ✅ 已完成
 - 下一步计划: 开始第一个业务功能开发
 
-## 🎯 这是一个全新项目
-当前只有框架代码，尚未开发任何业务功能。
+## 这是一个全新项目
+当前只有基础框架，尚未开发任何业务功能。
 
 **框架已包含**：
-- ✅ 系统管理功能
-- ✅ 代码生成器
-- ✅ 通用工具库（20+ 模块）
-- ✅ 定时任务（SnailJob）
-- ✅ 工作流引擎（WarmFlow）
+- ✅ core-base 基础配置
+- ✅ 双库架构（系统库 + 商户库）
+- ✅ pigx-framework 3.4.7
 
 **下一步**：
-使用 `/dev` 或代码生成器开始开发第一个业务功能。
+使用 `/dev` 开始设计第一个业务功能，或使用 `/crud` 基于已有表快速生成代码。
 ```
 
-##### 2. 业务模块统计（按 Maven 模块分组）
+##### 2. 业务模块统计（按核心模块分组）
 ```markdown
 ## ✅ 已完成
 
-### ruoyi-xxx 模块 - 已完成 X 个 / 共 Y 个
+### sys-canteen 模块 - 已完成 X 个 / 共 Y 个
 - [x] 功能名称 (完成日期: YYYY-MM-DD)
   - 耗时: X天 (根据Git提交计算)
   - 说明: 功能描述
-  - 完整度: 100% (Entity✅ BO✅ VO✅ Controller✅ Service✅ Mapper✅)
+  - 完整度: 100% (Entity✅ DTO✅ VO✅ Mapper✅ XML✅ Service✅ Business✅ Controller✅)
 ```
 
 ##### 3. 进行中模块（完整度 < 100%）
 ```markdown
 ## 🚧 进行中
 
-### ruoyi-xxx 模块
+### sys-canteen 模块
 
 - [ ] 功能名称 (开始: YYYY-MM-DD)
   - 进度: X%
   - 预计完成: YYYY-MM-DD
   - 缺失部分:
-    - ⏳ XxxVo.java (视图对象未创建)
-    - ⏳ XxxBo.java (业务对象未创建)
-  - 位置: ruoyi-modules/ruoyi-xxx/src/main/java/org/dromara/xxx/
+    - ⏳ XxxWebBusiness.java (Business 编排层未创建)
+    - ⏳ XxxInfoMapper.xml (XML 映射文件未创建)
+  - 位置: sys-canteen/src/main/java/net/xnzn/core/canteen/[功能包]/
 ```
 
 ##### 4. 待办任务
@@ -537,7 +517,7 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
   - 优先级: 高
   - 预计工作量: X天
   - 位置: 文件路径:行号
-  - 模块: ruoyi-xxx
+  - 模块: sys-canteen
 ```
 
 ##### 5. 技术债务和问题
@@ -547,39 +527,44 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 ### 技术债务
 - **TODO 标记**: 项目中存在 X 个 TODO 标记
   - 按模块分类列出...
+
+### 代码规范问题
+- 权限注解缺失：X 个接口缺少 @RequiresAuthentication
+- 审计字段问题：X 处使用了 createBy（应为 crby）
 ```
 
-#### 📋 需求文档 (`docs/需求文档.md`)
+#### 需求文档 (`docs/需求文档.md`)
 
 **必须包含的内容**:
 
 ##### 1. 项目概述
 ```markdown
-## 📋 项目概述
-- **项目名称**: [从 pom.xml 提取 artifactId]
-- **项目类型**: 纯后端企业级管理系统
-- **技术栈**: Spring Boot 3 + MyBatis-Plus + Sa-Token
-- **包名规范**: org.dromara.*
-- **业务模块**: [列出所有业务 Maven 模块]
+## 项目概述
+- **项目名称**: leniu-tengyun-core（云食堂）
+- **项目类型**: 智慧食堂云服务平台
+- **技术栈**: Spring Boot 3.x + pigx-framework + MyBatis-Plus + JDK 21
+- **包名规范**: net.xnzn.core.*
+- **业务模块**: sys-canteen（食堂）、sys-kitchen（后厨）、sys-drp（供应链）、sys-common（公共）
 ```
 
-##### 2. 功能需求（按 Maven 模块分类）
+##### 2. 功能需求（按核心模块分类）
 ```markdown
 ## 1. 功能需求
 
-### 1.1 ruoyi-xxx 模块
+### 1.1 sys-canteen 模块（食堂业务）
 
-#### REQ-XXX-001: 功能名称
+#### REQ-CANTEEN-001: 功能名称
 - 优先级: 高
 - 预计时间: X天
 - 状态: ✅ 已完成 / 🚧 进行中 / ⚪ 待开发
 - 描述: 功能描述
 - 技术实现:
-  - Maven 模块: ruoyi-xxx
-  - Entity: Xxx.java
-  - Controller: XxxController.java
-  - Service: IXxxService.java, XxxServiceImpl.java
-  - Mapper: XxxMapper.java
+  - 模块: sys-canteen
+  - 包路径: net.xnzn.core.canteen.[功能包]
+  - Controller: XxxWebController.java（路由：/api/v2/web/canteen/xxx）
+  - Business: XxxWebBusiness.java
+  - Service: XxxInfoService.java
+  - Mapper: XxxInfoMapper.java + XxxInfoMapper.xml
 ```
 
 ##### 3. 技术需求
@@ -587,16 +572,24 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 ## 2. 技术需求
 
 ### 2.1 后端技术栈
-[从根 pom.xml 自动提取关键依赖版本]
-- **Java**: [java.version]
-- **Spring Boot**: [spring-boot.version]
-- **MyBatis-Plus**: [mybatis-plus.version]
-- **Sa-Token**: [sa-token.version]
-- **数据库**: MySQL 8.0+
+- **Java**: JDK 21
+- **Spring Boot**: 3.x
+- **pigx-framework**: 3.4.7
+- **MyBatis-Plus**: 最新版
+- **数据库**: MySQL 8.0+（双库架构）
 - **缓存**: Redis + Redisson
+- **容器**: Undertow（替换 Tomcat）
+
+### 2.2 双库架构
+- **系统库**: 全局数据（商户配置、字典等）
+- **商户库**: 租户业务数据（订单、菜品等），通过请求头 MERCHANT-ID 路由
+- **切换方式**:
+  - 商户库（默认）：无需额外处理
+  - 系统库：`Executors.doInSystem(() -> {...})`
+  - 遍历租户：`Executors.doInAllTenant(tenantId -> {...})`
 ```
 
-#### ✅ 待办清单 (`docs/待办清单.md`)
+#### 待办清单 (`docs/待办清单.md`)
 
 **必须包含的内容**:
 
@@ -604,7 +597,7 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 ```markdown
 ## 🔥 高优先级（紧急重要）
 
-### ruoyi-xxx 模块
+### sys-canteen 模块
 - [ ] 任务描述
   - 截止日期: YYYY-MM-DD
   - 描述: 详细描述
@@ -614,15 +607,18 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 
 ##### 2. 统计信息
 ```markdown
-## 📊 统计信息
+## 统计信息
 
 ### 按优先级分类
 - 🔥 高优先级: X 项
 - 📌 中优先级: Y 项
 - 💡 低优先级: Z 项
 
-### 按 Maven 模块分类
-- ruoyi-xxx 模块: X 项
+### 按业务模块分类
+- sys-canteen 模块: X 项
+- sys-kitchen 模块: X 项
+- sys-drp 模块: X 项
+- sys-common 模块: X 项
 
 ### 工作量统计
 - 预计总工作量: 约 X 天
@@ -631,25 +627,27 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 
 ---
 
-## 📏 质量标准
+## 质量标准
 
-### ✅ 优秀文档的特征
+### 优秀文档的特征
 1. **完整度明确**: 用百分比表示，不模糊
 2. **代码定位精确**: 完整的相对路径 + 行号
 3. **工作量合理**: 根据 Git 提交历史估算
-4. **分类清晰**: 按 Maven 模块分类
+4. **分类清晰**: 按业务模块分类（sys-canteen/sys-kitchen/sys-drp/sys-common）
 5. **信息完整**: 包含依赖、影响范围、解决方案
 6. **统计准确**: 数量、百分比、工作量都有数据支撑
 
-### ❌ 必须避免的问题
-1. **不要统计框架代码**: 只关注业务模块（排除 6 个框架模块：system、generator、demo、job、workflow、common）
-2. **不要只统计文件数**: 要分析功能完整度（7 个必需文件）
-3. **不要笼统描述**: "XX 模块已完成" → "XX 模块 100% (Entity✅ BO✅ VO✅...)"
+### 必须避免的问题
+1. **不要统计基础设施代码**: 只关注业务模块（排除 core-base、core-aggregator、sys-open、sys-logistics）
+2. **不要只统计文件数**: 要分析功能完整度（8 个必需文件：leniu 四层架构）
+3. **不要笼统描述**: "XX 模块已完成" → "XX 模块 100% (Entity✅ DTO✅ VO✅ Mapper✅ XML✅ Service✅ Business✅ Controller✅)"
 4. **不要遗漏 TODO**: 深度扫描所有业务模块代码中的 TODO 标记
 5. **不要估算过于乐观**: 工作量评估要参考历史提交
 6. **不要忽略技术债务**: 单独列出 FIXME 和已知问题
-7. **包名必须正确**: `org.dromara.*`（非 `plus.ruoyi`、非 `com.ruoyi`）
-8. **三层架构**: Controller → Service → Mapper（无 DAO 层）
+7. **包名必须正确**: `net.xnzn.core.*`（非 `org.dromara`、非 `com.ruoyi`）
+8. **四层架构**: Controller → Business → Service → Mapper（含 Business 层！）
+9. **Mapper XML 同目录**: XML 与 .java 文件在同一目录，非 `resources/mapper/`
+10. **审计字段规范**: `crby/crtime/upby/uptime`（非 `createBy/createTime`）
 
 ## 注意事项
 
@@ -672,7 +670,7 @@ ruoyi-modules/ruoyi-*/src/main/java/**/*.java
 
 ---
 
-## 🔗 相关命令
+## 相关命令
 
 | 命令 | 说明 | 用途 |
 |------|------|------|

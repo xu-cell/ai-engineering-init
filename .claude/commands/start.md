@@ -1,481 +1,199 @@
 # /start - 项目快速了解
 
-新成员快速了解项目的必看命令。自动检测项目类型、扫描业务模块、生成项目概览。
+新成员快速了解 leniu-tengyun-core（云食堂）项目的必看命令。
 
 ---
 
-## 🎯 适用场景
+## 适用场景
 
 | 场景 | 说明 |
 |------|------|
 | **初次接触** | 新成员第一次接触项目 |
 | **项目交接** | 接手他人的项目 |
-| **重新梳理** | 距上次熟悉项目已久，需要快速回顾 |
-| **团队分享** | 向团队成员介绍项目现状 |
+| **重新梳理** | 距上次熟悉项目已久，需快速回顾 |
 | **窗口切换** | 在新的 Claude 会话中快速了解项目 |
 
 ---
 
-## 🚀 执行流程
+## 执行流程
 
-### 第一步：识别项目类型和框架（强制执行）
-
-#### 1.1 读取项目配置
+### 第一步：扫描项目结构
 
 ```bash
-# 扫描项目结构
-Glob pattern: "ruoyi-modules/ruoyi-*/src/main/java/**/controller/*Controller.java"
+# 扫描业务模块 Controller
+Glob pattern: "sys-canteen/src/main/java/net/xnzn/core/**/controller/*Controller.java"
+Glob pattern: "sys-kitchen/src/main/java/net/xnzn/core/**/controller/*Controller.java"
+Glob pattern: "sys-drp/src/main/java/net/xnzn/core/**/controller/*Controller.java"
 
 # 查看最近 3 条 Git 提交
-git log -3 --oneline --format="%h %s (%ar)"
+git log -3 --oneline
 ```
 
-#### 1.2 分析项目架构
+### 第二步：识别 leniu 模块结构
 
-**识别框架模块（不统计进度）**：
-- ✅ `ruoyi-system` - 系统管理模块（用户、角色、菜单、字典等）
-- ✅ `ruoyi-generator` - 代码生成器
-- ✅ `ruoyi-common` - 通用工具库（20+ 子模块）
-- ✅ `ruoyi-demo` - 官方示例模块
-- ✅ `ruoyi-job` - 定时任务模块（SnailJob）
-- ✅ `ruoyi-workflow` - 工作流引擎模块（WarmFlow）
+**核心业务模块（统计进度）**：
 
-**识别业务模块（需统计进度）**：
-- 排除上述框架模块后的所有 `ruoyi-*` 模块
-- 示例：`ruoyi-business`, `ruoyi-xxx` 等
-
----
-
-### 第二步：判断项目开发阶段
-
-#### 2.1 按业务模块数分类
-
-```
-业务模块数量 = 0    → 🟢 全新项目（仅有框架）
-业务模块数量 1-5   → 🟡 初期开发（刚开始业务）
-业务模块数量 6+    → 🔴 成熟项目（业务较多）
-```
-
-#### 2.2 检查文档状态
-
-```bash
-# 检查文档是否存在
-Glob pattern: "docs/*.md"
-
-# 检查主要文档
-docs/项目状态.md             # 项目进度
-docs/需求文档.md             # 业务需求
-docs/待办清单.md             # 待办清单
-```
-
-#### 2.3 分析代码完整性
-
-```bash
-# 扫描业务模块的功能完整性
-对每个业务模块，检查 7 个必需的文件：
-- Entity.java
-- Bo.java
-- Vo.java
-- Controller.java
-- IService.java
-- ServiceImpl.java
-- Mapper.java
-```
-
----
-
-### 第三步：生成项目概览报告
-
-根据项目阶段生成不同的输出格式。
-
-#### 情况 1：全新项目（业务模块数 = 0）
-
-```markdown
-# 👋 欢迎使用 RuoYi-Vue-Plus 框架
-
-**项目类型**：Spring Boot 3 + MyBatis-Plus 纯后端项目
-**框架版本**：[从 pom.xml 的 `<revision>` 标签动态读取]
-
----
-
-## 📦 框架现状
-
-### ✅ 已就绪的框架模块
-
-| 模块 | 说明 | 状态 |
+| 模块 | 说明 | 包名 |
 |------|------|------|
-| ruoyi-system | 系统管理（用户、角色、菜单、字典等） | ✅ 完整 |
-| ruoyi-generator | 动态代码生成器 | ✅ 完整 |
-| ruoyi-common | 通用工具库（20+ 子模块） | ✅ 完整 |
-| ruoyi-demo | 官方示例模块 | ✅ 完整 |
-| ruoyi-job | 定时任务（SnailJob） | ✅ 完整 |
-| ruoyi-workflow | 工作流引擎（WarmFlow） | ✅ 完整 |
+| `sys-canteen` | 食堂业务（订单、菜品、用户）| `net.xnzn.core.canteen` |
+| `sys-kitchen` | 后场厨房（备餐、出餐、排班）| `net.xnzn.core.kitchen` |
+| `sys-drp` | 供应链（采购、库存、配送）| `net.xnzn.core.drp` |
+| `sys-common` | 公共业务（支付、通知、对接）| `net.xnzn.core.common` |
 
-### 核心特性
+**基础设施模块（不统计进度）**：
+- `core-base` - 公共配置、工具类
+- `core-aggregator` - 聚合器
+- `sys-open` - 开放接口模块
+- `sys-logistics` - 物流模块
 
-- ✅ Spring Boot 3.x 最新版本
-- ✅ MyBatis-Plus 完整支持
-- ✅ Sa-Token 权限管理体系
-- ✅ 多租户隔离
-- ✅ 动态代码生成
+### 第三步：判断项目开发阶段
 
----
-
-## 🕐 最近动态
-
-**最新提交**：[commit message]
-**提交时间**：[时间]
-
----
-
-## 🎯 快速开始
-
-### 方式 1：使用 /dev 命令（推荐）
-
-```bash
-/dev
 ```
-
-引导式开发新功能，包含数据库设计、代码生成、菜单配置等完整流程。
-
-### 方式 2：使用 /crud 命令（表已存在）
-
-```bash
-/crud
+Controller 数量 = 0    → 全新项目
+Controller 数量 1-20   → 初期开发
+Controller 数量 21+    → 成熟项目
 ```
-
-快速为现有数据库表生成 CRUD 代码。
-
-### 方式 3：使用代码生成器（UI方式）
-
-1. 访问：http://localhost:8080
-2. 导航：系统工具 → 代码生成
-3. 导入表并生成代码
-
----
-
-## 💡 推荐操作
-
-**第一步**：了解项目规范
-```bash
-查看项目根目录的 CLAUDE.md 文件
-```
-
-**第二步**：初始化项目文档
-```bash
-/init-docs
-```
-
-**第三步**：开发第一个功能
-```bash
-/dev  # 或 /crud
-```
-
----
-
-## 📚 相关命令
-
-| 命令 | 说明 | 何时使用 |
-|------|------|---------|
-| `/dev` | 完整开发流程 | 从零开始开发功能 |
-| `/crud` | 快速代码生成 | 表已存在时 |
-| `/init-docs` | 初始化文档 | 第一次使用本项目 |
-| `/check` | 代码规范检查 | 代码审查前 |
-| `/progress` | 查看项目进度 | 了解完成情况 |
-| `/next` | 获取建议 | 不知道做什么 |
-```
-
-#### 情况 2：初期开发项目（业务模块数 1-5）
-
-```markdown
-# 👋 欢迎回到项目
-
-**项目名称**：[自动识别]
-**技术栈**：Spring Boot 3 + MyBatis-Plus + Sa-Token
-**项目阶段**：🟡 初期开发
-
----
-
-## 📊 项目概况
-
-### 框架状态
-| 组件 | 版本 | 说明 |
-|------|------|------|
-| Spring Boot | [从 pom.xml 动态读取] | ✅ |
-| MyBatis-Plus | 3.5.x | ✅ 已优化 |
-| Sa-Token | 最新 | ✅ 权限就绪 |
-
-### 业务进度
-- **业务模块**：X 个
-- **已完成功能**：X 个
-- **进行中功能**：X 个
-- **总体进度**：X%
-
-### 业务模块清单
-| 模块 | 功能数 | 完成数 | 完成率 |
-|------|--------|--------|--------|
-| ruoyi-demo | X | X | X% |
-| ruoyi-xxx | X | X | X% |
-
----
-
-## 🕐 最近动态
-
-**最新提交**：[commit message]
-**提交时间**：[时间]
-**最近贡献**：[模块/功能说明]
-
----
-
-## 📈 代码质量指标
-
-| 维度 | 状态 | 说明 |
-|------|------|------|
-| 包名规范 | ✅ | org.dromara.* |
-| 权限注解 | ✅/⚠️ | @SaCheckPermission 完整度 |
-| 对象转换 | ✅/⚠️ | MapstructUtils 使用情况 |
-| 代码文件 | X | 总文件数 |
-
----
-
-## 🎯 当前工作建议
-
-### 快速查看进度
-```bash
-/progress
-```
-
-### 检查代码规范
-```bash
-/check
-```
-
-### 获取开发建议
-```bash
-/next
-```
-
-### 继续开发新功能
-```bash
-/dev 新功能名称
-```
-
-### 为现有表生成代码
-```bash
-/crud 表名
-```
-
----
-
-## 📚 相关命令
-
-| 命令 | 说明 | 用途 |
-|------|------|------|
-| `/progress` | 详细进度报告 | 了解各模块完成情况 |
-| `/check` | 代码规范检查 | 确保代码质量 |
-| `/next` | 下一步建议 | 获取开发方向 |
-| `/sync` | 全量同步 | 定期整理文档 |
-| `/dev` | 开发新功能 | 完整开发流程 |
-| `/crud` | 快速生成 | 表已存在时 |
-```
-
-#### 情况 3：成熟项目（业务模块数 6+）
-
-```markdown
-# 👋 欢迎回到 [项目名称]
-
-**项目阶段**：🔴 成熟开发
-**技术栈**：Spring Boot 3 + MyBatis-Plus + Sa-Token
-**代码规模**：X 个 Java 文件 | X 行代码
-
----
-
-## 📊 项目整体状态
-
-### 框架与基础设施
-| 组件 | 版本 | 状态 |
-|------|------|------|
-| Spring Boot | 3.5.x | ✅ 稳定 |
-| MyBatis-Plus | 3.5.x | ✅ 优化 |
-| Sa-Token | - | ✅ 完整 |
-
-### 业务模块现状
-- **业务模块数**：X 个
-- **总功能数**：X 个
-- **已完成**：X 个（X%）
-- **进行中**：X 个（X%）
-- **待开发**：X 个（X%）
-
-### 模块清单
-| 模块 | 功能 | 完成率 | 状态 |
-|------|------|--------|------|
-| ruoyi-system | 系统管理 | 100% | ✅ |
-| ruoyi-demo | 示例功能 | 100% | ✅ |
-| ruoyi-xxx | [业务模块] | X% | 🔄 |
-
----
-
-## 🕐 最近活动（最近 7 天）
-
-**最新提交**：[commit message]
-**提交数**：X 次
-**涉及模块**：[模块1, 模块2, ...]
-**上次同步**：[日期]
-
----
-
-## 📈 项目指标
-
-| 指标 | 值 | 说明 |
-|------|-----|------|
-| 代码行数 | X | 总行数 |
-| 类文件数 | X | Java 类总数 |
-| 数据库表 | X | 业务表总数 |
-| 代码质量 | ✅/⚠️ | 检查结果 |
-| 待办任务 | X | 未完成任务数 |
-
----
-
-## 🎯 本周工作建议
-
-### 1. 查看完整进度
-```bash
-/progress
-```
-
-### 2. 获取优先级建议
-```bash
-/next
-```
-
-### 3. 检查代码质量
-```bash
-/check
-```
-
-### 4. 全量同步文档
-```bash
-/sync
-```
-
-### 5. 继续开发功能
-```bash
-/dev 功能名称  # 开发新功能
-/crud 表名      # 为表生成代码
-```
-
----
-
-## 📚 核心命令
-
-| 命令 | 说明 | 场景 |
-|------|------|------|
-| `/progress` | 项目进度分析 | 定期追踪进度 |
-| `/check` | 代码规范检查 | 代码审查、质量把控 |
-| `/next` | 下一步建议 | 规划工作方向 |
-| `/sync` | 全量同步文档 | 每周整理 |
-| `/dev` | 完整开发流程 | 新功能开发 |
-| `/crud` | 快速代码生成 | 表已存在 |
-| `/add-todo` | 添加待办任务 | 任务跟踪 |
-```
-
----
 
 ### 第四步：检查文档状态
 
-#### 4.1 如果文档缺失
+```bash
+Glob pattern: "docs/*.md"
+```
+
+---
+
+## 输出格式
+
+### 情况一：全新项目
 
 ```markdown
-## ⚠️ 建议
+# 欢迎使用 leniu-tengyun-core（云食堂）
+
+**技术栈**：Spring Boot 3.x + pigx-framework + MyBatis-Plus + JDK 21
+**架构**：四层架构（Controller → Business → Service → Mapper）
+**双库**：系统库（全局配置）+ 商户库（租户业务数据）
+
+## 框架现状
+
+### 核心特性
+- 双库物理隔离（无 tenant_id 字段，通过请求头 MERCHANT-ID 路由）
+- JDK 21 + jakarta.validation.*
+- PageHelper 分页 + LeRequest<T> 请求封装
+- LeException 业务异常 + I18n 国际化
+
+## 快速开始
+
+1. 了解规范：查看 CLAUDE.md
+2. 初始化文档：/init-docs
+3. 开始开发：/dev 或 /crud
+```
+
+### 情况二：开发中项目
+
+```markdown
+# 欢迎回到 leniu-tengyun-core
+
+**项目阶段**：开发中
+**技术栈**：Spring Boot 3.x + JDK 21 + pigx-framework
+
+## 模块进度
+
+| 模块 | Controller 数 | 说明 |
+|------|--------------|------|
+| sys-canteen | X | 食堂业务 |
+| sys-kitchen | X | 后场厨房 |
+| sys-drp | X | 供应链 |
+
+## 最近提交
+
+[显示最近 3 条 git commit]
+
+## 代码质量速查
+
+| 检查项 | 状态 |
+|--------|------|
+| 包名 (net.xnzn.core.*) | ✅/⚠️ |
+| 审计字段 (crby/crtime) | ✅/⚠️ |
+| 认证注解 (@RequiresAuthentication) | ✅/⚠️ |
+
+## 建议操作
+
+```bash
+/progress    # 查看详细进度
+/check       # 检查代码规范
+/next        # 获取下一步建议
+```
+```
+
+### 第五步：文档建议
+
+若 `docs/` 目录不存在：
+
+```markdown
+## 建议
 
 检测到业务代码，但尚未初始化项目文档。
 
-为了更好地管理项目，建议执行以下命令初始化文档：
-
-```bash
-/init-docs
-```
-
-这将为你创建：
+执行 /init-docs 初始化：
 - 项目状态.md - 进度追踪
 - 需求文档.md - 业务需求
 - 待办清单.md - 任务清单
 ```
 
-#### 4.2 如果文档已存在
-
-```markdown
-## 📚 项目文档导航
-
-- [📊 项目状态](./docs/项目状态.md) - 进度追踪
-- [📋 需求文档](./docs/需求文档.md) - 业务需求
-- [📝 待办清单](./docs/待办清单.md) - 任务清单
-```
-
 ---
 
-## 🎓 新成员入门清单
+## 新成员入门清单
 
-- [ ] 阅读项目根目录的 `CLAUDE.md` 了解开发规范
+- [ ] 阅读 `CLAUDE.md` 了解 leniu 开发规范
 - [ ] 运行 `/start` 了解项目现状
 - [ ] 运行 `/progress` 查看详细进度
-- [ ] 查看 `CLAUDE.md` 了解架构
+- [ ] 了解双库架构（系统库 vs 商户库）
+- [ ] 了解四层架构（Controller → Business → Service → Mapper）
 - [ ] 根据 `/next` 建议选择任务
-- [ ] 使用 `/dev` 或 `/crud` 开始开发
 
 ---
 
-## 💡 常见问题
-
-### Q: 项目框架有没有完整？
-A: 是的，`ruoyi-system` 框架模块已完整，只需开发业务功能。
-
-### Q: 如何开始开发新功能？
-A: 有三种方式：
-1. 使用 `/dev` 命令（推荐，包含完整流程）
-2. 使用 `/crud` 命令（表已存在时）
-3. 手动开发（熟悉项目规范后）
-
-### Q: 如何了解代码规范？
-A:
-1. 查看 `CLAUDE.md` 文件
-2. 运行 `/check` 命令检查规范
-3. 参考 `ruoyi-system` 现有代码
-
-### Q: 如何追踪项目进度？
-A:
-1. 运行 `/progress` 查看详细进度
-2. 运行 `/sync` 生成完整报告
-3. 查看 `docs/项目状态.md`
-
----
-
-## 🔗 核心命令速览
+## 核心命令速览
 
 ```bash
-# 了解项目
 /start          # 项目概览（当前命令）
 /progress       # 详细进度
-
-# 代码管理
 /check          # 代码规范检查
-/dev            # 开发新功能
-/crud           # 快速生成代码
-
-# 项目管理
+/dev            # 开发新功能（含表设计）
+/crud           # 快速生成 CRUD（表已存在）
 /next           # 获取建议
 /sync           # 全量同步
 /init-docs      # 初始化文档
-
-# 任务跟踪
 /add-todo       # 添加待办
 ```
 
 ---
 
-## 📌 输出说明
+## 常见问题
 
-- 此报告基于实时代码扫描和 Git 分析生成
-- 刷新报告：重新运行 `/start` 命令
-- 详细分析：运行 `/progress` 获取更详细信息
-- 获取建议：运行 `/next` 获取下一步开发建议
+### Q: leniu 架构和 RuoYi-Vue-Plus 有什么区别？
+
+| 对比 | RuoYi-Vue-Plus | leniu-tengyun-core |
+|------|----------------|-------------------|
+| 包名 | `org.dromara.*` | `net.xnzn.core.*` |
+| 租户 | 单库 `tenant_id` 字段 | 双库物理隔离 |
+| 审计字段 | createBy/createTime | crby/crtime |
+| del_flag | 0=正常 | 2=正常 |
+| 请求封装 | BO | LeRequest<T> |
+| 权限注解 | @SaCheckPermission | @RequiresAuthentication |
+| 异常 | ServiceException | LeException |
+| 多了一层 | 三层 | 四层（多 Business 层）|
+
+### Q: 怎么开发新功能？
+
+```bash
+/dev  # 含表结构设计的完整开发向导
+/crud # 表已存在时快速生成代码
+```
+
+### Q: 怎么追踪进度？
+
+```bash
+/progress  # 查看完成情况
+/sync      # 生成完整报告
+```

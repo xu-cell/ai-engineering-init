@@ -1,697 +1,454 @@
 # /crud - 快速生成 CRUD 代码
 
-作为 CRUD 代码生成助手，基于已存在的数据库表快速生成标准后端 CRUD 代码。
+作为 CRUD 代码生成助手，基于已存在的数据库表快速生成 leniu-tengyun-core 标准后端代码。
 
-## 🎯 适用场景
-
-### ✅ 适合使用 `/crud` 的情况
+## 适用场景
 
 - ✅ **数据库表已存在** - 表结构已设计完毕
-- ✅ **只需标准 CRUD** - 增删改查、导入导出等标准功能
-- ✅ **无复杂业务逻辑** - 没有特殊的业务规则
-- ✅ **快速原型开发** - 需要快速搭建基础功能
-- ✅ **树形结构数据** - 部门、分类等层级数据（tree 模板）
+- ✅ **快速生成四层代码** - Entity / DTO / VO / Mapper / Service / Business / Controller
+- ✅ **标准 CRUD** - 增删改查、分页列表
 
-### ❌ 不适合使用 `/crud` 的情况
-
-- ❌ **表结构尚未设计** → 请使用 `/dev` 命令
-- ❌ **需要复杂业务逻辑** → 请使用 `/dev` 命令后手动增强
-- ❌ **需要特殊的查询条件** → 请使用 `/dev` 命令后手动修改
-
-### 📋 支持的模板类型
-
-| 模板类型 | 适用场景 | 特点 |
-|---------|---------|------|
-| **crud** | 普通表 | 标准增删改查、分页列表 |
-| **tree** | 树形表 | 父子层级、展开折叠、无分页 |
+不适合：
+- ❌ 表结构尚未设计 → 使用 `/dev` 命令
+- ❌ 需要复杂业务逻辑 → 使用 `/dev` 后手动增强
 
 ---
 
-## 📋 执行流程
+## 执行流程
 
-### 第一步：连接数据库并查看表结构
+### 第一步：获取表信息
 
-#### 1.1 询问用户
+询问用户：
 
 ```
-请提供表名：
-（如：sys_notice, demo_xxx）
+请提供以下信息：
 
-💡 数据库连接信息将从 application-dev.yml 自动读取
+1. 表名？（如：canteen_order_info）
+2. 所属模块？（sys-canteen / sys-kitchen / sys-drp / sys-common）
+3. 功能名称（中文）？（如：订单管理）
+4. 端类型？（web / mobile / android，默认 web）
 ```
 
-#### 1.2 读取数据库配置（强制执行）⭐⭐⭐⭐⭐
+#### 1.1 查看表结构
 
 ```bash
-# 读取开发环境配置文件
-Read ruoyi-admin/src/main/resources/application-dev.yml
-```
-
-从配置文件中提取以下信息（注意环境变量和默认值）：
-
-**配置文件格式示例**（动态多数据源）：
-```yaml
-spring:
-  datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    dynamic:
-      primary: master
-      datasource:
-        master:
-          type: ${spring.datasource.type}
-          driverClassName: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/ry-vue?useUnicode=true&characterEncoding=utf8&...
-          username: root
-          password: root
-```
-
-**解析规则**：
-- 配置路径：`spring.datasource.dynamic.datasource.master`
-- 主机和端口：从 `url` 中的 `jdbc:mysql://[主机]:[端口]/[数据库名]` 解析
-- 用户名：`username` 字段
-- 密码：`password` 字段
-- 如果使用环境变量格式 `${ENV:默认值}`，取默认值部分
-
-**⚠️ 注意**：不要输出数据库连接信息给用户确认，直接使用读取到的配置连接数据库
-
-#### 1.3 连接数据库并查看表结构
-
-```bash
-# 使用解析出的配置连接数据库
-mysql -h [主机] -P [端口] -u [用户名] -p[密码] [数据库名]
-
-# 查看表结构
+# 查看表结构（用户提供连接信息，或从配置文件读取）
 SHOW CREATE TABLE [表名];
-
-# 查看字段详情
 DESC [表名];
-
-# 查询最大菜单ID
-SELECT MAX(menu_id) FROM sys_menu;
-
-# 查询最大表ID（用于生成配置）
-SELECT MAX(table_id) FROM gen_table;
-
-# 查询现有字典类型（避免重复创建）
-SELECT dict_type FROM sys_dict_type WHERE del_flag = '0';
 ```
 
-#### 1.4 字段类型映射规则
+#### 1.2 字段类型映射
 
-| 数据库类型 | Java类型 | 说明 |
+| 数据库类型 | Java 类型 | 说明 |
 |-----------|---------|------|
-| BIGINT(20), BIGINT | Long | 长整数 |
-| INT(11), INT | Integer | 整数 |
-| VARCHAR(n), CHAR(n) | String | 字符串 |
-| TEXT, LONGTEXT | String | 长文本 |
-| DATETIME, TIMESTAMP | Date | 日期时间 |
-| DECIMAL(m,n) | BigDecimal | 高精度数值 |
-| TINYINT(1), CHAR(1) | String | 状态字段（0/1）|
+| BIGINT | Long | 主键、外键、金额（分）|
+| INT / TINYINT | Integer | 状态、类型 |
+| VARCHAR / CHAR | String | 字符串 |
+| TEXT / LONGTEXT | String | 长文本 |
+| DATETIME / TIMESTAMP | LocalDateTime | 时间 |
+| DECIMAL | BigDecimal | 高精度数值 |
 
-#### 1.5 输出表结构分析
+#### 1.3 输出表结构分析
 
 ```markdown
-## 📊 表结构分析
+## 表结构分析
 
-**表名**：[表名]
-**注释**：[表注释]
+**表名**：canteen_order_info
+**功能名称**：订单管理
+**包名**：net.xnzn.core.canteen.order
 
 **字段列表**：
-| 字段名 | 类型 | 是否必填 | 默认值 | 注释 |
-|--------|------|---------|--------|------|
-| id | BIGINT(20) | 是 | - | 主键ID |
-| tenant_id | VARCHAR(20) | 否 | '000000' | 租户ID |
-| xxx_name | VARCHAR(100) | 是 | - | 名称 |
-| status | CHAR(1) | 否 | '1' | 状态 |
-| create_dept | BIGINT(20) | 否 | NULL | 创建部门 |
-| create_by | BIGINT(20) | 否 | NULL | 创建人 |
-| create_time | DATETIME | 否 | CURRENT_TIMESTAMP | 创建时间 |
-| update_by | BIGINT(20) | 否 | NULL | 修改人 |
-| update_time | DATETIME | 否 | CURRENT_TIMESTAMP | 更新时间 |
-| del_flag | CHAR(1) | 否 | '0' | 删除标志 |
+| 字段 | 类型 | 注释 | 是否审计 |
+|------|------|------|---------|
+| id | BIGINT | 主键 | - |
+| order_no | VARCHAR(32) | 订单号 | - |
+| total_amount | BIGINT | 订单金额（分）| - |
+| status | TINYINT | 订单状态 | - |
+| crby | VARCHAR(64) | 创建人 | ✅ |
+| crtime | DATETIME | 创建时间 | ✅ |
+| upby | VARCHAR(64) | 更新人 | ✅ |
+| uptime | DATETIME | 更新时间 | ✅ |
+| del_flag | TINYINT | 删除标识(1删除,2正常) | ✅ |
 
-**审计字段**：✅ 完整（包含 create_dept, create_by, create_time, update_by, update_time）
-**逻辑删除**：✅ 已配置（del_flag）
-**租户支持**：✅ 已支持（tenant_id）
-
----
-
-### 提取功能名称
-
-根据表名 `sys_notice` 提取功能名称：
-- 中文名：公告
-- 英文名：Notice
-- 类名前缀：Notice
-- 接口路径：/system/notice
-
-确认功能名称，或自定义修改？
+**审计字段**：✅ 完整（crby/crtime/upby/uptime/del_flag）
+**逻辑删除**：✅ del_flag（2=正常，1=删除）
 ```
 
 ---
 
-### 第 1.6 步：选择模板类型（新增）⭐⭐⭐⭐⭐
-
-根据表结构特征，询问用户选择模板类型：
-
-**自动检测规则**：
-- 表中包含 `parent_id` 字段且 `parent_id` 为 BIGINT → `tree` 模板
-- 其他情况 → `crud` 模板
-
-**用户选择** (如需覆盖自动检测)：
-```
-## 🎯 请选择模板类型
-
-根据您的表结构，请选择合适的模板类型：
-
-1. **crud** - 普通表（默认）
-   适用于：标准增删改查，无层级关系
-   示例：通知公告、用户反馈等
-
-2. **tree** - 树表
-   适用于：有父子层级关系的数据（如部门、分类、菜单）
-   特征：表中包含 parent_id 或类似的父级字段
-
-请输入模板类型（crud/tree）：
-```
-
-#### 1.6.1 树表自动检测
-
-如果表结构包含以下字段，自动提示可能是树表：
-- `parent_id` / `pid` / `parent` - 父级ID
-- `order_num` / `sort` - 排序字段
-
-```
-💡 检测到您的表可能是树表结构：
-- 发现父级字段：parent_id
-- 发现排序字段：order_num
-
-是否使用树表模板？(Y/n)
-```
-
-#### 1.6.2 树表配置
-
-当用户选择 tree 模板时，询问以下配置：
-
-```
-## 🌳 树表配置
-
-请确认或修改以下配置：
-
-1. **树编码字段**（Java 字段名）
-   用于构建树结构的主键字段
-   默认检测：id
-
-2. **树父编码字段**（Java 驼峰字段名）
-   父节点的关联字段
-   检测到：parentId
-
-3. **树名称字段**（Java 驼峰字段名）
-   在树节点上显示的名称字段
-   检测到：deptName
-
-确认配置？(Y/n)
-```
-
----
-
-### 第二步：生成菜单 SQL
-
-#### 2.1 根据表名前缀确定模块名
-
-| 表名前缀 | 模块名 | 权限标识符格式 |
-|---------|--------|--------------|
-| `sys_` | `system` | `system:[功能名]:[操作]` |
-| `demo_` | `demo` | `demo:[功能名]:[操作]` |
-| 其他 | 询问用户 | `[模块名]:[功能名]:[操作]` |
-
-#### 2.2 询问菜单信息
-
-```
-请提供菜单配置信息：
-
-1. **父菜单ID**：（默认：1 - 系统管理）
-2. **排序值**：（默认：10）
-3. **菜单图标**：（默认：'guide'）
-4. **菜单ID起始值**：当前最大ID + 10
-```
-
-#### 2.3 生成菜单 SQL
-
-生成完整的菜单 SQL（6个权限：查看、查询、新增、修改、删除、导出）。
-
----
-
-### 第三步：生成后端代码
-
-#### 3.1 学习现有代码（强制执行）
-
-```bash
-# 必须先阅读 demo 模块代码作为参考（标准 CRUD 写法）
-Read ruoyi-modules/ruoyi-demo/src/main/java/org/dromara/demo/controller/TestDemoController.java
-Read ruoyi-modules/ruoyi-demo/src/main/java/org/dromara/demo/service/impl/TestDemoServiceImpl.java
-Read ruoyi-modules/ruoyi-demo/src/main/java/org/dromara/demo/domain/bo/TestDemoBo.java
-Read ruoyi-modules/ruoyi-demo/src/main/java/org/dromara/demo/domain/vo/TestDemoVo.java
-```
-
-#### 3.2 生成代码顺序（三层架构）
-
-按照以下顺序生成：
-
-1. **Entity** - 继承 TenantEntity，字段从表结构映射
-2. **BO** - 使用 @AutoMapper 注解
-3. **VO** - 含 Excel 导出注解
-4. **Mapper** - 继承 BaseMapperPlus
-5. **Service 接口** - 标准 CRUD 方法声明
-6. **ServiceImpl** - 业务逻辑实现，包含 buildQueryWrapper
-7. **Controller** - 标准接口 + 导入导出
-
-#### 3.3 字段类型映射规则
-
-| 数据库类型 | Java类型 |
-|-----------|---------|
-| BIGINT(20) | Long |
-| VARCHAR/CHAR | String |
-| TEXT | String |
-| DATETIME | Date |
-| DECIMAL | BigDecimal |
-| INT | Integer |
-
-#### 3.4 查询条件生成规则⭐⭐⭐⭐⭐
-
-| 字段名后缀 | 查询方式 | Java类型 | 说明 |
-|-----------|---------|---------|------|
-| `xxx_name`、`xxx_title` | LIKE | String | 名称/标题字段（模糊搜索） |
-| `xxx_content`、`remark` | LIKE | String | 长文本/备注字段（模糊搜索） |
-| `id`、`code` | EQ | Long/String | ID/编码字段（精确匹配） |
-| `status` | EQ | String | 标准状态字段，绑定 `sys_enable_status` |
-| `xxx_status` | EQ | String | 业务状态字段，绑定自定义字典 `xxx_status` |
-| `xxx_type` | EQ | String | 分类/类型字段，绑定自定义字典 `xxx_type` |
-| `is_xxx` | EQ | String | 布尔标志字段，绑定 `sys_boolean_flag` |
-| `xxx_num`、`xxx_count`、`xxx_quantity` | EQ | Integer | 数量/计数字段 |
-| `xxx_amount`、`xxx_price`、`xxx_total` | EQ | BigDecimal | 金额/价格/合计字段 |
-| `xxx_rate`、`xxx_percentage` | EQ | BigDecimal | 比率/百分比字段 |
-| `xxx_time`、`xxx_date` | BETWEEN | Date | 日期/时间范围查询 |
-| `begin_xxx_time`、`end_xxx_time` | BETWEEN | Date | 时间段查询（分离字段） |
-
-#### 3.5 字典类型配置（可选）
-
-如果字段需要使用字典下拉，需要检查并配置字典类型：
-
-```
-## 🏷️ 字典类型检查
-
-检测到以下字段可能需要配置字典：
-
-| 字段 | 推荐字典类型 | 是否已存在 |
-|------|------------|----------|
-| status | sys_enable_status | ✅ 存在 |
-| notice_type | （需自定义） | ❌ 不存在 |
-
-对于不存在的字典，是否需要创建？(Y/n)
-```
-
----
-
-### 第四步：输出代码清单
+### 第二步：生成代码清单确认
 
 ```markdown
-✅ CRUD 代码生成完成！
+## 代码生成方案
 
-## 已生成文件清单
+**功能名称**：订单管理
+**Java 类名前缀**：OrderInfo
+**包名**：net.xnzn.core.canteen.order
+**路由**：/api/v2/web/canteen/order
 
-### 菜单 SQL
-- ✅ 菜单 SQL（需手动执行）
+**将生成 7 个文件**：
 
-### 后端代码 (7个文件)
-- ✅ domain/Xxx.java (Entity)
-- ✅ domain/bo/XxxBo.java (BO)
-- ✅ domain/vo/XxxVo.java (VO)
-- ✅ mapper/XxxMapper.java (Mapper)
-- ✅ service/IXxxService.java (Service接口)
-- ✅ service/impl/XxxServiceImpl.java (Service实现)
-- ✅ controller/XxxController.java (Controller)
+| 层 | 文件 |
+|----|------|
+| Controller | web/controller/OrderInfoWebController.java |
+| Business | web/business/impl/OrderInfoWebBusiness.java |
+| Service | common/service/impl/OrderInfoService.java |
+| Mapper | common/mapper/OrderInfoMapper.java + OrderInfoMapper.xml |
+| Entity | common/model/OrderInfo.java |
+| DTO | web/dto/OrderInfoDTO.java |
+| VO | web/vo/OrderInfoVO.java |
 
----
-
-## 下一步操作
-
-1. 执行菜单 SQL
-2. 重启后端服务
-3. 测试接口（Swagger: http://localhost:8080/doc.html）
-4. 配置菜单权限
+确认开始生成？
 ```
 
 ---
 
-## 代码模板
+### 第三步：生成所有文件
 
-### Entity 模板
+#### Entity 实体类
+
+根据表字段逐一映射，**注意**：
+- 审计字段使用 `@TableField(fill = FieldFill.INSERT)` 自动填充
+- `delFlag` 字段不加自动填充（手动设置）
+- 不生成 `tenantId` 字段
 
 ```java
-package org.dromara.[模块].domain;
+package net.xnzn.core.[模块].[功能].common.model;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import org.dromara.common.tenant.core.TenantEntity;
+import com.baomidou.mybatisplus.annotation.*;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
+/**
+ * [功能名称] 实体
+ */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@Accessors(chain = true)
 @TableName("[表名]")
-public class [实体名] extends TenantEntity {
+@ApiModel("[功能名称]")
+public class [实体名] implements Serializable {
 
-    @TableId(value = "id")
+    @ApiModelProperty("主键ID")
+    @TableId(value = "id", type = IdType.INPUT)
     private Long id;
 
-    // 业务字段...
+    // === 业务字段（从表结构逐一映射）===
+
+    @ApiModelProperty("删除标识(1删除,2正常)")
+    @TableField("del_flag")
+    private Integer delFlag;
+
+    @TableField(value = "crby", fill = FieldFill.INSERT)
+    private String crby;
+
+    @TableField(value = "crtime", fill = FieldFill.INSERT)
+    private LocalDateTime crtime;
+
+    @TableField(value = "upby", fill = FieldFill.INSERT_UPDATE)
+    private String upby;
+
+    @TableField(value = "uptime", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime uptime;
 }
 ```
 
-### BO 模板
+#### DTO 请求参数
+
+根据业务字段生成，审计字段不放入 DTO：
 
 ```java
-package org.dromara.[模块].domain.bo;
+package net.xnzn.core.[模块].[功能].web.dto;
 
-import org.dromara.[模块].domain.[实体名];
-import org.dromara.common.core.validate.AddGroup;
-import org.dromara.common.core.validate.EditGroup;
-import org.dromara.common.mybatis.core.domain.BaseEntity;
-import io.github.linpeilie.annotations.AutoMapper;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-
-@Data
-@EqualsAndHashCode(callSuper = true)
-@AutoMapper(target = [实体名].class, reverseConvertGenerate = false)
-public class [实体名]Bo extends BaseEntity {
-
-    /**
-     * 主键（编辑时必填）
-     */
-    @NotNull(message = "主键不能为空", groups = {EditGroup.class})
-    private Long id;
-
-    // 业务字段示例:
-    // @NotBlank(message = "名称不能为空", groups = {AddGroup.class, EditGroup.class})
-    // private String xxxName;
-}
-```
-
-### VO 模板
-
-```java
-package org.dromara.[模块].domain.vo;
-
-import org.dromara.[模块].domain.[实体名];
-import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
-import cn.idev.excel.annotation.ExcelProperty;
-import io.github.linpeilie.annotations.AutoMapper;
-import lombok.Data;
-
-import java.io.Serial;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
 
 @Data
-@ExcelIgnoreUnannotated
-@AutoMapper(target = [实体名].class)
-public class [实体名]Vo implements Serializable {
+@ApiModel("[功能名称] 请求参数")
+public class [实体名]DTO implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    @ExcelProperty(value = "主键")
+    @ApiModelProperty("主键ID（修改必填）")
+    @NotNull(message = "ID不能为空", groups = {UpdateGroup.class})
     private Long id;
 
-    // 业务字段...
+    // === 业务字段 ===
+
+    // 分页参数
+    private Integer pageNum = 1;
+    private Integer pageSize = 10;
 }
 ```
 
-### Mapper 模板
+#### VO 返回对象
 
 ```java
-package org.dromara.[模块].mapper;
+package net.xnzn.core.[模块].[功能].web.vo;
 
-import org.dromara.[模块].domain.[实体名];
-import org.dromara.[模块].domain.vo.[实体名]Vo;
-import org.dromara.common.mybatis.core.mapper.BaseMapperPlus;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
-public interface [实体名]Mapper extends BaseMapperPlus<[实体名], [实体名]Vo> {
+@Data
+@ApiModel("[功能名称] 返回对象")
+public class [实体名]VO implements Serializable {
+
+    @ApiModelProperty("主键ID")
+    private Long id;
+
+    // === 业务字段 ===
+
+    @ApiModelProperty("创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime crtime;
 }
 ```
 
-### Service 接口模板
+#### Mapper 接口
 
 ```java
-package org.dromara.[模块].service;
+package net.xnzn.core.[模块].[功能].common.mapper;
 
-import org.dromara.[模块].domain.bo.[实体名]Bo;
-import org.dromara.[模块].domain.vo.[实体名]Vo;
-import org.dromara.common.mybatis.core.page.PageQuery;
-import org.dromara.common.mybatis.core.page.TableDataInfo;
-import java.util.Collection;
-import java.util.List;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import net.xnzn.core.[模块].[功能].common.model.[实体名];
+import org.apache.ibatis.annotations.Mapper;
 
-public interface I[实体名]Service {
-
-    /**
-     * 查询
-     */
-    [实体名]Vo queryById(Long id);
-
-    /**
-     * 分页查询
-     */
-    TableDataInfo<[实体名]Vo> queryPageList([实体名]Bo bo, PageQuery pageQuery);
-
-    /**
-     * 查询列表
-     */
-    List<[实体名]Vo> queryList([实体名]Bo bo);
-
-    /**
-     * 新增
-     */
-    Boolean insertByBo([实体名]Bo bo);
-
-    /**
-     * 修改
-     */
-    Boolean updateByBo([实体名]Bo bo);
-
-    /**
-     * 校验并批量删除
-     */
-    Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+@Mapper
+public interface [实体名]Mapper extends BaseMapper<[实体名]> {
 }
 ```
 
-### ServiceImpl 模板
+#### Mapper XML（与 Java 同目录）
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.xnzn.core.[模块].[功能].common.mapper.[实体名]Mapper">
+
+</mapper>
+```
+
+#### Service 实现
 
 ```java
-package org.dromara.[模块].service.impl;
+package net.xnzn.core.[模块].[功能].common.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.RequiredArgsConstructor;
-import org.dromara.[模块].domain.[实体名];
-import org.dromara.[模块].domain.bo.[实体名]Bo;
-import org.dromara.[模块].domain.vo.[实体名]Vo;
-import org.dromara.[模块].mapper.[实体名]Mapper;
-import org.dromara.[模块].service.I[实体名]Service;
-import org.dromara.common.core.utils.MapstructUtils;
-import org.dromara.common.core.utils.StringUtils;
-import org.dromara.common.mybatis.core.page.PageQuery;
-import org.dromara.common.mybatis.core.page.TableDataInfo;
+import com.pig4cloud.pigx.common.core.exception.LeException;
+import lombok.extern.slf4j.Slf4j;
+import net.xnzn.core.[模块].[功能].web.dto.[实体名]DTO;
+import net.xnzn.core.[模块].[功能].common.mapper.[实体名]Mapper;
+import net.xnzn.core.[模块].[功能].common.model.[实体名];
+import net.xnzn.core.[模块].[功能].web.vo.[实体名]VO;
+import net.xnzn.framework.id.Id;
 import org.springframework.stereotype.Service;
-import java.util.Collection;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
-@RequiredArgsConstructor
+@Slf4j
 @Service
-public class [实体名]ServiceImpl implements I[实体名]Service {
+public class [实体名]Service {
 
-    private final [实体名]Mapper baseMapper;
+    @Resource
+    private [实体名]Mapper mapper;
 
-    @Override
-    public [实体名]Vo queryById(Long id) {
-        return baseMapper.selectVoById(id);
+    @Transactional(rollbackFor = Exception.class)
+    public Long add([实体名]DTO dto) {
+        [实体名] entity = BeanUtil.copyProperties(dto, [实体名].class);
+        entity.setId(Id.next()).setDelFlag(2);
+        mapper.insert(entity);
+        return entity.getId();
     }
 
-    @Override
-    public TableDataInfo<[实体名]Vo> queryPageList([实体名]Bo bo, PageQuery pageQuery) {
-        LambdaQueryWrapper<[实体名]> lqw = buildQueryWrapper(bo);
-        Page<[实体名]Vo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
-        return TableDataInfo.build(result);
+    @Transactional(rollbackFor = Exception.class)
+    public void update([实体名]DTO dto) {
+        Optional.ofNullable(mapper.selectById(dto.getId()))
+            .orElseThrow(() -> new LeException("记录不存在"));
+        mapper.updateById(BeanUtil.copyProperties(dto, [实体名].class));
     }
 
-    @Override
-    public List<[实体名]Vo> queryList([实体名]Bo bo) {
-        LambdaQueryWrapper<[实体名]> lqw = buildQueryWrapper(bo);
-        return baseMapper.selectVoList(lqw);
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        Optional.ofNullable(mapper.selectById(id))
+            .orElseThrow(() -> new LeException("记录不存在"));
+        mapper.updateById(new [实体名]().setId(id).setDelFlag(1));
     }
 
-    private LambdaQueryWrapper<[实体名]> buildQueryWrapper([实体名]Bo bo) {
-        Map<String, Object> params = bo.getParams();
-        LambdaQueryWrapper<[实体名]> lqw = Wrappers.lambdaQuery();
-        // 根据字段类型添加查询条件
-        // lqw.like(StringUtils.isNotBlank(bo.getXxxName()), [实体名]::getXxxName, bo.getXxxName());
-        // lqw.eq(StringUtils.isNotBlank(bo.getStatus()), [实体名]::getStatus, bo.getStatus());
-        return lqw;
+    public [实体名]VO getById(Long id) {
+        return BeanUtil.copyProperties(
+            Optional.ofNullable(mapper.selectById(id))
+                .orElseThrow(() -> new LeException("记录不存在")),
+            [实体名]VO.class
+        );
     }
 
-    @Override
-    public Boolean insertByBo([实体名]Bo bo) {
-        [实体名] add = MapstructUtils.convert(bo, [实体名].class);
-        validEntityBeforeSave(add);
-        boolean flag = baseMapper.insert(add) > 0;
-        if (flag) {
-            bo.setId(add.getId());
-        }
-        return flag;
+    public List<[实体名]VO> list([实体名]DTO dto) {
+        List<[实体名]> list = mapper.selectList(buildWrapper(dto));
+        if (CollUtil.isEmpty(list)) return Collections.emptyList();
+        return BeanUtil.copyToList(list, [实体名]VO.class);
     }
 
-    @Override
-    public Boolean updateByBo([实体名]Bo bo) {
-        [实体名] update = MapstructUtils.convert(bo, [实体名].class);
-        validEntityBeforeSave(update);
-        return baseMapper.updateById(update) > 0;
-    }
-
-    /**
-     * 保存前的数据校验
-     */
-    private void validEntityBeforeSave([实体名] entity) {
-        //TODO 做一些数据校验,如唯一约束
-    }
-
-    @Override
-    public Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid) {
-        if (isValid) {
-            //TODO 做一些业务上的校验,判断是否需要校验
-        }
-        return baseMapper.deleteByIds(ids) > 0;
+    private LambdaQueryWrapper<[实体名]> buildWrapper([实体名]DTO dto) {
+        return Wrappers.<[实体名]>lambdaQuery()
+            .eq([实体名]::getDelFlag, 2)
+            // 根据业务字段追加查询条件
+            // .like(StrUtil.isNotBlank(dto.getXxxName()), [实体名]::getXxxName, dto.getXxxName())
+            .orderByDesc([实体名]::getCrtime);
     }
 }
 ```
 
-### Controller 模板
+#### Business 业务层
 
 ```java
-package org.dromara.[模块].controller;
+package net.xnzn.core.[模块].[功能].web.business.impl;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
-import org.dromara.common.core.domain.R;
-import org.dromara.common.core.validate.AddGroup;
-import org.dromara.common.core.validate.EditGroup;
-import org.dromara.common.excel.utils.ExcelUtil;
-import org.dromara.common.log.annotation.Log;
-import org.dromara.common.log.enums.BusinessType;
-import org.dromara.common.mybatis.core.page.PageQuery;
-import org.dromara.common.mybatis.core.page.TableDataInfo;
-import org.dromara.common.web.core.BaseController;
-import org.dromara.[模块].domain.bo.[实体名]Bo;
-import org.dromara.[模块].domain.vo.[实体名]Vo;
-import org.dromara.[模块].service.I[实体名]Service;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import java.util.Arrays;
+import com.github.pagehelper.page.PageMethod;
+import lombok.extern.slf4j.Slf4j;
+import net.xnzn.core.[模块].[功能].web.dto.[实体名]DTO;
+import net.xnzn.core.[模块].[功能].common.service.impl.[实体名]Service;
+import net.xnzn.core.[模块].[功能].web.vo.[实体名]VO;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 import java.util.List;
 
-@Validated
-@RequiredArgsConstructor
+@Slf4j
+@Service
+public class [实体名]WebBusiness {
+
+    @Resource
+    private [实体名]Service service;
+
+    public Long add([实体名]DTO dto) { return service.add(dto); }
+    public void update([实体名]DTO dto) { service.update(dto); }
+    public void delete(Long id) { service.delete(id); }
+
+    public [实体名]VO getById(Long id) { return service.getById(id); }
+
+    public List<[实体名]VO> page([实体名]DTO dto) {
+        PageMethod.startPage(dto.getPageNum(), dto.getPageSize());
+        return service.list(dto);
+    }
+}
+```
+
+#### Controller 接口层
+
+```java
+package net.xnzn.core.[模块].[功能].web.controller;
+
+import com.pig4cloud.pigx.common.core.util.LeRequest;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import net.xnzn.core.[模块].[功能].web.business.impl.[实体名]WebBusiness;
+import net.xnzn.core.[模块].[功能].web.dto.[实体名]DTO;
+import net.xnzn.core.[模块].[功能].web.vo.[实体名]VO;
+import net.xnzn.framework.secure.filter.annotation.RequiresAuthentication;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+@Slf4j
 @RestController
-@RequestMapping("/[模块路径]/[功能路径]")
-public class [实体名]Controller extends BaseController {
+@RequestMapping("/api/v2/web/[模块]/[功能]")
+@Api(tags = "[功能名称]管理")
+public class [实体名]WebController {
 
-    private final I[实体名]Service service;
+    @Resource
+    private [实体名]WebBusiness business;
 
-    /**
-     * 查询列表
-     */
-    @SaCheckPermission("[权限前缀]:list")
-    @GetMapping("/list")
-    public TableDataInfo<[实体名]Vo> list([实体名]Bo bo, PageQuery pageQuery) {
-        return service.queryPageList(bo, pageQuery);
+    @PostMapping("/add")
+    @ApiOperation("新增")
+    @RequiresAuthentication
+    public Long add(@Validated(InsertGroup.class) @RequestBody LeRequest<[实体名]DTO> request) {
+        return business.add(request.getContent());
     }
 
-    /**
-     * 导出列表
-     */
-    @SaCheckPermission("[权限前缀]:export")
-    @Log(title = "[功能名称]", businessType = BusinessType.EXPORT)
-    @PostMapping("/export")
-    public void export([实体名]Bo bo, HttpServletResponse response) {
-        List<[实体名]Vo> list = service.queryList(bo);
-        ExcelUtil.exportExcel(list, "[功能名称]", [实体名]Vo.class, response);
+    @PostMapping("/update")
+    @ApiOperation("修改")
+    @RequiresAuthentication
+    public void update(@Validated(UpdateGroup.class) @RequestBody LeRequest<[实体名]DTO> request) {
+        business.update(request.getContent());
     }
 
-    /**
-     * 获取详细信息
-     */
-    @SaCheckPermission("[权限前缀]:query")
-    @GetMapping("/{id}")
-    public R<[实体名]Vo> getInfo(@NotNull(message = "主键不能为空") @PathVariable Long id) {
-        return R.ok(service.queryById(id));
+    @PostMapping("/delete")
+    @ApiOperation("删除")
+    @RequiresAuthentication
+    public void delete(@RequestBody LeRequest<Long> request) {
+        business.delete(request.getContent());
     }
 
-    /**
-     * 新增
-     */
-    @SaCheckPermission("[权限前缀]:add")
-    @Log(title = "[功能名称]", businessType = BusinessType.INSERT)
-    @PostMapping
-    public R<Void> add(@Validated(AddGroup.class) @RequestBody [实体名]Bo bo) {
-        return toAjax(service.insertByBo(bo));
+    @GetMapping("/get/{id}")
+    @ApiOperation("获取详情")
+    @RequiresAuthentication
+    public [实体名]VO getById(@PathVariable Long id) {
+        return business.getById(id);
     }
 
-    /**
-     * 修改
-     */
-    @SaCheckPermission("[权限前缀]:edit")
-    @Log(title = "[功能名称]", businessType = BusinessType.UPDATE)
-    @PutMapping
-    public R<Void> edit(@Validated(EditGroup.class) @RequestBody [实体名]Bo bo) {
-        return toAjax(service.updateByBo(bo));
-    }
-
-    /**
-     * 删除
-     */
-    @SaCheckPermission("[权限前缀]:remove")
-    @Log(title = "[功能名称]", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{ids}")
-    public R<Void> remove(@NotEmpty(message = "主键不能为空") @PathVariable Long[] ids) {
-        return toAjax(service.deleteWithValidByIds(Arrays.asList(ids), true));
+    @PostMapping("/page")
+    @ApiOperation("分页查询")
+    @RequiresAuthentication
+    public List<[实体名]VO> page(@RequestBody LeRequest<[实体名]DTO> request) {
+        return business.page(request.getContent());
     }
 }
 ```
 
 ---
 
-## 与 `/dev` 命令的区别
+### 第四步：输出清单
 
-| 对比项 | `/crud` | `/dev` |
-|--------|---------|--------|
-| **适用场景** | 表已存在 | 从零开始 |
-| **表结构设计** | ❌ 跳过 | ✅ 引导设计 |
-| **菜单 SQL** | ✅ 生成 | ✅ 生成 |
-| **代码生成** | ✅ 自动 | ✅ 自动 |
-| **树表支持** | ✅ 支持 | ✅ 支持 |
-| **执行速度** | ⚡ 快速 | 🐢 较慢 |
+```markdown
+## CRUD 代码生成完成！
 
-**建议**：
-- 快速原型：使用 `/crud`
-- 正式开发：使用 `/dev`
-- 表已存在：使用 `/crud`
+### 已生成文件（8 个）
 
-<!-- 抓蛙师 -->
+| 文件 | 状态 |
+|------|------|
+| common/model/[实体名].java | ✅ |
+| web/dto/[实体名]DTO.java | ✅ |
+| web/vo/[实体名]VO.java | ✅ |
+| common/mapper/[实体名]Mapper.java | ✅ |
+| common/mapper/[实体名]Mapper.xml | ✅ |
+| common/service/impl/[实体名]Service.java | ✅ |
+| web/business/impl/[实体名]WebBusiness.java | ✅ |
+| web/controller/[实体名]WebController.java | ✅ |
+
+### 下一步
+
+1. 完善 DTO 查询条件字段
+2. 完善 Service buildWrapper 查询逻辑
+3. 根据业务在 Business 层增加复杂编排
+4. 运行 /check 检查代码规范
+```
+
+---
+
+## 与 /dev 的区别
+
+| 对比 | `/crud` | `/dev` |
+|------|---------|--------|
+| **适用** | 表已存在 | 从零设计 |
+| **建表 SQL** | ❌ 跳过 | ✅ 引导设计 |
+| **代码生成** | ✅ 快速 | ✅ 完整 |
