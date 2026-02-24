@@ -185,6 +185,13 @@ cd ai-engineering-init
 
 ## 更新日志
 
+### v1.1.1（2026-02-24）
+
+- 优化 **npm 发布流程**
+  - 预发布版本（含 `-`）自动发布到 `test` 标签
+  - 正式版本自动发布到 `latest` 标签
+  - GitHub Release 自动标记预发布版本（`prerelease: true`）
+
 ### v1.1.0（2026-02-24）
 
 - 新增 **Cursor** 工具支持（`.cursor/` 目录）
