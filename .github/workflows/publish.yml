@@ -32,7 +32,16 @@ jobs:
           echo "✅ 版本匹配: v$PKG_VERSION"
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: |
+          set -e
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if echo "$PKG_VERSION" | grep -q '-'; then
+            echo "Pre-release $PKG_VERSION -> npm tag: test"
+            npm publish --access public --tag test
+          else
+            echo "Stable $PKG_VERSION -> npm tag: latest"
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -41,6 +50,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           body: |
             ## 安装
 
