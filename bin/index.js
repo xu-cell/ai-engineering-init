@@ -24,7 +24,7 @@ const fmt = (color, text) => `${c[color]}${text}${c.reset}`;
 // ── Banner ─────────────────────────────────────────────────────────────────
 console.log('');
 console.log(fmt('blue', fmt('bold', '┌─────────────────────────────────────────┐')));
-console.log(fmt('blue', fmt('bold', '│      AI Engineering 初始化工具  v1.0      │')));
+console.log(fmt('blue', fmt('bold', '│      AI Engineering 初始化工具  v1.1      │')));
 console.log(fmt('blue', fmt('bold', '└─────────────────────────────────────────┘')));
 console.log('');
 
@@ -42,7 +42,7 @@ for (let i = 0; i < args.length; i++) {
     case '--help': case '-h':
       console.log(`用法: ${fmt('bold', 'npx ai-engineering-init')} [选项]\n`);
       console.log('选项:');
-      console.log('  --tool, -t <工具>   指定工具: claude | codex | all');
+      console.log('  --tool, -t <工具>   指定工具: claude | cursor | codex | all');
       console.log('  --dir,  -d <目录>   目标目录（默认：当前目录）');
       console.log('  --force,-f          强制覆盖已有文件');
       console.log('  --help, -h          显示此帮助\n');
@@ -60,6 +60,12 @@ const TOOLS = {
     files: [
       { src: '.claude',   dest: '.claude',   label: '.claude/ 目录', isDir: true },
       { src: 'CLAUDE.md', dest: 'CLAUDE.md', label: 'CLAUDE.md'                 },
+    ],
+  },
+  cursor: {
+    label: 'Cursor',
+    files: [
+      { src: '.cursor',   dest: '.cursor',   label: '.cursor/ 目录', isDir: true },
     ],
   },
   codex: {
@@ -116,6 +122,13 @@ function showDoneHint(toolKey) {
     console.log(`  3. 输入 ${fmt('bold', '/dev')} 开始开发新功能`);
     console.log('');
   }
+  if (toolKey === 'cursor' || toolKey === 'all') {
+    console.log(fmt('cyan', 'Cursor 使用：'));
+    console.log(`  1. 在 Cursor Chat 中输入 ${fmt('bold', '/')} 查看所有可用 Skills`);
+    console.log(`  2. 输入 ${fmt('bold', '@技能名')} 手动调用指定技能`);
+    console.log(`  3. 在 Settings → MCP 中确认 MCP 服务器已连接`);
+    console.log('');
+  }
   if (toolKey === 'codex' || toolKey === 'all') {
     console.log(fmt('cyan', 'Codex 使用：'));
     console.log(`  1. 按需修改 ${fmt('bold', 'AGENTS.md')} 中的项目说明`);
@@ -126,8 +139,8 @@ function showDoneHint(toolKey) {
 
 // ── 主逻辑 ────────────────────────────────────────────────────────────────
 function run(selectedTool) {
-  if (!['claude', 'codex', 'all'].includes(selectedTool)) {
-    console.error(fmt('red', `无效工具: ${selectedTool}。有效选项: claude | codex | all`));
+  if (!['claude', 'cursor', 'codex', 'all'].includes(selectedTool)) {
+    console.error(fmt('red', `无效工具: ${selectedTool}。有效选项: claude | cursor | codex | all`));
     process.exit(1);
   }
   console.log(`  目标目录: ${fmt('bold', targetDir)}`);
@@ -137,7 +150,7 @@ function run(selectedTool) {
   console.log('');
 
   if (selectedTool === 'all') {
-    initTool('claude'); console.log(''); initTool('codex');
+    initTool('claude'); console.log(''); initTool('cursor'); console.log(''); initTool('codex');
   } else {
     initTool(selectedTool);
   }
@@ -150,13 +163,14 @@ if (tool) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   console.log(fmt('cyan', '请选择要初始化的 AI 工具：'));
   console.log('');
-  console.log(`  ${fmt('bold', '1')}) ${fmt('green', 'Claude Code')}   — 初始化 .claude/ + CLAUDE.md`);
-  console.log(`  ${fmt('bold', '2')}) ${fmt('yellow', 'OpenAI Codex')}  — 初始化 .codex/ + AGENTS.md`);
-  console.log(`  ${fmt('bold', '3')}) ${fmt('blue', '全部工具')}       — 同时初始化 Claude + Codex`);
+  console.log(`  ${fmt('bold', '1')}) ${fmt('green',  'Claude Code')}   — 初始化 .claude/ + CLAUDE.md`);
+  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',   'Cursor')}        — 初始化 .cursor/（Skills + Agents + MCP）`);
+  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow', 'OpenAI Codex')}  — 初始化 .codex/ + AGENTS.md`);
+  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',   '全部工具')}       — 同时初始化 Claude + Cursor + Codex`);
   console.log('');
-  rl.question(fmt('bold', '请输入选项 [1-3]: '), (answer) => {
+  rl.question(fmt('bold', '请输入选项 [1-4]: '), (answer) => {
     rl.close();
-    const map = { '1': 'claude', '2': 'codex', '3': 'all' };
+    const map = { '1': 'claude', '2': 'cursor', '3': 'codex', '4': 'all' };
     const selected = map[answer.trim()];
     if (!selected) { console.error(fmt('red', '无效选项，退出。')); process.exit(1); }
     console.log('');
