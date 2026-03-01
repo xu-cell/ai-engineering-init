@@ -197,7 +197,7 @@ cd ai-engineering-init
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**最近更新（Unreleased）**：集成 Codex MCP Server，Claude 可直接调用 Codex 进行代码审查，无需 Python 桥接脚本。
+**v1.2.1 新增**：`update` 命令一键更新框架文件；Codex MCP Server 集成；拆分独立 CHANGELOG.md。
 
 ## License
 

@@ -4,10 +4,18 @@
 
 ---
 
-## [Unreleased]
+## [v1.2.1] - 2026-03-01
 
 ### 新增
+- **`update` 命令**：一键更新已安装的框架文件（Skills/Commands/Agents/Hooks），自动跳过用户自定义文件（`settings.json`、`CLAUDE.md`、`AGENTS.md`、`mcp.json`）
+  - `npx ai-engineering-init update` — 自动检测已安装工具并更新
+  - `npx ai-engineering-init update --tool claude` — 只更新指定工具
+  - `npx ai-engineering-init update --force` — 强制更新，包括保留文件
 - **Codex MCP Server 集成**：将 OpenAI Codex CLI 以 MCP Server 方式接入 `.claude/settings.json`，Claude 可直接通过 `codex` / `codex-reply` 工具调用 Codex 进行代码审查与协同开发，无需 Python 桥接脚本
+- **CHANGELOG.md**：从 README.md 拆分独立更新日志文件
+
+### 优化
+- CLI 版本号从 `package.json` 动态读取，Banner 自动同步
 
 ---
 
