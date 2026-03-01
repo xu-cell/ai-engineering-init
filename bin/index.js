@@ -14,13 +14,22 @@ const fs       = require('fs');
 const path     = require('path');
 const readline = require('readline');
 
-// ── ANSI 颜色 ──────────────────────────────────────────────────────────────
-const c = {
+// ── ANSI 颜色（Windows CMD/PowerShell 兼容）────────────────────────────────
+// Windows Terminal 设置 WT_SESSION，ConEmu/Cmder 设置 COLORTERM，VSCode 设置 TERM_PROGRAM
+const supportsColor = !!process.stdout.isTTY && (
+  process.platform !== 'win32' ||
+  !!process.env.WT_SESSION ||
+  !!process.env.COLORTERM ||
+  process.env.TERM_PROGRAM === 'vscode'
+);
+const ESC = supportsColor ? {
   reset: '\x1b[0m', bold: '\x1b[1m',
   red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m',
   blue: '\x1b[34m', cyan: '\x1b[36m', magenta: '\x1b[35m',
-};
-const fmt = (color, text) => `${c[color]}${text}${c.reset}`;
+} : Object.fromEntries(
+  ['reset','bold','red','green','yellow','blue','cyan','magenta'].map(k => [k, ''])
+);
+const fmt = (color, text) => `${ESC[color]}${text}${ESC.reset}`;
 
 // ── 版本 ───────────────────────────────────────────────────────────────────
 const PKG_VERSION = require('../package.json').version;
@@ -34,27 +43,52 @@ console.log('');
 
 // ── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-let command   = '';   // 'init' | 'update'
+let command   = '';   // 'update' | ''
 let tool      = '';
 let targetDir = process.cwd();
 let force     = false;
 
 for (let i = 0; i < args.length; i++) {
-  switch (args[i]) {
-    case 'update':       command   = 'update'; break;
-    case '--tool': case '-t': tool = args[++i]; break;
-    case '--dir':  case '-d': targetDir = path.resolve(args[++i]); break;
-    case '--force':case '-f': force = true; break;
+  const arg = args[i];
+  switch (arg) {
+    case 'update':
+      command = 'update';
+      break;
+    case '--tool': case '-t':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个值（claude | cursor | codex | all）`));
+        process.exit(1);
+      }
+      tool = args[++i];
+      break;
+    case '--dir': case '-d':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个目录路径`));
+        process.exit(1);
+      }
+      targetDir = path.resolve(args[++i]);
+      break;
+    case '--force': case '-f':
+      force = true;
+      break;
     case '--help': case '-h':
       printHelp();
       process.exit(0);
+      break;
+    default:
+      // 拒绝未知选项，避免静默忽略导致行为不符预期
+      if (arg.startsWith('-')) {
+        console.error(fmt('red', `错误：未知选项 "${arg}"，运行 --help 查看用法`));
+        process.exit(1);
+      }
+      break;
   }
 }
 
 function printHelp() {
   console.log(`用法: ${fmt('bold', 'npx ai-engineering-init')} [命令] [选项]\n`);
   console.log('命令:');
-  console.log(`  ${fmt('bold', '(无)')  }          交互式初始化`);
+  console.log(`  ${fmt('bold', '(无)')}            交互式初始化`);
   console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）\n`);
   console.log('选项:');
   console.log('  --tool, -t <工具>   指定工具: claude | cursor | codex | all');
@@ -69,7 +103,7 @@ function printHelp() {
   console.log('  npx ai-engineering-init update --force       # 强制更新，包括保留文件\n');
 }
 
-// ── 工具定义（init 用） ──────────────────────────────────────────────────────
+// ── 工具定义（init 用）────────────────────────────────────────────────────
 const TOOLS = {
   claude: {
     label: 'Claude Code',
@@ -93,19 +127,19 @@ const TOOLS = {
   },
 };
 
-// ── 更新规则（update 用） ────────────────────────────────────────────────────
-// update:  框架文件，始终从 npm 包最新版本覆盖
-// preserve: 用户自定义文件，默认跳过（--force 时强制更新）
+// ── 更新规则（update 用）──────────────────────────────────────────────────
+// update:   框架文件，从本机安装版本覆盖
+// preserve: 用户自定义文件，默认跳过（--force 时强制覆盖）
 const UPDATE_RULES = {
   claude: {
     label: 'Claude Code',
-    detect: '.claude',   // 检测目录，判断是否已安装
+    detect: '.claude',
     update: [
-      { src: '.claude/skills',            dest: '.claude/skills',            label: 'Skills（技能库）',   isDir: true },
-      { src: '.claude/commands',          dest: '.claude/commands',          label: 'Commands（快捷命令）', isDir: true },
-      { src: '.claude/agents',            dest: '.claude/agents',            label: 'Agents（子代理）',   isDir: true },
-      { src: '.claude/hooks',             dest: '.claude/hooks',             label: 'Hooks（钩子脚本）',  isDir: true },
-      { src: '.claude/templates',         dest: '.claude/templates',         label: 'Templates',         isDir: true },
+      { src: '.claude/skills',                dest: '.claude/skills',                label: 'Skills（技能库）',    isDir: true },
+      { src: '.claude/commands',              dest: '.claude/commands',              label: 'Commands（快捷命令）', isDir: true },
+      { src: '.claude/agents',               dest: '.claude/agents',               label: 'Agents（子代理）',    isDir: true },
+      { src: '.claude/hooks',                dest: '.claude/hooks',                label: 'Hooks（钩子脚本）',   isDir: true },
+      { src: '.claude/templates',            dest: '.claude/templates',            label: 'Templates',          isDir: true },
       { src: '.claude/framework-config.json', dest: '.claude/framework-config.json', label: 'framework-config.json' },
     ],
     preserve: [
@@ -117,9 +151,9 @@ const UPDATE_RULES = {
     label: 'Cursor',
     detect: '.cursor',
     update: [
-      { src: '.cursor/skills',  dest: '.cursor/skills',  label: 'Skills（技能库）', isDir: true },
-      { src: '.cursor/agents',  dest: '.cursor/agents',  label: 'Agents（子代理）', isDir: true },
-      { src: '.cursor/hooks',   dest: '.cursor/hooks',   label: 'Hooks（钩子脚本）', isDir: true },
+      { src: '.cursor/skills',     dest: '.cursor/skills',     label: 'Skills（技能库）',  isDir: true },
+      { src: '.cursor/agents',     dest: '.cursor/agents',     label: 'Agents（子代理）',  isDir: true },
+      { src: '.cursor/hooks',      dest: '.cursor/hooks',      label: 'Hooks（钩子脚本）', isDir: true },
       { src: '.cursor/hooks.json', dest: '.cursor/hooks.json', label: 'hooks.json（Hooks 配置）' },
     ],
     preserve: [
@@ -138,32 +172,50 @@ const UPDATE_RULES = {
   },
 };
 
-// ── 公共工具函数 ───────────────────────────────────────────────────────────
+// ── 公共工具函数 ──────────────────────────────────────────────────────────
 const SOURCE_DIR = path.join(__dirname, '..');
 
-/** 统计目录中的文件总数 */
-function countFiles(dir) {
-  if (!fs.existsSync(dir)) return 0;
-  let count = 0;
-  for (const entry of fs.readdirSync(dir)) {
-    const full = path.join(dir, entry);
-    count += fs.statSync(full).isDirectory() ? countFiles(full) : 1;
-  }
-  return count;
+/** 安全判断路径是否为真实目录（避免 existsSync 将文件误判为已安装目录） */
+function isRealDir(p) {
+  try { return fs.statSync(p).isDirectory(); } catch { return false; }
 }
 
-/** 递归复制目录 */
+/** 递归复制目录，返回实际写入的文件数；单文件失败不中断整体 */
 function copyDir(src, dest) {
-  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src)) {
+  let written = 0;
+  try {
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  } catch (e) {
+    console.log(`  ${fmt('red', '✗')}  无法创建目录 ${dest}: ${e.message}`);
+    return written;
+  }
+  let entries;
+  try {
+    entries = fs.readdirSync(src);
+  } catch (e) {
+    console.log(`  ${fmt('red', '✗')}  无法读取源目录 ${src}: ${e.message}`);
+    return written;
+  }
+  for (const entry of entries) {
     const s = path.join(src, entry);
     const d = path.join(dest, entry);
-    fs.statSync(s).isDirectory() ? copyDir(s, d) : fs.copyFileSync(s, d);
+    try {
+      fs.statSync(s).isDirectory() ? (written += copyDir(s, d)) : (fs.copyFileSync(s, d), written++);
+    } catch (e) {
+      console.log(`  ${fmt('yellow', '⚠')}  跳过文件 ${d}: ${e.message}`);
+    }
   }
+  return written;
 }
 
-// ── INIT 逻辑 ──────────────────────────────────────────────────────────────
-function copyItem({ src, dest, label, isDir }) {
+/** 构建包含 --dir 上下文的提示命令（方便用户直接复制执行） */
+function hintCmd(subCmd) {
+  const dirPart = targetDir !== process.cwd() ? ` --dir "${targetDir}"` : '';
+  return `npx ai-engineering-init${dirPart} ${subCmd}`;
+}
+
+// ── INIT 逻辑 ─────────────────────────────────────────────────────────────
+function copyItem({ src, dest, label, isDir: srcIsDir }) {
   const srcPath  = path.join(SOURCE_DIR, src);
   const destPath = path.join(targetDir, dest);
 
@@ -175,13 +227,25 @@ function copyItem({ src, dest, label, isDir }) {
     console.log(`  ${fmt('yellow', '⚠')}  ${label} 已存在，跳过（--force 可强制覆盖）`);
     return;
   }
-  isDir ? copyDir(srcPath, destPath) : fs.copyFileSync(srcPath, destPath);
-  console.log(`  ${fmt('green', '✓')}  ${label}`);
+  try {
+    if (srcIsDir) {
+      const n = copyDir(srcPath, destPath);
+      console.log(`  ${fmt('green', '✓')}  ${label} ${fmt('magenta', `(${n} 个文件)`)}`);
+    } else {
+      fs.mkdirSync(path.dirname(destPath), { recursive: true });
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`  ${fmt('green', '✓')}  ${label}`);
+    }
+  } catch (e) {
+    console.log(`  ${fmt('red', '✗')}  ${label} 复制失败: ${e.message}`);
+  }
 }
 
 function initTool(toolKey) {
   const t = TOOLS[toolKey];
   console.log(fmt('cyan', `[${t.label}]`));
+  // 确保目标根目录存在（兼容 --dir 指向尚不存在的路径）
+  try { fs.mkdirSync(targetDir, { recursive: true }); } catch { /* 已存在忽略 */ }
   for (const f of t.files) copyItem(f);
 }
 
@@ -212,8 +276,8 @@ function showDoneHint(toolKey) {
 }
 
 function run(selectedTool) {
-  if (!['claude', 'cursor', 'codex', 'all'].includes(selectedTool)) {
-    console.error(fmt('red', `无效工具: ${selectedTool}。有效选项: claude | cursor | codex | all`));
+  if (!Object.keys(TOOLS).concat('all').includes(selectedTool)) {
+    console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
     process.exit(1);
   }
   console.log(`  目标目录: ${fmt('bold', targetDir)}`);
@@ -223,30 +287,28 @@ function run(selectedTool) {
   console.log('');
 
   if (selectedTool === 'all') {
-    initTool('claude'); console.log(''); initTool('cursor'); console.log(''); initTool('codex');
+    Object.keys(TOOLS).forEach((k, i) => { if (i) console.log(''); initTool(k); });
   } else {
     initTool(selectedTool);
   }
   showDoneHint(selectedTool);
 }
 
-// ── UPDATE 逻辑 ─────────────────────────────────────────────────────────────
+// ── UPDATE 逻辑 ───────────────────────────────────────────────────────────
 
-/** 检测当前目录已安装了哪些工具 */
+/** 检测当前目录已安装了哪些工具（用 isRealDir 排除误判） */
 function detectInstalledTools() {
-  return Object.keys(UPDATE_RULES).filter(key => {
-    const detectPath = path.join(targetDir, UPDATE_RULES[key].detect);
-    return fs.existsSync(detectPath);
-  });
+  return Object.keys(UPDATE_RULES).filter(key =>
+    isRealDir(path.join(targetDir, UPDATE_RULES[key].detect))
+  );
 }
 
-/** 更新单个工具的框架文件 */
+/** 更新单个工具，返回 { updated, failed, preserved } 文件数 */
 function updateTool(toolKey) {
   const rule = UPDATE_RULES[toolKey];
   console.log(fmt('cyan', `[${rule.label}]`));
 
-  let updatedCount = 0;
-  let skippedCount = 0;
+  let updated = 0, failed = 0, preserved = 0;
 
   // 更新框架文件
   for (const item of rule.update) {
@@ -257,16 +319,21 @@ function updateTool(toolKey) {
       console.log(`  ${fmt('yellow', '⚠')}  ${item.label} 源文件不存在，跳过`);
       continue;
     }
-
-    const fileCount = item.isDir ? countFiles(srcPath) : 1;
-    if (item.isDir) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      fs.copyFileSync(srcPath, destPath);
+    try {
+      if (item.isDir) {
+        const n = copyDir(srcPath, destPath);
+        console.log(`  ${fmt('green', '✓')}  ${item.label} ${fmt('magenta', `(${n} 个文件)`)}`);
+        updated += n;
+      } else {
+        fs.mkdirSync(path.dirname(destPath), { recursive: true });
+        fs.copyFileSync(srcPath, destPath);
+        console.log(`  ${fmt('green', '✓')}  ${item.label}`);
+        updated++;
+      }
+    } catch (e) {
+      console.log(`  ${fmt('red', '✗')}  ${item.label} 失败: ${e.message}`);
+      failed++;
     }
-    console.log(`  ${fmt('green', '✓')}  ${item.label} ${fmt('magenta', `(${fileCount} 个文件)`)}`);
-    updatedCount += fileCount;
   }
 
   // 处理保留文件
@@ -275,100 +342,115 @@ function updateTool(toolKey) {
     const srcPath  = path.join(SOURCE_DIR, item.dest);
 
     if (force) {
-      // --force 时强制更新保留文件
       if (fs.existsSync(srcPath)) {
-        const stat = fs.statSync(srcPath);
-        if (stat.isDirectory()) {
-          copyDir(srcPath, destPath);
-        } else {
-          fs.mkdirSync(path.dirname(destPath), { recursive: true });
-          fs.copyFileSync(srcPath, destPath);
+        try {
+          if (isRealDir(srcPath)) {
+            const n = copyDir(srcPath, destPath);
+            updated += n;
+          } else {
+            fs.mkdirSync(path.dirname(destPath), { recursive: true });
+            fs.copyFileSync(srcPath, destPath);
+            updated++;
+          }
+          console.log(`  ${fmt('green', '✓')}  ${item.dest} ${fmt('yellow', '(强制更新)')}`);
+        } catch (e) {
+          console.log(`  ${fmt('red', '✗')}  ${item.dest} 强制更新失败: ${e.message}`);
+          failed++;
         }
-        console.log(`  ${fmt('green', '✓')}  ${item.dest} ${fmt('yellow', '(强制更新)')}`);
-        updatedCount++;
       }
     } else {
-      if (fs.existsSync(destPath)) {
-        console.log(`  ${fmt('yellow', '⊘')}  ${item.dest} ${fmt('yellow', `已保留`)} — ${item.reason}`);
-        skippedCount++;
-      }
+      const exists = fs.existsSync(destPath);
+      const mark   = exists ? fmt('yellow', '已保留') : fmt('yellow', '不存在，跳过');
+      console.log(`  ${fmt('yellow', '⊘')}  ${item.dest} ${mark} — ${item.reason}`);
+      if (exists) preserved++;
     }
   }
 
-  return { updatedCount, skippedCount };
+  return { updated, failed, preserved };
 }
 
 /** update 命令主流程 */
 function runUpdate(selectedTool) {
   console.log(`  目标目录: ${fmt('bold', targetDir)}`);
-  console.log(`  来源版本: ${fmt('bold', `v${PKG_VERSION}`)} (npm latest)`);
-  if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：将同时更新用户保留文件')}`);
+  console.log(`  本机版本: ${fmt('bold', `v${PKG_VERSION}`)}`);
+  if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：将同时更新保留文件')}`);
   console.log('');
 
-  // 确定要更新的工具列表
   let toolsToUpdate = [];
-  if (selectedTool && selectedTool !== 'all') {
-    if (!UPDATE_RULES[selectedTool]) {
-      console.error(fmt('red', `无效工具: ${selectedTool}。有效选项: claude | cursor | codex | all`));
-      process.exit(1);
-    }
-    const detectPath = path.join(targetDir, UPDATE_RULES[selectedTool].detect);
-    if (!fs.existsSync(detectPath)) {
-      console.log(fmt('yellow', `⚠  ${selectedTool} 未在当前目录初始化，请先运行：`));
-      console.log(`   ${fmt('bold', `npx ai-engineering-init --tool ${selectedTool}`)}\n`);
-      process.exit(1);
-    }
-    toolsToUpdate = [selectedTool];
-  } else if (selectedTool === 'all') {
-    toolsToUpdate = Object.keys(UPDATE_RULES);
-  } else {
-    // 自动检测
+
+  if (!selectedTool || selectedTool === 'all') {
+    // 无参数 或 all：只更新已检测到的工具（不主动创建新目录）
     toolsToUpdate = detectInstalledTools();
     if (toolsToUpdate.length === 0) {
       console.log(fmt('yellow', '⚠  当前目录未检测到已安装的 AI 工具配置。'));
-      console.log(`   请先运行 ${fmt('bold', 'npx ai-engineering-init')} 进行初始化。\n`);
+      console.log(`   请先运行: ${fmt('bold', hintCmd('--tool claude'))}\n`);
       process.exit(1);
     }
     console.log(`  检测到已安装: ${fmt('bold', toolsToUpdate.join(', '))}`);
-    console.log('');
+    if (selectedTool === 'all') {
+      console.log(`  ${fmt('yellow', '提示')}：--tool all 只更新已安装工具，如需初始化新工具请用 --tool <name>`);
+    }
+  } else {
+    // 指定单个工具
+    if (!UPDATE_RULES[selectedTool]) {
+      console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
+      process.exit(1);
+    }
+    if (!isRealDir(path.join(targetDir, UPDATE_RULES[selectedTool].detect))) {
+      console.log(fmt('yellow', `⚠  ${selectedTool} 未在当前目录初始化，请先运行：`));
+      console.log(`   ${fmt('bold', hintCmd(`--tool ${selectedTool}`))}\n`);
+      process.exit(1);
+    }
+    toolsToUpdate = [selectedTool];
   }
 
+  console.log('');
   console.log(fmt('bold', '正在更新框架文件...'));
   console.log('');
 
-  let totalUpdated = 0;
-  let totalSkipped = 0;
-
+  let totalUpdated = 0, totalFailed = 0, totalPreserved = 0;
   for (let i = 0; i < toolsToUpdate.length; i++) {
-    const { updatedCount, skippedCount } = updateTool(toolsToUpdate[i]);
-    totalUpdated += updatedCount;
-    totalSkipped += skippedCount;
+    const { updated, failed, preserved } = updateTool(toolsToUpdate[i]);
+    totalUpdated   += updated;
+    totalFailed    += failed;
+    totalPreserved += preserved;
     if (i < toolsToUpdate.length - 1) console.log('');
   }
 
-  // 汇总
   console.log('');
   console.log(fmt('green', fmt('bold', '✅ 更新完成！')));
   console.log('');
-  console.log(`  ${fmt('green',  `✓ 更新文件: ${totalUpdated} 个`)}`);
-  if (totalSkipped > 0) {
-    console.log(`  ${fmt('yellow', `⊘ 已保留文件: ${totalSkipped} 个`)}（用户自定义，使用 --force 可强制更新）`);
+  console.log(`  ${fmt('green', `✓ 更新文件: ${totalUpdated} 个`)}`);
+  if (totalFailed > 0) {
+    console.log(`  ${fmt('red', `✗ 失败文件: ${totalFailed} 个`)}（请检查目录权限）`);
+  }
+  if (totalPreserved > 0) {
+    console.log(`  ${fmt('yellow', `⊘ 已保留文件: ${totalPreserved} 个`)}（--force 可强制更新）`);
   }
   console.log('');
   console.log(fmt('cyan', '提示：'));
   console.log('  重启 Claude Code / Cursor 使新技能生效');
-  if (!force && totalSkipped > 0) {
-    console.log(`  如需同步保留文件，运行: ${fmt('bold', `npx ai-engineering-init update --force`)}`);
+  console.log(`  ${fmt('yellow', '注意')}：update 只新增/覆盖文件，不删除旧版本已移除的文件`);
+  if (!force && totalPreserved > 0) {
+    console.log(`  强制更新保留文件: ${fmt('bold', hintCmd('update --force'))}`);
   }
   console.log('');
+
+  if (totalFailed > 0) process.exitCode = 1;
 }
 
-// ── 主入口 ─────────────────────────────────────────────────────────────────
+// ── 主入口 ────────────────────────────────────────────────────────────────
 if (command === 'update') {
   runUpdate(tool);
 } else if (tool) {
   run(tool);
 } else {
+  // 非 TTY 环境（CI/管道）无法交互，强制要求显式指定 --tool
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：非交互环境下必须指定 --tool 参数'));
+    console.error(`  示例: ${fmt('bold', hintCmd('--tool claude'))}`);
+    process.exit(1);
+  }
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   console.log(fmt('cyan', '请选择要初始化的 AI 工具：'));
   console.log('');
