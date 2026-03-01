@@ -2,6 +2,9 @@
 
 > 一键初始化 AI 工程化配置，支持 Claude Code、Cursor、OpenAI Codex 等主流 AI 开发工具。
 
+[![npm version](https://img.shields.io/npm/v/ai-engineering-init)](https://www.npmjs.com/package/ai-engineering-init)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 ## 快速开始
 
 ### 方式一：npx（推荐，无需克隆）
@@ -84,12 +87,15 @@ cd ai-engineering-init
 | `skills/` | Codex 技能配置 |
 | `AGENTS.md` | AI Agent 项目规范说明 |
 
-## Skills 列表（68个）
+> **MCP Server 支持**：Codex CLI 可通过 `codex mcp-server` 作为 MCP Server 暴露给 Claude Code，
+> 配置写入 `.claude/settings.json` 的 `mcpServers` 后，Claude 可直接调用 `codex` / `codex-reply` 工具进行代码审查。
+
+## Skills 列表（69个）
 
 <details>
 <summary>展开查看完整列表</summary>
 
-**通用后端技能（33个）**
+**通用后端技能（34个）**
 
 | 技能 | 触发场景 |
 |------|---------|
@@ -120,7 +126,7 @@ cd ai-engineering-init
 | `tech-decision` | 技术选型、方案对比 |
 | `task-tracker` | 任务进度跟踪 |
 | `project-navigator` | 项目结构导航、文件定位 |
-| `collaborating-with-codex` | 与 Codex 协同开发 |
+| `collaborating-with-codex` | 与 Codex 协同开发（支持 MCP Server 直调） |
 | `collaborating-with-gemini` | 与 Gemini 协同开发 |
 | `banana-image` | AI 图片生成、海报、缩略图 |
 | `add-skill` | 创建新技能 |
@@ -139,6 +145,7 @@ cd ai-engineering-init
 | `leniu-backend-annotations` | `@RequiresAuthentication`、分组校验 |
 | `leniu-utils-toolkit` | BeanUtil、CollUtil、StrUtil、RedisUtil |
 | `leniu-code-patterns` | net.xnzn 包名规范、禁止事项 |
+| `leniu-brainstorm` | 云食堂方案头脑风暴 |
 | `leniu-data-permission` | 云食堂数据权限控制 |
 | `leniu-java-entity` | Entity/VO/DTO/Param 数据类规范 |
 | `leniu-java-mybatis` | MyBatis Plus、LambdaQueryWrapper、XML 映射 |
@@ -184,39 +191,13 @@ cd ai-engineering-init
 
 1. 修改 `AGENTS.md` 中的项目说明
 2. 使用 `.codex/skills/` 下的技能辅助开发
+3. （可选）以 MCP Server 接入 Claude Code：`.claude/settings.json` → `mcpServers.codex`，重启后 Claude 可直接调用 `codex` / `codex-reply` 工具
 
 ## 更新日志
 
-### v1.2.0（2026-03-01）
+查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-- 新增 **Cursor Hooks 支持**（`.cursor/hooks.json` + `.cursor/hooks/`）
-  - `beforeSubmitPrompt`：检测用户意图，自动注入相关技能文档路径引导 Agent 阅读（对应 Claude 的 `UserPromptSubmit`）
-  - `preToolUse`：拦截危险 Shell 命令（`rm -rf /`、`drop database` 等），兼容 Cursor `Shell` 工具名
-  - `stop`：复用 Claude 的 `stop.js`，支持 nul 文件清理和完成音效
-- 修复 **leniu-java-export** 技能示例代码：移除错误的 `Executors.readInSystem()` 包装（业务查询默认在商户库执行）
-- 修复 **leniu-java-total-line** 技能：同步修正双库架构说明，`Executors.doInSystem()` 仅用于访问系统库
-
-### v1.1.1（2026-02-24）
-
-- 优化 **npm 发布流程**
-  - 预发布版本（含 `-`）自动发布到 `test` 标签
-  - 正式版本自动发布到 `latest` 标签
-  - GitHub Release 自动标记预发布版本（`prerelease: true`）
-
-### v1.1.0（2026-02-24）
-
-- 新增 **Cursor** 工具支持（`.cursor/` 目录）
-  - 同步 68 个 Skills 到 `.cursor/skills/`
-  - 新增 Subagents 配置（`code-reviewer`、`project-manager`）
-  - 新增 MCP 服务器配置（`sequential-thinking`、`context7`、`github`）
-- 新增 **25 个 leniu 云食堂专项技能**
-  - 覆盖金额处理、并发、MQ、定时任务、报表、餐次、营销规则等场景
-
-### v1.0.0
-
-- 初始版本，支持 Claude Code 和 OpenAI Codex
-- 内置通用后端技能、OpenSpec 工作流技能
-- 自动化 Hooks（技能强制评估、代码规范检查）
+**最近更新（Unreleased）**：集成 Codex MCP Server，Claude 可直接调用 Codex 进行代码审查，无需 Python 桥接脚本。
 
 ## License
 
