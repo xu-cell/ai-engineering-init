@@ -37,5 +37,11 @@
       }
     ]
   },
-  "mcpServers": {}
+  "mcpServers": {
+    "codex": {
+      "command": "/Users/xujiajun/.nvm/versions/node/v20.19.6/bin/codex",
+      "args": ["mcp-server"],
+      "description": "OpenAI Codex CLI - 代码分析/算法实现/代码审查"
+    }
+  }
 }
