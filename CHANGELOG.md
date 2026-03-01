@@ -4,6 +4,19 @@
 
 ---
 
+## [v1.2.3] - 2026-03-02
+
+### 新增
+- **leniu-report-customization 技能**：新增定制报表开发技能，涵盖 `report_order_info`/`report_order_detail`/`report_account_flow` 基础表结构、退款数据处理模式、汇总报表开发模板
+
+### 优化
+- **技能触发词精准化**：移除所有 leniu-* 技能触发词中的 `leniu-` 前缀，改为自然语言关键词，提升匹配精准度
+- **合并冗余技能**：`leniu-java-code-style` 合并到 `leniu-code-patterns`，消除重复
+- **补充 YAML 头部**：为 `leniu-data-permission` 和 `leniu-redis-cache` 补充标准 YAML 头部
+- **同步注册信息**：`skill-forced-eval.js` hook 和 `AGENTS.md` 全部同步更新触发词
+
+---
+
 ## [v1.2.2] - 2026-03-01
 
 ### 新增
