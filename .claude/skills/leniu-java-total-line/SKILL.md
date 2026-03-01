@@ -24,7 +24,7 @@ description: |
 |------|------|
 | **包名前缀** | `net.xnzn.core.*` |
 | **JDK 版本** | 21 |
-| **跨租户工具** | `Executors.readInSystem()` |
+| **双库切换** | 默认商户库，`Executors.doInSystem()` 切换系统库 |
 | **分页工具** | `PageMethod.startPage()` |
 | **结果封装** | `ReportBaseTotalVO<T>` |
 | **分页封装** | `PageVO.of()` |
@@ -38,32 +38,32 @@ description: |
 ### 带合计行的分页查询
 
 ```java
-import net.xnzn.framework.data.executor.Executors;
 import net.xnzn.core.common.page.PageMethod;
 import net.xnzn.core.common.page.PageVO;
 import net.xnzn.core.common.vo.ReportBaseTotalVO;
 import cn.hutool.core.collection.CollUtil;
 
+// ⚠️ 系统默认在商户库执行，业务查询无需 Executors.readInSystem()
+// Executors.readInSystem() 仅用于需要访问系统库的场景（如全局配置、商户管理）
+
 public ReportBaseTotalVO<XxxVO> pageWithTotal(XxxPageParam param) {
-    return Executors.readInSystem(() -> {
-        ReportBaseTotalVO<XxxVO> result = new ReportBaseTotalVO<>();
+    ReportBaseTotalVO<XxxVO> result = new ReportBaseTotalVO<>();
 
-        // 1. 导出时不查询合计行(避免不必要的性能开销)
-        if (CollUtil.isEmpty(param.getExportCols())) {
-            XxxVO totalLine = mapper.getSummaryTotal(param);
-            result.setTotalLine(totalLine);
-        }
+    // 1. 导出时不查询合计行(避免不必要的性能开销)
+    if (CollUtil.isEmpty(param.getExportCols())) {
+        XxxVO totalLine = mapper.getSummaryTotal(param);
+        result.setTotalLine(totalLine);
+    }
 
-        // 2. 开启分页
-        PageMethod.startPage(param.getPage());
+    // 2. 开启分页
+    PageMethod.startPage(param.getPage());
 
-        // 3. 查询数据
-        List<XxxVO> list = mapper.getSummaryList(param);
+    // 3. 查询数据
+    List<XxxVO> list = mapper.getSummaryList(param);
 
-        // 4. 封装分页结果
-        result.setResultPage(PageVO.of(list));
-        return result;
-    });
+    // 4. 封装分页结果
+    result.setResultPage(PageVO.of(list));
+    return result;
 }
 ```
 
@@ -71,7 +71,8 @@ public ReportBaseTotalVO<XxxVO> pageWithTotal(XxxPageParam param) {
 
 ```java
 public XxxVO getSummaryTotal(XxxPageParam param) {
-    return Executors.readInSystem(() -> mapper.getSummaryTotal(param));
+    // 默认在商户库执行，无需 Executors 包装
+    return mapper.getSummaryTotal(param);
 }
 ```
 
@@ -190,6 +191,6 @@ public void exportExcel(XxxParam param, HttpServletResponse response) {
 ## 注意事项
 
 - 合计SQL只返回数值字段，不返回字符串、ID、名称等
-- 使用 `Executors.readInSystem()` 跨租户查询
+- 业务查询默认在商户库执行，无需 `Executors` 包装；仅访问系统库数据时才使用 `Executors.doInSystem()`
 - 导出时通过 `exportCols` 判断是否需要合计行
 - 金额字段类型与 Entity 保持一致：订单模块用 `BigDecimal`，钱包模块用 `Long`（详见 leniu-java-amount-handling）

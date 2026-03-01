@@ -74,6 +74,8 @@ cd ai-engineering-init
 | `skills/`（68个） | 与 `.claude/skills/` 完全同步，支持 `@技能名` 手动调用或 Agent 自动委托 |
 | `agents/`（2个） | Subagents：`code-reviewer`（`readonly: true`）、`project-manager` |
 | `mcp.json` | MCP 服务器配置：`sequential-thinking`、`context7`、`github` |
+| `hooks.json` | Hooks 配置：技能文档引导（beforeSubmitPrompt）、危险命令拦截（preToolUse）、完成音效（stop） |
+| `hooks/` | Hooks 脚本：`cursor-skill-eval.js`、`cursor-pre-tool-use.js` |
 
 ### OpenAI Codex（`.codex/`）
 
@@ -184,6 +186,15 @@ cd ai-engineering-init
 2. 使用 `.codex/skills/` 下的技能辅助开发
 
 ## 更新日志
+
+### v1.2.0（2026-03-01）
+
+- 新增 **Cursor Hooks 支持**（`.cursor/hooks.json` + `.cursor/hooks/`）
+  - `beforeSubmitPrompt`：检测用户意图，自动注入相关技能文档路径引导 Agent 阅读（对应 Claude 的 `UserPromptSubmit`）
+  - `preToolUse`：拦截危险 Shell 命令（`rm -rf /`、`drop database` 等），兼容 Cursor `Shell` 工具名
+  - `stop`：复用 Claude 的 `stop.js`，支持 nul 文件清理和完成音效
+- 修复 **leniu-java-export** 技能示例代码：移除错误的 `Executors.readInSystem()` 包装（业务查询默认在商户库执行）
+- 修复 **leniu-java-total-line** 技能：同步修正双库架构说明，`Executors.doInSystem()` 仅用于访问系统库
 
 ### v1.1.1（2026-02-24）
 

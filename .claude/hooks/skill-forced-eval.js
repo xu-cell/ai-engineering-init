@@ -113,6 +113,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - leniu-error-handler: leniu-yunshitang/leniu-异常/leniu-LeException/leniu-全局异常/leniu-参数校验/leniu-日志/leniu-错误码/leniu-I18n/leniu-国际化/net.xnzn/leniu-yunshitang
 - leniu-backend-annotations: leniu-yunshitang/leniu-注解/leniu-@RequiresAuthentication/leniu-@RequiresGuest/leniu-@Validated/leniu-@NotNull/leniu-@Api/leniu-@ApiOperation/leniu-@ApiModelProperty/leniu-分组校验/leniu-InsertGroup/leniu-UpdateGroup/net.xnzn/leniu-yunshitang
 - leniu-api-development: leniu-API/leniu-接口/leniu-Controller/leniu-RESTful/LeResult/云食堂接口/云食堂API/leiu-yunshitang
+- leniu-brainstorm: leniu头脑风暴/云食堂方案/leniu怎么设计/云食堂讨论/leniu创意/leniu方案探索/leniu功能规划
 - leniu-architecture-design: leniu-架构/云食堂架构/双库架构/商户库/系统库/net.xnzn/pigx框架
 - openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new/创建变更
 - openspec-ff-change: 快速推进/快速生成所有制品/opsx:ff/openspec ff/fast-forward

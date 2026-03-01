@@ -80,6 +80,7 @@
 |---------|---------|
 | `leniu-crud-development` | leniu-CRUD/leniu-增删改查/leniu-新建模块/leniu-Entity/leniu-DTO/leniu-VO/leniu-Service/leniu-Mapper/LeRequest/PageDTO/net.xnzn/leniu-yunshitang |
 | `leniu-api-development` | leniu-API开发/云食堂接口/leniu-Controller/LeResult/leniu-yunshitang/net.xnzn |
+| `leniu-brainstorm` | leniu头脑风暴/云食堂方案/leniu怎么设计/云食堂讨论/leniu创意/leniu方案探索/leniu功能规划 |
 | `leniu-architecture-design` | leniu-架构/云食堂架构/双库架构/商户库/系统库/net.xnzn/pigx框架 |
 | `leniu-database-ops` | leniu-数据库/leniu-SQL/leniu-建表/leniu-双库/leniu-商户库/leniu-系统库/net.xnzn/leniu-yunshitang |
 | `leniu-utils-toolkit` | leniu-工具类/leniu-BeanUtil/leniu-StrUtil/leniu-CollUtil/leniu-ObjectUtil/leniu-RedisUtil/net.xnzn/leniu-yunshitang |

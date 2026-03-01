@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .cursor/hooks/cursor-skill-eval.js"
+          }
+        ]
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "Shell|Write|CreateFile|EditFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .cursor/hooks/cursor-pre-tool-use.js",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/stop.js",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  }
+}
