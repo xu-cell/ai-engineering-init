@@ -10,7 +10,7 @@ description: |
   - 配置时间格式化和参数校验
   - 使用 Jakarta Validation 注解
 
-  触发词：Entity、VO、DTO、Param、实体类、@TableName、@TableField、@JsonFormat、字段映射、数据对象、@NotNull、@NotBlank、jakarta.validation
+  触发词：Entity实体类、VO视图对象、DTO数据传输、Param参数类、@TableName、@TableField、审计字段、字段映射
 ---
 
 # leniu-tengyun-core Entity/VO/DTO 规范

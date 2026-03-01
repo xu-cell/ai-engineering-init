@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：并发、CompletableFuture、线程池、ThreadPool、并发安全、锁、synchronized、volatile、原子类、异步处理、leniu并发、leniu-yunshitang并发、net.xnzn并发
+  触发词：并发、CompletableFuture、线程池、ThreadPool、并发安全、异步处理、synchronized
 ---
 
 # leniu-tengyun-core 并发处理规范

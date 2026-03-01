@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：营销计费、price规则、计价规则、RulePriceHandler、RulePriceEnum、折扣规则、满减规则、限额规则、补贴规则、营销规则定制、leniu营销、leniu-yunshitang、net.xnzn
+  触发词：营销计费、计价规则、RulePriceHandler、RulePriceEnum、折扣规则、满减规则、限额规则、补贴规则
 ---
 
 # leniu-tengyun-core 营销计费规则定制

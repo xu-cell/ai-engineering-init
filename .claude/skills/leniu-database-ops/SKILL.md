@@ -12,7 +12,7 @@ description: |
 
   适用项目：leniu-tengyun-core（云食堂项目）
 
-  触发词：leniu-数据库、leniu-SQL、leniu-建表、leniu-Entity、leniu-双库、leniu-商户库、leniu-系统库、net.xnzn、leniu-yunshitang、云食堂数据库
+  触发词：数据库、SQL、建表、双库、商户库、系统库、审计字段、crby、crtime、del_flag
 ---
 
 # leniu-yunshitang-core 数据库操作规范

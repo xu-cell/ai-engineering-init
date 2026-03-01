@@ -9,9 +9,11 @@ description: |
   - 配置 Swagger 文档注解（@Api, @ApiOperation, @ApiModelProperty）
   - 配置分组校验（InsertGroup, UpdateGroup）
 
-  适用项目：leniu-tengyun-core（云食堂项目）
+  适用项目：
+  - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
+  - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-注解、leniu-@RequiresAuthentication、leniu-@RequiresGuest、leniu-@Validated、leniu-@NotNull、leniu-@Api、leniu-@ApiOperation、leniu-@ApiModelProperty、leniu-分组校验、leniu-InsertGroup、leniu-UpdateGroup、net.xnzn、leniu-yunshitang、云食堂注解
+  触发词：@RequiresAuthentication、@RequiresGuest、@Validated、@NotNull、@Api、@ApiOperation、@ApiModelProperty、分组校验、InsertGroup、UpdateGroup
 ---
 
 # leniu-yunshitang-core 后端注解指南

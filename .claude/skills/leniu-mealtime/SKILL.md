@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：餐次、mealtime、mealtimeType、早餐、午餐、晚餐、下午茶、夜宵、AllocMealtimeTypeEnum、MealtimeTypeConverter、正餐、leniu餐次、leniu-yunshitang、net.xnzn
+  触发词：餐次、mealtime、mealtimeType、早餐、午餐、晚餐、下午茶、夜宵、AllocMealtimeTypeEnum
 ---
 
 # leniu-tengyun-core 餐次处理规范

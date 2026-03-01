@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-消息队列、leniu-MQ、leniu-MqUtil、leniu-@MqConsumer、leniu-延迟消息、leniu-消息重试、leniu-事务消息、net.xnzn、leniu-yunshitang
+  触发词：消息队列、MQ、MqUtil、@MqConsumer、延迟消息、消息重试、事务消息
 ---
 
 # leniu-tengyun-core 消息队列规范

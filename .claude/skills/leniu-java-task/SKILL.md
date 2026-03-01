@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-定时任务、leniu-XXL-Job、leniu-@XxlJob、leniu-TenantLoader、leniu-TenantContextHolder、leniu-分布式锁、net.xnzn、leniu-yunshitang
+  触发词：定时任务、XXL-Job、@XxlJob、TenantLoader、任务调度、分布式定时
 ---
 
 # leniu-tengyun-core 定时任务规范

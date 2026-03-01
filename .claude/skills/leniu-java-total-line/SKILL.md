@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-合计行、leniu-totalLine、leniu-报表合计、leniu-合计查询、leniu-SUM合计、leniu-ReportBaseTotalVO、net.xnzn、leniu-yunshitang
+  触发词：合计行、totalLine、报表合计、SUM合计、ReportBaseTotalVO、合计查询
 ---
 
 # leniu-tengyun-core 合计行(Total Line)规范

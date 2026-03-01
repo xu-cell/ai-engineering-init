@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu架构、云食堂架构、双库架构、商户库、系统库、net.xnzn、pigx框架、leniu-yunshitang、leniu-tengyun-core
+  触发词：架构设计、双库架构、商户库、系统库、pigx框架、四层架构、模块划分、Business层
 ---
 
 # leniu-yunshitang-core 架构设计指南

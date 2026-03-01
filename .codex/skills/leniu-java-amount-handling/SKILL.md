@@ -9,7 +9,7 @@ description: |
   - Excel 导出含金额列，需分转元
   - 报表合计查询含金额汇总
 
-  触发词：金额、分转元、元转分、Long 金额、money、fen、cents、金额字段、金额处理、AmountConverter、AmountUtil
+  触发词：金额处理、分转元、元转分、Long金额、money、fen、BigDecimal金额、金额字段
 ---
 
 # leniu-tengyun-core 金额处理规范

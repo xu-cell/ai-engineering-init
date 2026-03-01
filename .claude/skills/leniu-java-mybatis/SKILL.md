@@ -10,7 +10,7 @@ description: |
   - 使用 MyBatis Plus 分页查询
   - 处理租户隔离（@InterceptorIgnore）
 
-  触发词：MyBatis、MyBatisPlus、Mapper、LambdaQueryWrapper、LambdaQuery、XML映射、动态SQL、selectPage、BaseMapper、@Select、resultMap、租户隔离、delFlag
+  触发词：MyBatis、MyBatisPlus、Mapper、LambdaQueryWrapper、XML映射、动态SQL、BaseMapper、@Select、resultMap
 ---
 
 # leniu-tengyun-core MyBatis 规范

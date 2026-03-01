@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：导出、Export、Excel导出、异步导出、分页导出、@ExcelProperty、exportApi、数据导出、导出接口、leniu导出、leniu-yunshitang导出、net.xnzn导出
+  触发词：导出、Excel导出、异步导出、分页导出、@ExcelProperty、exportApi、数据导出
 ---
 
 # leniu-tengyun-core 数据导出规范

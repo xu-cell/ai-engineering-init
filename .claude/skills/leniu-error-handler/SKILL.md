@@ -13,7 +13,7 @@ description: |
 
   适用项目：leniu-tengyun-core（云食堂项目）
 
-  触发词：leniu-异常、leniu-LeException、leniu-throw、leniu-错误处理、leniu-全局异常、leniu-@Validated、leniu-参数校验、leniu-日志、leniu-log、leniu-错误码、leniu-事务、leniu-I18n、net.xnzn、leniu-yunshitang、云食堂异常
+  触发词：异常处理、LeException、全局异常、参数校验、错误码、I18n、国际化、throw
 ---
 
 # leniu-yunshitang-core 异常处理指南

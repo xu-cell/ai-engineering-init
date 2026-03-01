@@ -78,32 +78,32 @@
 
 | 技能名称 | 触发条件 |
 |---------|---------|
-| `leniu-crud-development` | leniu-CRUD/leniu-增删改查/leniu-新建模块/leniu-Entity/leniu-DTO/leniu-VO/leniu-Service/leniu-Mapper/LeRequest/PageDTO/net.xnzn/leniu-yunshitang |
-| `leniu-api-development` | leniu-API开发/云食堂接口/leniu-Controller/LeResult/leniu-yunshitang/net.xnzn |
-| `leniu-brainstorm` | leniu头脑风暴/云食堂方案/leniu怎么设计/云食堂讨论/leniu创意/leniu方案探索/leniu功能规划 |
-| `leniu-architecture-design` | leniu-架构/云食堂架构/双库架构/商户库/系统库/net.xnzn/pigx框架 |
-| `leniu-database-ops` | leniu-数据库/leniu-SQL/leniu-建表/leniu-双库/leniu-商户库/leniu-系统库/net.xnzn/leniu-yunshitang |
-| `leniu-utils-toolkit` | leniu-工具类/leniu-BeanUtil/leniu-StrUtil/leniu-CollUtil/leniu-ObjectUtil/leniu-RedisUtil/net.xnzn/leniu-yunshitang |
-| `leniu-error-handler` | leniu-异常/leniu-LeException/leniu-全局异常/leniu-参数校验/leniu-错误码/leniu-I18n/net.xnzn/leniu-yunshitang |
-| `leniu-backend-annotations` | leniu-注解/leniu-@RequiresAuthentication/leniu-@RequiresGuest/leniu-@Validated/leniu-分组校验/leniu-InsertGroup/leniu-UpdateGroup/net.xnzn/leniu-yunshitang |
-| `leniu-security-guard` | leniu-安全/leniu-认证/leniu-@RequiresAuthentication/leniu-SQL注入/leniu-XSS/leniu-数据脱敏/net.xnzn/leniu-yunshitang |
-| `leniu-data-permission` | leniu-多租户/leniu-数据权限/leniu-@UseSystem/leniu-Executors.readInSystem/leniu-TenantContextHolder/net.xnzn/leniu-yunshitang |
-| `leniu-redis-cache` | leniu-Redis/leniu-缓存/leniu-RedisUtil/leniu-分布式锁/net.xnzn/leniu-yunshitang |
-| `leniu-code-patterns` | leniu-规范/leniu-禁止/leniu-命名/leniu-pigx框架/net.xnzn/leniu-yunshitang |
-| `leniu-java-entity` | leniu-Entity/leniu-VO/leniu-DTO/leniu-Param/leniu-实体类/leniu-@TableName/leniu-@TableField/net.xnzn/leniu-yunshitang |
-| `leniu-java-logging` | leniu-日志/leniu-@Slf4j/leniu-log.info/leniu-log.error/leniu-日志级别/net.xnzn/leniu-yunshitang |
-| `leniu-java-mybatis` | leniu-MyBatis/leniu-Mapper/leniu-LambdaQueryWrapper/leniu-XML映射/leniu-动态SQL/net.xnzn/leniu-yunshitang |
-| `leniu-java-code-style` | leniu-代码风格/leniu-命名规范/leniu-类命名/leniu-方法命名/leniu-包结构/net.xnzn/leniu-yunshitang |
-| `leniu-java-amount-handling` | leniu-金额/leniu-分转元/leniu-元转分/leniu-Long金额/leniu-money/net.xnzn/leniu-yunshitang |
-| `leniu-java-concurrent` | leniu-并发/leniu-CompletableFuture/leniu-线程池/leniu-分布式锁/net.xnzn/leniu-yunshitang |
-| `leniu-java-export` | leniu-导出/leniu-Export/leniu-Excel导出/leniu-异步导出/leniu-@ExcelProperty/net.xnzn/leniu-yunshitang |
-| `leniu-java-mq` | leniu-消息队列/leniu-MQ/leniu-MqUtil/leniu-@MqConsumer/leniu-延迟消息/net.xnzn/leniu-yunshitang |
-| `leniu-java-task` | leniu-定时任务/leniu-XXL-Job/leniu-@XxlJob/leniu-TenantLoader/leniu-任务调度/net.xnzn/leniu-yunshitang |
-| `leniu-java-report-query-param` | leniu-报表查询/leniu-Param类/leniu-分页参数/leniu-ReportBaseParam/net.xnzn/leniu-yunshitang |
-| `leniu-java-total-line` | leniu-合计行/leniu-totalLine/leniu-报表合计/leniu-SUM合计/leniu-ReportBaseTotalVO/net.xnzn/leniu-yunshitang |
-| `leniu-mealtime` | leniu-餐次/leniu-mealtimeType/早餐/午餐/晚餐/下午茶/夜宵/AllocMealtimeTypeEnum/net.xnzn/leniu-yunshitang |
-| `leniu-marketing-price-rule-customizer` | leniu-营销计费/leniu-price规则/leniu-RulePriceHandler/折扣/满减/限额/补贴规则/net.xnzn |
-| `leniu-marketing-recharge-rule-customizer` | leniu-营销充值/leniu-recharge规则/leniu-RuleRechargeHandler/满赠/充值赠送规则/net.xnzn |
+| `leniu-crud-development` | CRUD、增删改查、新建模块、Business层、Service、Mapper、Controller、分页查询、LeRequest、PageDTO |
+| `leniu-api-development` | API接口、Controller、RESTful、LeResult、LeResponse、LeRequest、接口开发、路由前缀 |
+| `leniu-brainstorm` | 头脑风暴、方案设计、怎么设计、创意探索、功能规划、可行性分析 |
+| `leniu-architecture-design` | 架构设计、双库架构、商户库、系统库、pigx框架、四层架构、模块划分、Business层 |
+| `leniu-database-ops` | 数据库、SQL、建表、双库、商户库、系统库、审计字段、crby、crtime、del_flag |
+| `leniu-utils-toolkit` | 工具类、BeanUtil、StrUtil、CollUtil、ObjectUtil、RedisUtil、JacksonUtil、LeBeanUtil |
+| `leniu-error-handler` | 异常处理、LeException、全局异常、参数校验、错误码、I18n、国际化 |
+| `leniu-backend-annotations` | @RequiresAuthentication、@RequiresGuest、@Validated、@NotNull、@Api、分组校验、InsertGroup |
+| `leniu-security-guard` | 安全认证、SQL注入防护、XSS防护、数据脱敏、SM4加密、接口安全、限流 |
+| `leniu-data-permission` | 多租户、数据权限、@UseSystem、Executors.doInTenant、TenantContextHolder、MERCHANT-ID、双库隔离 |
+| `leniu-redis-cache` | Redis、缓存、RedisUtil、分布式锁、RLock、getLock、setNx、ZSet、限流、缓存击穿 |
+| `leniu-code-patterns` | 代码禁令、代码规范、命名规范、代码风格、Git提交规范、包结构、禁止写法、审计字段规范 |
+| `leniu-java-entity` | Entity实体类、VO视图对象、DTO数据传输、Param参数类、@TableName、@TableField、字段映射 |
+| `leniu-java-logging` | 日志、@Slf4j、log.info、log.error、log.debug、日志级别、logback |
+| `leniu-java-mybatis` | MyBatis、MyBatisPlus、Mapper、LambdaQueryWrapper、XML映射、动态SQL、BaseMapper |
+| `leniu-java-amount-handling` | 金额处理、分转元、元转分、Long金额、money、fen、BigDecimal金额 |
+| `leniu-java-concurrent` | 并发、CompletableFuture、线程池、ThreadPool、并发安全、异步处理 |
+| `leniu-java-export` | 导出、Excel导出、异步导出、分页导出、@ExcelProperty、exportApi |
+| `leniu-java-mq` | 消息队列、MQ、MqUtil、@MqConsumer、延迟消息、消息重试、事务消息 |
+| `leniu-java-task` | 定时任务、XXL-Job、@XxlJob、TenantLoader、任务调度、分布式定时 |
+| `leniu-java-report-query-param` | 报表查询入参、Param类、分页参数、时间范围查询、ReportBaseParam、exportCols |
+| `leniu-java-total-line` | 合计行、totalLine、报表合计、SUM合计、ReportBaseTotalVO、合计查询 |
+| `leniu-mealtime` | 餐次、mealtime、mealtimeType、早餐、午餐、晚餐、下午茶、夜宵、AllocMealtimeTypeEnum |
+| `leniu-marketing-price-rule-customizer` | 营销计费、计价规则、RulePriceHandler、RulePriceEnum、折扣规则、满减规则、限额规则 |
+| `leniu-marketing-recharge-rule-customizer` | 营销充值、充值规则、RuleRechargeHandler、RuleRechargeEnum、满赠规则、充值赠送 |
+| `leniu-report-customization` | 定制报表、汇总报表、report_order_info、report_order_detail、report_account_flow、退款汇总、消费金额统计 |
 
 ### 前端开发技能（需 plus-ui 目录存在）
 

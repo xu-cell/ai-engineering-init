@@ -10,8 +10,7 @@ description: |
   - 避免过度工程
   - 代码风格检查
 
-  触发词：规范、禁止、命名、Git提交、代码风格、不能用、不允许、包名、架构、leniu、pigx
-  注意：leniu CRUD 开发规范请激活 leniu-crud-development，API 开发规范请激活 leniu-api-development。
+  触发词：代码禁令、代码规范、命名规范、代码风格、Git提交规范、包结构、禁止写法、审计字段规范、delFlag、crby/crtime
 ---
 
 # leniu-tengyun-core 代码规范速查
@@ -346,6 +345,53 @@ if (StrUtil.isNotBlank(str)) { }
 // 对象拷贝
 Target target = BeanUtil.copyProperties(source, Target.class);
 List<Target> targets = BeanUtil.copyToList(sources, Target.class);
+```
+
+## 包结构规范
+
+```
+net.xnzn.core
+├── [module]/
+│   ├── controller/         # 控制器层（按端分：web/mobile/android）
+│   ├── business/impl/      # 业务编排层
+│   ├── service/impl/       # 服务层
+│   ├── mapper/             # 数据访问层（含 XML 同目录）
+│   ├── model/              # 数据模型（Entity）
+│   ├── vo/                 # 视图对象（返回前端）
+│   ├── dto/                # 数据传输对象（服务间/MQ）
+│   ├── param/              # 请求参数对象
+│   ├── constants/          # 常量和枚举
+│   ├── config/             # 配置类
+│   ├── mq/                 # 消息队列监听器
+│   ├── task/               # 定时任务
+│   ├── handle/             # 业务处理器（策略模式）
+│   └── util/               # 工具类
+```
+
+## 依赖注入规范
+
+```java
+// 推荐：字段注入
+@Autowired
+private OrderService orderService;
+
+// 解决循环依赖
+@Resource
+@Lazy
+private ProductService productService;
+```
+
+## 类注释规范
+
+```java
+/**
+ * 类功能描述
+ *
+ * @author xujiajun
+ * @date 2026-02-20
+ */
+public class OrderService {
+}
 ```
 
 ## 通用代码规范

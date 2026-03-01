@@ -10,7 +10,7 @@ description: |
   - 业务关键路径日志埋点
   - 日志文件管理和保留策略
 
-  触发词：日志、@Slf4j、log.info、log.error、log.debug、log.warn、日志级别、日志格式、日志记录、logging、logback、leniu-yunshitang、leniu-tengyun-core、net.xnzn
+  触发词：日志、@Slf4j、log.info、log.error、log.debug、日志级别、logback、日志格式
 ---
 
 # leniu-tengyun-core / leniu-yunshitang 日志规范

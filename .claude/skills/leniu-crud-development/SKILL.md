@@ -17,7 +17,7 @@ description: |
   - leniu-tengyun-core（云食堂核心服务）
   - leniu-yunshitang（云食堂业务服务）
 
-  触发词：leniu-CRUD、leniu-增删改查、leniu-新建模块、leniu-Entity、leniu-DTO、leniu-VO、leniu-Service、leniu-Mapper、leniu-Controller、leniu-分页查询、LeRequest、PageDTO、net.xnzn、leniu-yunshitang、云食堂CRUD、leniu-事务、leniu-并发、leniu-代码质量、leniu-空指针、leniu-ServiceImpl
+  触发词：CRUD、增删改查、新建模块、Business层、Service、Mapper、Controller、分页查询、LeRequest、PageDTO、PageVO、事务管理
 ---
 
 # leniu CRUD 开发规范

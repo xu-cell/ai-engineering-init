@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu头脑风暴、云食堂方案、leniu怎么设计、云食堂讨论、leniu创意、leniu方案探索、leniu功能规划、leniu-yunshitang
+  触发词：头脑风暴、方案设计、怎么设计、创意探索、功能规划、可行性分析
 ---
 
 # leniu-yunshitang-core 头脑风暴框架
