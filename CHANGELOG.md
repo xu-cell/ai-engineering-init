@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.2.2] - 2026-03-01
+
+### 新增
+- **Windows MCP 路径说明**：在 README 中新增 Windows 用户配置 Codex MCP Server 路径的指引
+  - `mcpServers.codex.command` 需改为 Windows 实际路径（如 `C:\Users\YourName\AppData\Roaming\npm\codex.cmd`）
+  - 可通过 `where codex` 命令查询实际安装路径
+  - 在"包含内容"和"初始化后使用"两处均已添加说明
+
+---
+
 ## [v1.2.1] - 2026-03-01
 
 ### 新增

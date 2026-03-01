@@ -89,6 +89,12 @@ cd ai-engineering-init
 
 > **MCP Server 支持**：Codex CLI 可通过 `codex mcp-server` 作为 MCP Server 暴露给 Claude Code，
 > 配置写入 `.claude/settings.json` 的 `mcpServers` 后，Claude 可直接调用 `codex` / `codex-reply` 工具进行代码审查。
+>
+> **Windows 用户注意**：初始化后需将 `.claude/settings.json` 中 `mcpServers.codex.command` 的路径改为 Windows 上的实际路径，例如：
+> ```json
+> "command": "C:\\Users\\YourName\\AppData\\Roaming\\npm\\codex.cmd"
+> ```
+> 可通过 `where codex` 命令查询实际路径。
 
 ## Skills 列表（69个）
 
@@ -192,12 +198,13 @@ cd ai-engineering-init
 1. 修改 `AGENTS.md` 中的项目说明
 2. 使用 `.codex/skills/` 下的技能辅助开发
 3. （可选）以 MCP Server 接入 Claude Code：`.claude/settings.json` → `mcpServers.codex`，重启后 Claude 可直接调用 `codex` / `codex-reply` 工具
+   - **Windows 用户**：将 `command` 路径改为 `where codex` 查询到的实际路径（如 `C:\Users\YourName\AppData\Roaming\npm\codex.cmd`）
 
 ## 更新日志
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**v1.2.1 新增**：`update` 命令一键更新框架文件；Codex MCP Server 集成；拆分独立 CHANGELOG.md。
+**v1.2.2 新增**：README 补充 Windows MCP Server 路径配置说明；Windows 兼容性分析与说明。
 
 ## License
 
