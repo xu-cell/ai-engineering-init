@@ -251,29 +251,30 @@ public PageVO<XxxVO> pageList(XxxPageParam param) {
 ### 带合计行的导出
 
 ```java
+// ⚠️ 系统默认在商户库执行，业务查询无需 Executors.readInSystem()
+// Executors.readInSystem() 仅用于需要访问系统库的场景（如全局配置、商户管理）
+
 public ReportBaseTotalVO<XxxVO> pageWithTotal(XxxPageParam param) {
-    return Executors.readInSystem(() -> {
-        ReportBaseTotalVO<XxxVO> result = new ReportBaseTotalVO<>();
+    ReportBaseTotalVO<XxxVO> result = new ReportBaseTotalVO<>();
 
-        // 1. 导出时不查询合计行（避免不必要的性能开销）
-        if (CollUtil.isEmpty(param.getExportCols())) {
-            XxxVO totalLine = mapper.getSummaryTotal(param);
-            result.setTotalLine(totalLine);
-        }
+    // 1. 导出时不查询合计行（避免不必要的性能开销）
+    if (CollUtil.isEmpty(param.getExportCols())) {
+        XxxVO totalLine = mapper.getSummaryTotal(param);
+        result.setTotalLine(totalLine);
+    }
 
-        // 2. 导出时不分页
-        if (CollUtil.isNotEmpty(param.getExportCols())) {
-            List<XxxVO> list = mapper.getSummaryList(param);
-            result.setResultPage(PageVO.of(list));
-        } else {
-            // 正常分页查询
-            PageMethod.startPage(param);
-            List<XxxVO> list = mapper.getSummaryList(param);
-            result.setResultPage(PageVO.of(list));
-        }
+    // 2. 导出时不分页
+    if (CollUtil.isNotEmpty(param.getExportCols())) {
+        List<XxxVO> list = mapper.getSummaryList(param);
+        result.setResultPage(PageVO.of(list));
+    } else {
+        // 正常分页查询
+        PageMethod.startPage(param);
+        List<XxxVO> list = mapper.getSummaryList(param);
+        result.setResultPage(PageVO.of(list));
+    }
 
-        return result;
-    });
+    return result;
 }
 ```
 
