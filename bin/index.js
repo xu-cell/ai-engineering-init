@@ -190,16 +190,15 @@ const GLOBAL_RULES = {
     label: 'Claude Code',
     targetDir: path.join(HOME_DIR, '.claude'),
     files: [
-      { src: '.claude/skills',                dest: 'skills',                label: 'Skills（全局技能库）',    isDir: true },
-      { src: '.claude/commands',              dest: 'commands',              label: 'Commands（全局命令）',    isDir: true },
-      { src: '.claude/agents',               dest: 'agents',               label: 'Agents（全局子代理）',    isDir: true },
-      { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',       isDir: true },
+      { src: '.claude/skills',                dest: 'skills',                label: 'Skills（全局技能库）',          isDir: true },
+      { src: '.claude/commands',              dest: 'commands',              label: 'Commands（全局命令）',          isDir: true },
+      { src: '.claude/agents',               dest: 'agents',               label: 'Agents（全局子代理）',          isDir: true },
+      { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',             isDir: true },
       { src: '.claude/framework-config.json', dest: 'framework-config.json', label: 'framework-config.json' },
+      { src: '.claude/settings.json',         dest: 'settings.json',         label: 'settings.json（Hooks + MCP 配置）', merge: true },
     ],
-    preserve: [
-      { dest: 'settings.json', reason: '包含用户 MCP 配置和权限设置' },
-    ],
-    note: `Skills/Commands/Hooks 已安装到 ~/.claude，对所有项目自动生效`,
+    preserve: [],
+    note: `Skills/Commands/Hooks/Settings 已安装到 ~/.claude，对所有项目自动生效`,
   },
   cursor: {
     label: 'Cursor',
