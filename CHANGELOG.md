@@ -4,6 +4,19 @@
 
 ---
 
+## [v1.2.8] - 2026-03-02
+
+### 新增
+- **`global` 命令：全局安装（系统级别，对所有项目生效）**
+  - 新增 `npx ai-engineering-init global` 命令，将 Skills/Commands/Hooks/Agents 安装到 `~/.claude` / `~/.cursor` / `~/.codex`
+  - 支持 `--tool claude|cursor|codex|all` 指定工具
+  - 支持 `--force` 强制覆盖已有全局文件
+  - 自动保留用户配置（`settings.json`、`mcp.json` 等）
+  - 交互菜单新增选项 5「全局安装」
+  - 帮助文档同步更新，补充 `global` 命令说明与示例
+
+---
+
 ## [v1.2.7] - 2026-03-02
 
 ### 修复

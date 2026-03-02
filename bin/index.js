@@ -7,11 +7,14 @@
  *   npx ai-engineering-init --tool all
  *   npx ai-engineering-init update       # 自动检测已安装工具并更新
  *   npx ai-engineering-init update --tool claude
+ *   npx ai-engineering-init global       # 全局安装（对所有项目生效）
+ *   npx ai-engineering-init global --tool claude
  */
 'use strict';
 
 const fs       = require('fs');
 const path     = require('path');
+const os       = require('os');
 const readline = require('readline');
 
 // ── ANSI 颜色（Windows CMD/PowerShell 兼容）────────────────────────────────
@@ -43,7 +46,7 @@ console.log('');
 
 // ── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-let command   = '';   // 'update' | ''
+let command   = '';   // 'update' | 'global' | ''
 let tool      = '';
 let targetDir = process.cwd();
 let force     = false;
@@ -53,6 +56,9 @@ for (let i = 0; i < args.length; i++) {
   switch (arg) {
     case 'update':
       command = 'update';
+      break;
+    case 'global':
+      command = 'global';
       break;
     case '--tool': case '-t':
       if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
@@ -88,19 +94,22 @@ for (let i = 0; i < args.length; i++) {
 function printHelp() {
   console.log(`用法: ${fmt('bold', 'npx ai-engineering-init')} [命令] [选项]\n`);
   console.log('命令:');
-  console.log(`  ${fmt('bold', '(无)')}            交互式初始化`);
-  console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）\n`);
+  console.log(`  ${fmt('bold', '(无)')}            交互式初始化（安装到当前项目目录）`);
+  console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）`);
+  console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效\n`);
   console.log('选项:');
   console.log('  --tool, -t <工具>   指定工具: claude | cursor | codex | all');
-  console.log('  --dir,  -d <目录>   目标目录（默认：当前目录）');
-  console.log('  --force,-f          强制覆盖（init 时覆盖已有文件；update 时同时更新保留文件）');
+  console.log('  --dir,  -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）');
+  console.log('  --force,-f          强制覆盖（init 时覆盖已有文件；update/global 时同时更新保留文件）');
   console.log('  --help, -h          显示此帮助\n');
   console.log('示例:');
   console.log('  npx ai-engineering-init --tool claude');
   console.log('  npx ai-engineering-init --tool all --dir /path/to/project');
   console.log('  npx ai-engineering-init update               # 自动检测已安装工具');
   console.log('  npx ai-engineering-init update --tool claude # 只更新 Claude');
-  console.log('  npx ai-engineering-init update --force       # 强制更新，包括保留文件\n');
+  console.log('  npx ai-engineering-init update --force       # 强制更新，包括保留文件');
+  console.log('  npx ai-engineering-init global               # 全局安装所有工具');
+  console.log('  npx ai-engineering-init global --tool claude # 只全局安装 Claude\n');
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────
@@ -171,6 +180,147 @@ const UPDATE_RULES = {
     ],
   },
 };
+
+// ── 全局安装规则（global 用）─────────────────────────────────────────────
+// 安装到 ~/.claude / ~/.cursor / ~/.codex，对当前用户所有项目生效
+const HOME_DIR = os.homedir();
+
+const GLOBAL_RULES = {
+  claude: {
+    label: 'Claude Code',
+    targetDir: path.join(HOME_DIR, '.claude'),
+    files: [
+      { src: '.claude/skills',                dest: 'skills',                label: 'Skills（全局技能库）',    isDir: true },
+      { src: '.claude/commands',              dest: 'commands',              label: 'Commands（全局命令）',    isDir: true },
+      { src: '.claude/agents',               dest: 'agents',               label: 'Agents（全局子代理）',    isDir: true },
+      { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',       isDir: true },
+      { src: '.claude/framework-config.json', dest: 'framework-config.json', label: 'framework-config.json' },
+    ],
+    preserve: [
+      { dest: 'settings.json', reason: '包含用户 MCP 配置和权限设置' },
+    ],
+    note: `Skills/Commands/Hooks 已安装到 ~/.claude，对所有项目自动生效`,
+  },
+  cursor: {
+    label: 'Cursor',
+    targetDir: path.join(HOME_DIR, '.cursor'),
+    files: [
+      { src: '.cursor/skills', dest: 'skills', label: 'Skills（全局技能库）', isDir: true },
+      { src: '.cursor/agents', dest: 'agents', label: 'Agents（全局子代理）', isDir: true },
+      { src: '.cursor/hooks',  dest: 'hooks',  label: 'Hooks（全局钩子）',   isDir: true },
+    ],
+    preserve: [
+      { dest: 'mcp.json',   reason: '包含用户 MCP 服务器配置' },
+      { dest: 'hooks.json', reason: '包含用户 Hooks 配置（项目级优先）' },
+    ],
+    note: `Skills/Hooks 已安装到 ~/.cursor，重启 Cursor 后在全局规则中生效`,
+  },
+  codex: {
+    label: 'OpenAI Codex',
+    targetDir: path.join(HOME_DIR, '.codex'),
+    files: [
+      { src: '.codex/skills', dest: 'skills', label: 'Skills（全局技能库）', isDir: true },
+    ],
+    preserve: [],
+    note: `Skills 已安装到 ~/.codex`,
+  },
+};
+
+/** 全局安装单个工具 */
+function globalInstallTool(toolKey) {
+  const rule       = GLOBAL_RULES[toolKey];
+  const globalDest = rule.targetDir;
+  console.log(fmt('cyan', `[${rule.label}]`) + fmt('blue', ` → ${globalDest}`));
+
+  let installed = 0, failed = 0;
+
+  try { fs.mkdirSync(globalDest, { recursive: true }); } catch { /* 已存在忽略 */ }
+
+  for (const item of rule.files) {
+    const srcPath  = path.join(SOURCE_DIR, item.src);
+    const destPath = path.join(globalDest, item.dest);
+
+    if (!fs.existsSync(srcPath)) {
+      console.log(`  ${fmt('yellow', '⚠')}  ${item.label} 源文件不存在，跳过`);
+      continue;
+    }
+    if (fs.existsSync(destPath) && !force) {
+      console.log(`  ${fmt('yellow', '⚠')}  ${item.label} 已存在，跳过（--force 可强制覆盖）`);
+      continue;
+    }
+    try {
+      if (item.isDir) {
+        const n = copyDir(srcPath, destPath);
+        console.log(`  ${fmt('green', '✓')}  ${item.label} ${fmt('magenta', `(${n} 个文件)`)}`);
+        installed += n;
+      } else {
+        fs.mkdirSync(path.dirname(destPath), { recursive: true });
+        fs.copyFileSync(srcPath, destPath);
+        console.log(`  ${fmt('green', '✓')}  ${item.label}`);
+        installed++;
+      }
+    } catch (e) {
+      console.log(`  ${fmt('red', '✗')}  ${item.label} 安装失败: ${e.message}`);
+      failed++;
+    }
+  }
+
+  for (const item of rule.preserve) {
+    const destPath = path.join(globalDest, item.dest);
+    if (fs.existsSync(destPath)) {
+      console.log(`  ${fmt('yellow', '⊘')}  ${item.dest} 已保留 — ${item.reason}`);
+    }
+  }
+
+  return { installed, failed };
+}
+
+/** global 命令主流程 */
+function runGlobal(selectedTool) {
+  const validKeys    = Object.keys(GLOBAL_RULES);
+  const toolsToInstall = (!selectedTool || selectedTool === 'all')
+    ? validKeys
+    : [selectedTool];
+
+  if (selectedTool && selectedTool !== 'all' && !GLOBAL_RULES[selectedTool]) {
+    console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
+    process.exit(1);
+  }
+
+  console.log(`  安装模式: ${fmt('green', fmt('bold', '全局安装（当前用户所有项目生效）'))}`);
+  console.log(`  安装工具: ${fmt('bold', toolsToInstall.join(', '))}`);
+  if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：强制覆盖已有文件')}`);
+  console.log('');
+  console.log(fmt('bold', '正在安装到系统目录...'));
+  console.log('');
+
+  let totalInstalled = 0, totalFailed = 0;
+  for (let i = 0; i < toolsToInstall.length; i++) {
+    const { installed, failed } = globalInstallTool(toolsToInstall[i]);
+    totalInstalled += installed;
+    totalFailed    += failed;
+    if (i < toolsToInstall.length - 1) console.log('');
+  }
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', '✅ 全局安装完成！')));
+  console.log('');
+  console.log(`  ${fmt('green', `✓ 安装文件: ${totalInstalled} 个`)}`);
+  if (totalFailed > 0) {
+    console.log(`  ${fmt('red', `✗ 失败文件: ${totalFailed} 个`)}（请检查目录权限）`);
+  }
+  console.log('');
+  console.log(fmt('cyan', '安装位置说明：'));
+  for (const key of toolsToInstall) {
+    const rule = GLOBAL_RULES[key];
+    console.log(`  ${fmt('bold', rule.label + ':')} ${rule.note}`);
+  }
+  console.log('');
+  console.log(fmt('yellow', '提示：项目级配置（.claude/ 等）优先级高于全局配置，两者可同时使用。'));
+  console.log('');
+
+  if (totalFailed > 0) process.exitCode = 1;
+}
 
 // ── 公共工具函数 ──────────────────────────────────────────────────────────
 const SOURCE_DIR = path.join(__dirname, '..');
@@ -442,6 +592,8 @@ function runUpdate(selectedTool) {
 // ── 主入口 ────────────────────────────────────────────────────────────────
 if (command === 'update') {
   runUpdate(tool);
+} else if (command === 'global') {
+  runGlobal(tool);
 } else if (tool) {
   run(tool);
 } else {
@@ -452,19 +604,26 @@ if (command === 'update') {
     process.exit(1);
   }
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  console.log(fmt('cyan', '请选择要初始化的 AI 工具：'));
+  console.log(fmt('cyan', '请选择操作：'));
   console.log('');
-  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — 初始化 .claude/ + CLAUDE.md`);
-  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — 初始化 .cursor/（Skills + Agents + MCP）`);
-  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — 初始化 .codex/ + AGENTS.md`);
-  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时初始化 Claude + Cursor + Codex`);
+  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — 初始化到当前项目 .claude/ + CLAUDE.md`);
+  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — 初始化到当前项目 .cursor/（Skills + Agents）`);
+  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — 初始化到当前项目 .codex/ + AGENTS.md`);
+  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时初始化 Claude + Cursor + Codex 到当前项目`);
+  console.log(`  ${fmt('bold', '5')}) ${fmt('magenta', '全局安装')}       — 安装到 ~/.claude / ~/.cursor，对所有项目生效`);
   console.log('');
-  rl.question(fmt('bold', '请输入选项 [1-4]: '), (answer) => {
+  rl.question(fmt('bold', '请输入选项 [1-5]: '), (answer) => {
     rl.close();
     const map = { '1': 'claude', '2': 'cursor', '3': 'codex', '4': 'all' };
     const selected = map[answer.trim()];
-    if (!selected) { console.error(fmt('red', '无效选项，退出。')); process.exit(1); }
     console.log('');
-    run(selected);
+    if (answer.trim() === '5') {
+      runGlobal('all');
+    } else if (selected) {
+      run(selected);
+    } else {
+      console.error(fmt('red', '无效选项，退出。'));
+      process.exit(1);
+    }
   });
 }
