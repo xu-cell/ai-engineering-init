@@ -195,7 +195,7 @@ const GLOBAL_RULES = {
       { src: '.claude/agents',               dest: 'agents',               label: 'Agents（全局子代理）',          isDir: true },
       { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',             isDir: true },
       { src: '.claude/framework-config.json', dest: 'framework-config.json', label: 'framework-config.json' },
-      { src: '.claude/settings.json',         dest: 'settings.json',         label: 'settings.json（Hooks + MCP 配置）', merge: true },
+      { src: '.claude/settings.json',         dest: 'settings.json',         label: 'settings.json（Hooks + MCP 配置）', merge: true, rewritePrefix: '.claude/' },
     ],
     preserve: [],
     note: `Skills/Commands/Hooks/Settings 已安装到 ~/.claude，对所有项目自动生效`,
@@ -207,7 +207,7 @@ const GLOBAL_RULES = {
       { src: '.cursor/skills',     dest: 'skills',     label: 'Skills（全局技能库）',        isDir: true },
       { src: '.cursor/agents',     dest: 'agents',     label: 'Agents（全局子代理）',        isDir: true },
       { src: '.cursor/hooks',      dest: 'hooks',      label: 'Hooks（全局钩子脚本）',       isDir: true },
-      { src: '.cursor/hooks.json', dest: 'hooks.json', label: 'hooks.json（Hooks 触发配置）' },
+      { src: '.cursor/hooks.json', dest: 'hooks.json', label: 'hooks.json（Hooks 触发配置）', rewritePrefix: '.cursor/' },
       { src: '.cursor/mcp.json',   dest: 'mcp.json',   label: 'mcp.json（MCP 服务器配置）', merge: true },
     ],
     preserve: [],
@@ -257,6 +257,34 @@ function mergeJsonFile(srcPath, destPath, label) {
   }
 }
 
+/** 将 JSON 中的相对路径重写为绝对路径（递归遍历所有字符串值） */
+function rewritePaths(obj, relPrefix, absPrefix) {
+  if (typeof obj === 'string') {
+    // 匹配 "node .claude/hooks/xxx" 或 ".cursor/hooks/xxx" 等相对路径
+    return obj.split(' ').map(part =>
+      part.startsWith(relPrefix) ? part.replace(relPrefix, absPrefix) : part
+    ).join(' ');
+  }
+  if (Array.isArray(obj)) return obj.map(item => rewritePaths(item, relPrefix, absPrefix));
+  if (typeof obj === 'object' && obj !== null) {
+    const result = {};
+    for (const [k, v] of Object.entries(obj)) {
+      result[k] = rewritePaths(v, relPrefix, absPrefix);
+    }
+    return result;
+  }
+  return obj;
+}
+
+/** 重写已写入的 JSON 文件中的相对路径为绝对路径 */
+function rewriteJsonFilePaths(filePath, relPrefix, absPrefix) {
+  try {
+    let data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    data = rewritePaths(data, relPrefix, absPrefix);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
+  } catch { /* 静默失败 */ }
+}
+
 /** 全局安装单个工具 */
 function globalInstallTool(toolKey) {
   const rule       = GLOBAL_RULES[toolKey];
@@ -279,6 +307,10 @@ function globalInstallTool(toolKey) {
     // merge 模式：合并 JSON 而非覆盖（保留用户已有配置）
     if (item.merge) {
       const result = mergeJsonFile(srcPath, destPath, item.label);
+      // merge 后路径重写
+      if (result >= 0 && item.rewritePrefix) {
+        rewriteJsonFilePaths(destPath, item.rewritePrefix, globalDest + '/');
+      }
       if (result >= 0) installed++; else failed++;
       continue;
     }
@@ -294,7 +326,16 @@ function globalInstallTool(toolKey) {
         installed += n;
       } else {
         fs.mkdirSync(path.dirname(destPath), { recursive: true });
-        fs.copyFileSync(srcPath, destPath);
+        // 非 merge JSON 文件的路径重写
+        if (item.rewritePrefix && destPath.endsWith('.json')) {
+          try {
+            let data = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
+            data = rewritePaths(data, item.rewritePrefix, globalDest + '/');
+            fs.writeFileSync(destPath, JSON.stringify(data, null, 2) + '\n');
+          } catch { fs.copyFileSync(srcPath, destPath); }
+        } else {
+          fs.copyFileSync(srcPath, destPath);
+        }
         console.log(`  ${fmt('green', '✓')}  ${item.label}`);
         installed++;
       }

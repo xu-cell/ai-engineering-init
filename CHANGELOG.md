@@ -4,6 +4,17 @@
 
 ---
 
+## [v1.3.1] - 2026-03-02
+
+### 修复
+- **全局安装 Hooks 路径重写**：全局安装时自动将 hooks 命令中的相对路径（`.claude/hooks/`、`.cursor/hooks/`）重写为绝对路径
+  - Claude Code: `node .claude/hooks/xxx.js` → `node /Users/you/.claude/hooks/xxx.js`
+  - Cursor: `node .cursor/hooks/xxx.js` → `node /Users/you/.cursor/hooks/xxx.js`
+  - 修复全局 `~/.claude/settings.json` 和 `~/.cursor/hooks.json` 中 hooks 因相对路径无法触发的问题
+  - 新增 `rewritePaths()` 递归路径重写工具函数，支持 merge 和 copy 两种模式
+
+---
+
 ## [v1.3.0] - 2026-03-02
 
 ### 新增
