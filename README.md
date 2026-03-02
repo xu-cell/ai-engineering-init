@@ -193,6 +193,25 @@ cd ai-engineering-init
 3. Subagents 会根据任务自动委托：`/code-reviewer`、`/project-manager`
 4. 在 Settings → MCP 中确认 MCP 服务器已连接
 
+#### OpenSpec 规格驱动开发（opsx 命令）
+
+基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的规格驱动开发工作流，在 Cursor Chat 中通过 `/opsx-*` 命令使用：
+
+| 命令 | 用途 |
+|------|------|
+| `/opsx-new` | 新建变更，描述需求并创建规格文档 |
+| `/opsx-ff` | 快速推进，一次性生成所有制品（规格+任务） |
+| `/opsx-apply` | 开始实现，按任务清单编码 |
+| `/opsx-continue` | 继续变更，创建下一个制品 |
+| `/opsx-verify` | 验证实现是否与规格匹配 |
+| `/opsx-sync` | 将 delta 规格同步到主规格 |
+| `/opsx-archive` | 归档已完成的变更 |
+| `/opsx-bulk-archive` | 批量归档多个变更 |
+| `/opsx-explore` | 探索模式，思维伙伴式问题分析 |
+| `/opsx-onboard` | 新手引导，完整工作流演示 |
+
+**标准开发流程**：`/opsx-new` → `/opsx-ff` → `/opsx-apply` → `/opsx-verify` → `/opsx-archive`
+
 ### OpenAI Codex
 
 1. 修改 `AGENTS.md` 中的项目说明
