@@ -49,12 +49,18 @@ cd ai-engineering-init
 | OpenAI Codex | `--tool codex` | `.codex/` 目录 + `AGENTS.md` |
 | 全部 | `--tool all` | 以上全部 |
 
-## 选项
+## 命令与选项
 
-```
+```bash
+# 命令
+npx ai-engineering-init                 # 交互式初始化（安装到当前项目）
+npx ai-engineering-init update          # 更新已安装的框架文件
+npx ai-engineering-init global          # 全局安装到 ~/.claude 等，对所有项目生效
+
+# 选项
 --tool, -t <工具>   指定工具: claude | cursor | codex | all
---dir,  -d <目录>   目标目录（默认：当前目录）
---force,-f          强制覆盖已有文件
+--dir,  -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）
+--force,-f          强制覆盖（init 覆盖已有文件；update/global 同时更新保留文件）
 --help, -h          显示帮助
 ```
 
@@ -237,11 +243,31 @@ npx ai-engineering-init@latest update --force
 
 > **注意**：不加 `@latest` 会使用 npx 本地缓存的旧版本，源文件不是最新的。
 
+## 全局安装（v1.3.0+）
+
+一次安装，所有项目自动生效：
+
+```bash
+# 全局安装所有工具（~/.claude + ~/.cursor + ~/.codex）
+npx ai-engineering-init@latest global
+
+# 只全局安装指定工具
+npx ai-engineering-init@latest global --tool claude
+npx ai-engineering-init@latest global --tool cursor
+
+# 强制覆盖已有全局文件
+npx ai-engineering-init@latest global --force
+```
+
+> **说明**：全局安装将 Skills/Commands/Hooks 安装到 `~/.claude` / `~/.cursor` / `~/.codex`。`settings.json`、`mcp.json` 采用合并策略，不覆盖用户已有配置。项目级配置优先级高于全局配置，两者可共存。
+
 ## 更新日志
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**v1.2.6 修复**：Cursor stop hook 自包含，不再依赖 Claude Code 安装；修复完成音效无法触发的问题。
+**v1.3.0 新增**：`global` 命令，支持系统级全局安装，一次安装对所有项目生效。
+**v1.2.7 修复**：Cursor `beforeSubmitPrompt` hook 输出格式改为 JSON，修复技能注入失效。
+**v1.2.6 修复**：Cursor stop hook 自包含，不再依赖 Claude Code 安装。
 
 ## License
 
