@@ -219,11 +219,29 @@ cd ai-engineering-init
 3. （可选）以 MCP Server 接入 Claude Code：`.claude/settings.json` → `mcpServers.codex`，重启后 Claude 可直接调用 `codex` / `codex-reply` 工具
    - **Windows 用户**：将 `command` 路径改为 `where codex` 查询到的实际路径（如 `C:\Users\YourName\AppData\Roaming\npm\codex.cmd`）
 
+## 更新已安装的项目
+
+当有新版本发布时，在已安装的项目根目录执行：
+
+```bash
+# 必须加 @latest，确保使用最新源文件
+npx ai-engineering-init@latest update
+
+# 只更新指定工具
+npx ai-engineering-init@latest update --tool cursor
+npx ai-engineering-init@latest update --tool claude
+
+# 强制更新，包括 settings.json / CLAUDE.md 等保留文件
+npx ai-engineering-init@latest update --force
+```
+
+> **注意**：不加 `@latest` 会使用 npx 本地缓存的旧版本，源文件不是最新的。
+
 ## 更新日志
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**v1.2.4 优化**：优化 leniu 技能系统触发词精准度；合并冗余技能；新增定制报表技能。
+**v1.2.5 修复**：修复新版 Cursor 无法加载 hooks.json 的格式兼容问题。
 
 ## License
 
