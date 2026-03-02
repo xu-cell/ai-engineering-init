@@ -4,6 +4,15 @@
 
 ---
 
+## [v1.2.7] - 2026-03-02
+
+### 修复
+- **Cursor beforeSubmitPrompt hook 输出格式**：修复技能注入失效问题
+  - 将 `console.log(instructions)` 改为 `console.log(JSON.stringify({ systemMessage: instructions }))`
+  - Cursor 的 `beforeSubmitPrompt` hook 需要 JSON 格式 `{ "systemMessage": "..." }` 才能将内容注入 AI 上下文，纯 markdown 文本输出会被忽略
+
+---
+
 ## [v1.2.6] - 2026-03-02
 
 ### 修复
