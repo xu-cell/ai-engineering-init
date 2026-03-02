@@ -16,7 +16,7 @@
     "stop": [
       {
         "matcher": "",
-        "command": "node .claude/hooks/stop.js"
+        "command": "node .cursor/hooks/stop.js"
       }
     ]
   }

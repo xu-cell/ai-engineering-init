@@ -4,6 +4,17 @@
 
 ---
 
+## [v1.2.6] - 2026-03-02
+
+### 修复
+- **Cursor stop hook 自包含**：将 `stop.js` 和 `completed.wav` 内置到 `.cursor/` 目录，不再依赖 Claude Code 安装
+  - 新增 `.cursor/hooks/stop.js`（原来引用 `.claude/hooks/stop.js`）
+  - 新增 `.cursor/audio/completed.wav` 音效文件
+  - 音效查找策略：优先 `.cursor/audio/`，兼容 `.claude/audio/`（两者都安装时自动共用）
+  - `hooks.json` stop 命令改为 `node .cursor/hooks/stop.js`
+
+---
+
 ## [v1.2.5] - 2026-03-02
 
 ### 修复

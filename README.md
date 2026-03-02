@@ -241,7 +241,7 @@ npx ai-engineering-init@latest update --force
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**v1.2.5 修复**：修复新版 Cursor 无法加载 hooks.json 的格式兼容问题。
+**v1.2.6 修复**：Cursor stop hook 自包含，不再依赖 Claude Code 安装；修复完成音效无法触发的问题。
 
 ## License
 
