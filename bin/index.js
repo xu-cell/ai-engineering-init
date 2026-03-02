@@ -205,15 +205,14 @@ const GLOBAL_RULES = {
     label: 'Cursor',
     targetDir: path.join(HOME_DIR, '.cursor'),
     files: [
-      { src: '.cursor/skills', dest: 'skills', label: 'Skills（全局技能库）', isDir: true },
-      { src: '.cursor/agents', dest: 'agents', label: 'Agents（全局子代理）', isDir: true },
-      { src: '.cursor/hooks',  dest: 'hooks',  label: 'Hooks（全局钩子）',   isDir: true },
+      { src: '.cursor/skills',     dest: 'skills',     label: 'Skills（全局技能库）',        isDir: true },
+      { src: '.cursor/agents',     dest: 'agents',     label: 'Agents（全局子代理）',        isDir: true },
+      { src: '.cursor/hooks',      dest: 'hooks',      label: 'Hooks（全局钩子脚本）',       isDir: true },
+      { src: '.cursor/hooks.json', dest: 'hooks.json', label: 'hooks.json（Hooks 触发配置）' },
+      { src: '.cursor/mcp.json',   dest: 'mcp.json',   label: 'mcp.json（MCP 服务器配置）', merge: true },
     ],
-    preserve: [
-      { dest: 'mcp.json',   reason: '包含用户 MCP 服务器配置' },
-      { dest: 'hooks.json', reason: '包含用户 Hooks 配置（项目级优先）' },
-    ],
-    note: `Skills/Hooks 已安装到 ~/.cursor，重启 Cursor 后在全局规则中生效`,
+    preserve: [],
+    note: `Skills/Hooks/MCP 已安装到 ~/.cursor，重启 Cursor 后生效`,
   },
   codex: {
     label: 'OpenAI Codex',
@@ -225,6 +224,39 @@ const GLOBAL_RULES = {
     note: `Skills 已安装到 ~/.codex`,
   },
 };
+
+/** 合并 JSON 文件：将 src 的键补充到 dest，已有的键保留不覆盖 */
+function mergeJsonFile(srcPath, destPath, label) {
+  try {
+    const srcData = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
+    let destData = {};
+    if (fs.existsSync(destPath)) {
+      try { destData = JSON.parse(fs.readFileSync(destPath, 'utf8')); } catch { destData = {}; }
+    }
+    // 深度合并第一层对象键（如 mcpServers），已有的不覆盖
+    let added = 0;
+    for (const [key, value] of Object.entries(srcData)) {
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        if (!destData[key]) destData[key] = {};
+        for (const [subKey, subValue] of Object.entries(value)) {
+          if (!(subKey in destData[key])) {
+            destData[key][subKey] = subValue;
+            added++;
+          }
+        }
+      } else if (!(key in destData)) {
+        destData[key] = value;
+        added++;
+      }
+    }
+    fs.writeFileSync(destPath, JSON.stringify(destData, null, 2) + '\n');
+    console.log(`  ${fmt('green', '✓')}  ${label} ${fmt('magenta', `(合并 +${added} 项，已有配置保留)`)}`);
+    return added > 0 ? 1 : 0;
+  } catch (e) {
+    console.log(`  ${fmt('red', '✗')}  ${label} 合并失败: ${e.message}`);
+    return -1;
+  }
+}
 
 /** 全局安装单个工具 */
 function globalInstallTool(toolKey) {
@@ -244,6 +276,14 @@ function globalInstallTool(toolKey) {
       console.log(`  ${fmt('yellow', '⚠')}  ${item.label} 源文件不存在，跳过`);
       continue;
     }
+
+    // merge 模式：合并 JSON 而非覆盖（保留用户已有配置）
+    if (item.merge) {
+      const result = mergeJsonFile(srcPath, destPath, item.label);
+      if (result >= 0) installed++; else failed++;
+      continue;
+    }
+
     if (fs.existsSync(destPath) && !force) {
       console.log(`  ${fmt('yellow', '⚠')}  ${item.label} 已存在，跳过（--force 可强制覆盖）`);
       continue;
