@@ -204,7 +204,7 @@ cd ai-engineering-init
 
 查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
 
-**v1.2.3 优化**：优化 leniu 技能系统触发词精准度；合并冗余技能；新增定制报表技能。
+**v1.2.4 优化**：优化 leniu 技能系统触发词精准度；合并冗余技能；新增定制报表技能。
 
 ## License
 
