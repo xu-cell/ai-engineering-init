@@ -351,5 +351,5 @@ ${matchedSkills.map((name, i) => `- **${name}**: \`${skillPaths[i]}\``).join('\n
 
 > 注意：SKILL.md 文档包含本项目特定的实现规范，必须优先参考，不得使用通用写法替代。`;
 
-console.log(instructions);
+console.log(JSON.stringify({ systemMessage: instructions }));
 process.exit(0);
