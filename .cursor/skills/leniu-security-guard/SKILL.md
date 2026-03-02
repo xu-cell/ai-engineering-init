@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-安全、leniu-认证、leniu-@RequiresAuthentication、leniu-@RequiresGuest、leniu-SQL注入、leniu-XSS、leniu-数据脱敏、leniu-限流、net.xnzn、leniu-yunshitang
+  触发词：安全认证、SQL注入防护、XSS防护、数据脱敏、SM4加密、接口安全、限流
 ---
 
 # leniu-security-guard

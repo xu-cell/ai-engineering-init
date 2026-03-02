@@ -12,7 +12,7 @@ description: |
 
   适用项目：leniu-tengyun-core（云食堂项目）
 
-  触发词：leniu-API、leniu-接口、leniu-Controller、leniu-RESTful、LeResult、云食堂接口、云食堂API
+  触发词：API接口、Controller、RESTful、LeResult、LeResponse、LeRequest、接口开发、路由前缀
 ---
 
 # leiu-yunshitang-core API 接口开发规范

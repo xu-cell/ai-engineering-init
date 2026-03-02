@@ -1,3 +1,18 @@
+---
+name: leniu-redis-cache
+description: |
+  leniu-tengyun-core 项目 Redis 缓存和分布式锁操作规范。包含 RedisUtil 工具类、分布式锁、ZSet 排行榜、缓存 Key 命名规范。
+
+  触发场景：
+  - 使用 RedisUtil 进行缓存操作（setString/setObj/getObj）
+  - 实现分布式锁（getLock/lock/unlock）
+  - 使用 Redis 自增自减计数器（incr/decr）
+  - 实现缓存击穿保护
+  - ZSet 排行榜操作
+
+  触发词：Redis、缓存、RedisUtil、分布式锁、RLock、getLock、setNx、ZSet、限流、缓存击穿
+---
+
 # leniu-redis-cache
 
 适用于 leniu-tengyun-core 项目的 Redis 缓存和分布式锁操作。

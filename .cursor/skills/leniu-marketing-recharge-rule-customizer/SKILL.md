@@ -14,7 +14,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：营销充值、recharge规则、充值规则、RuleRechargeHandler、RuleRechargeEnum、满赠规则、充值赠送、充值限额、管理费规则、充值规则定制、leniu营销、leniu-yunshitang、net.xnzn
+  触发词：营销充值、充值规则、RuleRechargeHandler、RuleRechargeEnum、满赠规则、充值赠送、管理费规则
 ---
 
 # leniu-tengyun-core 营销充值规则定制

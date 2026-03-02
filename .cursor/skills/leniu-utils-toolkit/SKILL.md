@@ -16,7 +16,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-工具类、leniu-BeanUtil、leniu-StrUtil、leniu-CollUtil、leniu-ObjectUtil、leniu-RedisUtil、leniu-JacksonUtil、leniu-LeBeanUtil、net.xnzn、leniu-yunshitang、leniu-yunshitang-core、云食堂工具类
+  触发词：工具类、BeanUtil、StrUtil、CollUtil、ObjectUtil、RedisUtil、JacksonUtil、LeBeanUtil
 
 ---
 

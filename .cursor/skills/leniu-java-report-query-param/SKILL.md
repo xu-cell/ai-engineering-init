@@ -13,7 +13,7 @@ description: |
   - leniu-tengyun-core：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun-core
   - leniu-yunshitang：/Users/xujiajun/Developer/gongsi_proj/leniu-api/leniu-tengyun/leniu-yunshitang
 
-  触发词：leniu-报表查询、leniu-Param类、leniu-查询入参、leniu-分页参数、leniu-时间范围、leniu-ReportBaseParam、leniu-exportCols、net.xnzn、leniu-yunshitang
+  触发词：报表查询入参、Param类、分页参数、时间范围查询、ReportBaseParam、exportCols
 ---
 
 # leniu-tengyun-core 报表查询入参规范
