@@ -1,0 +1,9 @@
+{
+  "notify": {
+    "methods": ["sound"],
+    "sound": { "enabled": true, "file": "completed.wav" },
+    "notification": { "enabled": false, "title": "AI 任务完成" },
+    "tts": { "enabled": false, "prefix": "任务完成", "maxLength": 80 },
+    "summary": { "maxLength": 100, "strategy": "first-sentence", "stripMarkdown": true }
+  }
+}

@@ -153,8 +153,9 @@ const UPDATE_RULES = {
       { src: '.claude/framework-config.json', dest: '.claude/framework-config.json', label: 'framework-config.json' },
     ],
     preserve: [
-      { dest: '.claude/settings.json', reason: '包含用户 MCP 配置和权限设置' },
-      { dest: 'CLAUDE.md',             reason: '包含项目自定义规范' },
+      { dest: '.claude/settings.json',        reason: '包含用户 MCP 配置和权限设置' },
+      { dest: '.claude/notify-config.json',   reason: '包含用户通知偏好设置' },
+      { dest: 'CLAUDE.md',                    reason: '包含项目自定义规范' },
     ],
   },
   cursor: {
@@ -198,6 +199,7 @@ const GLOBAL_RULES = {
       { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',             isDir: true },
       { src: '.claude/audio',                dest: 'audio',                label: 'Audio（完成音效）',             isDir: true },
       { src: '.claude/framework-config.json', dest: 'framework-config.json', label: 'framework-config.json' },
+      { src: '.claude/notify-config.json',   dest: 'notify-config.json',   label: 'notify-config.json（通知偏好）' },
       { src: '.claude/settings.json',         dest: 'settings.json',         label: 'settings.json（Hooks + MCP 配置）', merge: true, rewritePrefix: '.claude/' },
     ],
     preserve: [],

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
  * Stop Hook - Cursor 回答结束时触发
- * 功能: nul 文件清理 + 完成音效
+ * 功能: nul 文件清理 + 智能完成通知（音效/系统通知/TTS）
  */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 // 清理可能误创建的 nul 文件（Windows 下 > nul 可能创建该文件）
 const findAndDeleteNul = (dir, depth = 0) => {
@@ -28,40 +27,7 @@ const findAndDeleteNul = (dir, depth = 0) => {
 };
 findAndDeleteNul(process.cwd());
 
-// 播放完成音效（可选）
-// 查找顺序: 工作区 .cursor/audio/ → 工作区 .claude/audio/ → 全局 ~/.cursor/audio/ → 全局 ~/.claude/audio/
-const homeDir = require('os').homedir();
-const candidates = [
-  path.join(process.cwd(), '.cursor', 'audio', 'completed.wav'),
-  path.join(process.cwd(), '.claude', 'audio', 'completed.wav'),
-  path.join(homeDir, '.cursor', 'audio', 'completed.wav'),
-  path.join(homeDir, '.claude', 'audio', 'completed.wav'),
-];
-const audioFile = candidates.find(f => fs.existsSync(f)) || null;
-
-try {
-  if (audioFile) {
-    const platform = process.platform;
-    if (platform === 'darwin') {
-      execSync(`afplay "${audioFile}"`, { stdio: ['pipe', 'pipe', 'pipe'] });
-    } else if (platform === 'win32') {
-      execSync(`powershell -c "(New-Object Media.SoundPlayer '${audioFile.replace(/'/g, "''")}').PlaySync()"`, {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-    } else if (platform === 'linux') {
-      try {
-        execSync(`aplay "${audioFile}"`, { stdio: ['pipe', 'pipe', 'pipe'] });
-      } catch {
-        try {
-          execSync(`paplay "${audioFile}"`, { stdio: ['pipe', 'pipe', 'pipe'] });
-        } catch {
-          // 播放失败，静默忽略
-        }
-      }
-    }
-  }
-} catch {
-  // 播放失败时静默忽略
-}
-
-process.exit(0);
+// 执行智能通知
+require('./lib/notify.js').run(process.cwd())
+  .then(() => process.exit(0))
+  .catch(() => process.exit(0));
