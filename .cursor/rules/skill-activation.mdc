@@ -1,0 +1,94 @@
+---
+description: 技能激活规则 - 根据用户问题自动读取对应 SKILL.md 文件
+alwaysApply: true
+---
+
+## 技能激活规则（必须遵守）
+
+当用户问题涉及以下主题时，**必须先读取对应 SKILL.md 文件**，再回答：
+
+### leniu 专项技能
+
+| 触发词 | SKILL.md 路径 |
+|--------|--------------|
+| CRUD/增删改查/新建模块/LeRequest/PageDTO/leniu-CRUD | `.cursor/skills/leniu-crud-development/SKILL.md` |
+| leniu-API/LeResult/LeResponse/云食堂接口 | `.cursor/skills/leniu-api-development/SKILL.md` |
+| leniu-数据库/leniu-建表/双库/商户库/系统库/leniu-SQL | `.cursor/skills/leniu-database-ops/SKILL.md` |
+| leniu-Entity/leniu-VO/leniu-DTO/@TableName/@TableField | `.cursor/skills/leniu-java-entity/SKILL.md` |
+| leniu-MyBatis/leniu-Mapper/LambdaQueryWrapper/leniu-XML | `.cursor/skills/leniu-java-mybatis/SKILL.md` |
+| leniu-并发/CompletableFuture/leniu-线程池 | `.cursor/skills/leniu-java-concurrent/SKILL.md` |
+| leniu-导出/leniu-Excel导出/leniu-@ExcelProperty | `.cursor/skills/leniu-java-export/SKILL.md` |
+| leniu-日志/@Slf4j/leniu-log.info | `.cursor/skills/leniu-java-logging/SKILL.md` |
+| leniu-消息队列/leniu-MQ/MqUtil/@MqConsumer | `.cursor/skills/leniu-java-mq/SKILL.md` |
+| leniu-定时任务/leniu-XXL-Job/@XxlJob | `.cursor/skills/leniu-java-task/SKILL.md` |
+| leniu-合计行/totalLine/ReportBaseTotalVO | `.cursor/skills/leniu-java-total-line/SKILL.md` |
+| leniu-金额/leniu-分转元/leniu-元转分/amountFen | `.cursor/skills/leniu-java-amount-handling/SKILL.md` |
+| leniu-报表查询/ReportBaseParam/leniu-分页参数 | `.cursor/skills/leniu-java-report-query-param/SKILL.md` |
+| leniu-异常/LeException/leniu-全局异常/leniu-I18n | `.cursor/skills/leniu-error-handler/SKILL.md` |
+| leniu-注解/@RequiresAuthentication/@Validated | `.cursor/skills/leniu-backend-annotations/SKILL.md` |
+| leniu-工具类/leniu-BeanUtil/leniu-StrUtil/LeBeanUtil | `.cursor/skills/leniu-utils-toolkit/SKILL.md` |
+| leniu-架构/云食堂架构/双库架构/pigx框架 | `.cursor/skills/leniu-architecture-design/SKILL.md` |
+| leniu-安全/leniu-认证/leniu-权限/leniu-加密 | `.cursor/skills/leniu-security-guard/SKILL.md` |
+| leniu-缓存/leniu-Redis/leniu-RedisUtil/leniu-分布式锁 | `.cursor/skills/leniu-redis-cache/SKILL.md` |
+| leniu-数据权限/DataScope/leniu-行级权限 | `.cursor/skills/leniu-data-permission/SKILL.md` |
+| leniu-规范/leniu-禁止/leniu-命名/leniu-代码风格 | `.cursor/skills/leniu-code-patterns/SKILL.md` |
+| 营销计费/计费规则/RulePriceHandler | `.cursor/skills/leniu-marketing-price-rule-customizer/SKILL.md` |
+| 营销充值/充值规则/RuleRechargeHandler/满赠规则 | `.cursor/skills/leniu-marketing-recharge-rule-customizer/SKILL.md` |
+| 餐次/早餐/午餐/下午茶/晚餐/夜宵/mealtimeTypes | `.cursor/skills/leniu-mealtime/SKILL.md` |
+
+### OpenSpec 工作流技能
+
+| 触发词 | SKILL.md 路径 |
+|--------|--------------|
+| 新建变更/opsx:new/openspec new | `.cursor/skills/openspec-new-change/SKILL.md` |
+| 快速推进/opsx:ff/openspec ff | `.cursor/skills/openspec-ff-change/SKILL.md` |
+| 实现任务/opsx:apply/openspec apply | `.cursor/skills/openspec-apply-change/SKILL.md` |
+| 继续变更/opsx:continue/openspec continue | `.cursor/skills/openspec-continue-change/SKILL.md` |
+| 归档变更/opsx:archive/openspec archive | `.cursor/skills/openspec-archive-change/SKILL.md` |
+| 批量归档/opsx:bulk-archive | `.cursor/skills/openspec-bulk-archive-change/SKILL.md` |
+| 探索模式/opsx:explore/openspec explore | `.cursor/skills/openspec-explore/SKILL.md` |
+| 同步规格/opsx:sync/openspec sync | `.cursor/skills/openspec-sync-specs/SKILL.md` |
+| 验证变更/opsx:verify/openspec verify | `.cursor/skills/openspec-verify-change/SKILL.md` |
+
+### 通用技能
+
+| 触发词 | SKILL.md 路径 |
+|--------|--------------|
+| CRUD/增删改查/Entity/Service/Controller/业务模块 | `.cursor/skills/crud-development/SKILL.md` |
+| API设计/RESTful/接口规范/Swagger | `.cursor/skills/api-development/SKILL.md` |
+| 数据库/SQL/建表/字典/菜单配置 | `.cursor/skills/database-ops/SKILL.md` |
+| @RateLimiter/@DataScope/@RepeatSubmit | `.cursor/skills/backend-annotations/SKILL.md` |
+| MapstructUtils/StreamUtils/TreeBuildUtils | `.cursor/skills/utils-toolkit/SKILL.md` |
+| 文件上传/OSS/云存储/MinIO/预签名URL | `.cursor/skills/file-oss-management/SKILL.md` |
+| Bug/报错/异常/不工作/NullPointerException | `.cursor/skills/bug-detective/SKILL.md` |
+| 异常处理/ServiceException/全局异常 | `.cursor/skills/error-handler/SKILL.md` |
+| 性能/慢查询/接口慢/N+1问题 | `.cursor/skills/performance-doctor/SKILL.md` |
+| 数据权限/@DataPermission/DataScope/行级权限 | `.cursor/skills/data-permission/SKILL.md` |
+| Sa-Token/认证授权/XSS/SQL注入/数据脱敏 | `.cursor/skills/security-guard/SKILL.md` |
+| 架构设计/模块划分/重构/技术栈 | `.cursor/skills/architecture-design/SKILL.md` |
+| 规范/禁止/命名规范/代码风格 | `.cursor/skills/code-patterns/SKILL.md` |
+| 项目结构/文件在哪/定位代码/模块职责 | `.cursor/skills/project-navigator/SKILL.md` |
+| git/commit/提交/分支/合并/push/pull/冲突 | `.cursor/skills/git-workflow/SKILL.md` |
+| 任务跟踪/记录进度/继续任务/跨会话 | `.cursor/skills/task-tracker/SKILL.md` |
+| 技术选型/方案对比/哪个好/优缺点 | `.cursor/skills/tech-decision/SKILL.md` |
+| 头脑风暴/方案设计/怎么设计/有什么办法 | `.cursor/skills/brainstorm/SKILL.md` |
+| 工作流/审批流/Flowable/WarmFlow | `.cursor/skills/workflow-engine/SKILL.md` |
+| 单元测试/@Test/JUnit5/Mockito | `.cursor/skills/test-development/SKILL.md` |
+| JSON/序列化/反序列化/JsonUtils/BigDecimal精度 | `.cursor/skills/json-serialization/SKILL.md` |
+| Redis/缓存/@Cacheable/@CacheEvict/分布式锁/RLock | `.cursor/skills/redis-cache/SKILL.md` |
+| 定时任务/SnailJob/@Scheduled/@JobExecutor | `.cursor/skills/scheduled-jobs/SKILL.md` |
+| WebSocket/SSE/实时推送/消息通知/双向通信 | `.cursor/skills/websocket-sse/SKILL.md` |
+| 短信/邮件/SMS/验证码/MailUtils | `.cursor/skills/sms-mail/SKILL.md` |
+| 第三方登录/微信登录/OAuth/JustAuth/扫码登录 | `.cursor/skills/social-login/SKILL.md` |
+| 多租户/租户隔离/TenantEntity/tenantId/SaaS | `.cursor/skills/tenant-management/SKILL.md` |
+| Element UI/前端组件/el-table/el-form/管理页面 | `.cursor/skills/ui-pc/SKILL.md` |
+| Vuex/store/mapState/mapActions/状态管理 | `.cursor/skills/store-pc/SKILL.md` |
+
+### 执行规则
+
+1. **识别触发词** → 找到匹配的技能
+2. **读取 SKILL.md** → 使用 Read 工具读取对应文件
+3. **严格遵循规范** → 按照文档中的规范实现，不得违反禁令
+4. **多技能时逐个读取** → 有多个匹配技能时，依次读取所有 SKILL.md
+
+> SKILL.md 文档包含本项目特定的实现规范，必须优先参考，禁止使用通用写法替代。

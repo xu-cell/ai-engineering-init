@@ -4,6 +4,21 @@
 
 ---
 
+## [v1.3.3] - 2026-03-03
+
+### 修复
+- **Cursor beforeSubmitPrompt hook 技能注入失效**：根本原因是 `systemMessage` 字段不在 Cursor 支持范围内
+  - Cursor `beforeSubmitPrompt` 只支持 `{continue, user_message}`，之前输出 `{systemMessage}` 被直接忽略
+  - 改为同时输出 `prompt`（修改用户 prompt 注入指引）和 `user_message`（fallback 备注），覆盖 Cursor 可能支持的字段
+
+### 新增
+- **`.cursor/rules/skill-activation.mdc`（核心兜底）**：利用 Cursor Rules 系统实现永久技能激活
+  - `alwaysApply: true` — Cursor 将其内容注入**每次对话的系统上下文**，不依赖 hook 协议
+  - 包含完整的触发词 → SKILL.md 路径映射表（leniu 专项、OpenSpec 工作流、通用技能三大分类）
+  - AI 识别到触发词后自动读取对应 SKILL.md，确保技能激活率接近 100%
+
+---
+
 ## [v1.3.2] - 2026-03-03
 
 ### 修复

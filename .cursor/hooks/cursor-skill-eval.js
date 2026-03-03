@@ -337,19 +337,22 @@ if (matchedSkills.length === 0) {
 // 构建技能文档路径列表
 const skillPaths = matchedSkills.map(name => `.cursor/skills/${name}/SKILL.md`);
 
-const instructions = `## 技能知识库引导
+const skillList = matchedSkills.map((name, i) => `- **${name}**: \`${skillPaths[i]}\``).join('\n');
 
-检测到当前任务匹配以下技能，**请在回答前阅读对应技能文档**：
+const injectedPrompt = `${prompt}
 
-${matchedSkills.map((name, i) => `- **${name}**: \`${skillPaths[i]}\``).join('\n')}
+---
+[系统提示] 检测到以下匹配技能，**请先用 Read 工具读取对应 SKILL.md 文件，再回答**：
+${skillList}
 
-### 执行步骤
+执行顺序：① 读取 SKILL.md → ② 理解规范 → ③ 实现功能`;
 
-1. **阅读技能文档**（必须）：依次读取上述 SKILL.md 文件获取规范指导
-2. **理解项目规范**：根据文档中的规范、禁令和示例代码制定实现方案
-3. **实现功能**：严格按照技能文档的规范实现，不得违反禁令
-
-> 注意：SKILL.md 文档包含本项目特定的实现规范，必须优先参考，不得使用通用写法替代。`;
-
-console.log(JSON.stringify({ systemMessage: instructions }));
+// 策略1：尝试修改 prompt（若 Cursor 支持则直接生效，是最理想方案）
+// 策略2：fallback 到 user_message 软提示（会打断用户但能传达信息）
+// 策略3：rules/skill-activation.mdc 兜底（alwaysApply 永久生效，不依赖 hook）
+console.log(JSON.stringify({
+  continue: true,
+  prompt: injectedPrompt,           // 策略1：修改 prompt（测试 Cursor 是否支持）
+  user_message: skillList           // 策略2：fallback（continue:true 时可能作为备注显示）
+}));
 process.exit(0);
