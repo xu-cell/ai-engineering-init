@@ -4,6 +4,20 @@
 
 ---
 
+## [v1.3.4] - 2026-03-03
+
+### 新增
+- **leniu-report-standard-customization 技能**：新增标准版（core-report 模块）定制报表开发技能，涵盖经营分析、营业额分析、用户活跃度、菜品排行、操作员统计、账户日结等场景
+
+### 优化
+- **add-skill 技能重构**：优化技能创建文档，提升技能编写指引的清晰度
+- **leniu-report-customization 技能**：补充更多报表开发模板和示例
+- **skill-forced-eval.js**：同步注册 `leniu-report-standard-customization` 触发词
+- **skill-activation.mdc**：同步注册标准版报表技能触发词到 Cursor Rules
+- **AGENTS.md**：同步更新技能注册信息
+
+---
+
 ## [v1.3.3] - 2026-03-03
 
 ### 修复

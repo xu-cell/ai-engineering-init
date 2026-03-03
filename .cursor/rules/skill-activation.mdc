@@ -35,6 +35,8 @@ alwaysApply: true
 | 营销计费/计费规则/RulePriceHandler | `.cursor/skills/leniu-marketing-price-rule-customizer/SKILL.md` |
 | 营销充值/充值规则/RuleRechargeHandler/满赠规则 | `.cursor/skills/leniu-marketing-recharge-rule-customizer/SKILL.md` |
 | 餐次/早餐/午餐/下午茶/晚餐/夜宵/mealtimeTypes | `.cursor/skills/leniu-mealtime/SKILL.md` |
+| 定制报表/汇总报表/report_order_info/v5.29报表/batchConsume/consumeType | `.cursor/skills/leniu-report-customization/SKILL.md` |
+| 标准版报表/core-report/report_refund/经营分析/fix重算/账户日结/菜品排行 | `.cursor/skills/leniu-report-standard-customization/SKILL.md` |
 
 ### OpenSpec 工作流技能
 

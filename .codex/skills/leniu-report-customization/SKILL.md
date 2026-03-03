@@ -13,11 +13,51 @@ description: |
   触发词：定制报表、汇总报表、report_order_info、report_order_detail、report_account_flow、退款汇总、消费金额统计、订单报表、流水报表
 ---
 
-# leniu 定制报表开发指南
+# leniu 定制报表开发指南（v5.29 版）
+
+## ⚠️ 版本识别（必读）
+
+**本 skill 仅适用于 v5.29 版本（报表内嵌于 sys-canteen 模块）**。开始前必须确认项目版本。
+
+### 如何判断当前项目版本
+
+**方法一：查看目录结构**
+```bash
+# 若报表代码在 sys-canteen 内 → v5.29 版本（使用本 skill）
+ls leniu-tengyun-core/sys-canteen/src/main/java/.../report/statistics/
+
+# 若存在独立的 core-report 模块 → 标准版（使用 leniu-report-standard-customization）
+ls leniu-tengyun-core/core-report/
+```
+
+**方法二：查看 git tag**
+```bash
+git tag --sort=-v:refname | head -5
+# v5.29.x tag → v5.29 版本，使用本 skill
+```
+
+**方法三：检查 report_order_info 表字段**
+- 有 `consume_type` 字段（1=消费，2=退款）→ v5.29 版本，使用本 skill
+- 无 `consume_type`，有独立 `report_refund` 表 → 标准版，使用 `leniu-report-standard-customization`
+
+### 两版本核心差异速查
+
+| 特性 | v5.29 版本（本指南） | 标准版 |
+|------|------------------|--------|
+| 模块位置 | `sys-canteen` 内嵌 | `core-report` 独立模块 |
+| 退款存储 | 合并入 `report_order_info`，`consumeType=2` | 独立 `report_refund` 表 |
+| 退款金额 | **负数**存储，直接 SUM 即净额 | **正数**存储，需手动减退 |
+| 第二阶段消费 | 用 `batchConsume()` 增量累加 | 用 `fix()` 按日重算 |
+| report_order_info.consumeType | **1=消费，2=退款** | 无此字段 |
+| 分析模块 | 无独立分析模块 | 完整引擎（6 大分析维度） |
+
+> **标准版报表开发**请使用 `leniu-report-standard-customization` skill。
+
+---
 
 ## 概述
 
-本项目的定制报表基于**报表基础表**（由 MQ 消息写入）进行二次汇总。核心数据源有两类：
+本项目（v5.29）的定制报表基于**报表基础表**（由 MQ 消息写入）进行二次汇总。核心数据源有两类：
 1. **订单类**：`report_order_info` + `report_order_detail`（消费/退款数据）
 2. **账户流水类**：`report_account_flow` + `report_account_flow_detail`（钱包变动数据）
 

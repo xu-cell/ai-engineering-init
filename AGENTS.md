@@ -104,6 +104,7 @@
 | `leniu-marketing-price-rule-customizer` | 营销计费、计价规则、RulePriceHandler、RulePriceEnum、折扣规则、满减规则、限额规则 |
 | `leniu-marketing-recharge-rule-customizer` | 营销充值、充值规则、RuleRechargeHandler、RuleRechargeEnum、满赠规则、充值赠送 |
 | `leniu-report-customization` | 定制报表、汇总报表、report_order_info、report_order_detail、report_account_flow、退款汇总、消费金额统计 |
+| `leniu-report-standard-customization` | 标准版报表、core-report、report_refund、经营分析、营业额分析、用户活跃度、菜品排行、操作员统计、账户日结、商户消费汇总 |
 
 ### 前端开发技能（需 plus-ui 目录存在）
 

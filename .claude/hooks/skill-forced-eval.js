@@ -3,7 +3,7 @@
  * UserPromptSubmit Hook - 强制技能评估 (跨平台版本)
  * 功能: 开发场景下，将 Skills 激活率从约 25% 提升到 90% 以上
  *
- * 适配项目: RuoYi-Vue-Plus (纯后端项目)
+ * 适配项目: leniu (纯后端项目)
  * 架构: 三层架构 (Controller → Service → Mapper)
  * 包名: org.dromara.*
  */
@@ -107,6 +107,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - leniu-java-task: 定时任务/XXL-Job/@XxlJob/TenantLoader/任务调度/分布式定时
 - leniu-java-total-line: 合计行/totalLine/报表合计/SUM合计/ReportBaseTotalVO/合计查询
 - leniu-report-customization: 定制报表/汇总报表/report_order_info/report_order_detail/report_account_flow/退款汇总/消费金额统计/订单报表/流水报表
+- leniu-report-standard-customization: 标准版报表/core-report/report_refund/report_refund_detail/经营分析/营业额分析/用户活跃度/菜品排行/操作员统计/账户日结/钱包消费汇总/商户消费汇总/ReportOrderConsumeService/ReportAccountConsumeService
 - leniu-crud-development: CRUD/增删改查/新建模块/Business层/Service/Mapper/Controller/分页查询/LeRequest/PageDTO/PageVO/事务管理
 - leniu-database-ops: 数据库/SQL/建表/双库/商户库/系统库/审计字段/crby/crtime/del_flag
 - leniu-utils-toolkit: 工具类/BeanUtil/StrUtil/CollUtil/ObjectUtil/RedisUtil/JacksonUtil/LeBeanUtil

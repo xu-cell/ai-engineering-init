@@ -16,19 +16,53 @@ description: |
 
 ## 概述
 
-本指南用于在 RuoYi-Vue-Plus 框架中添加新的技能（Skill）。技能通过 UserPromptSubmit Hook 自动评估和激活，确保 AI 在编码前加载领域专业知识。
+本指南用于在 leniu-tengyun-core 项目中添加新的技能（Skill）。项目同时支持三个 AI 编码平台，技能需在所有平台保持一致。
 
-**技能系统工作原理**：
+### 三平台架构
 
+| 平台 | 技能目录 | Hook 文件 | 激活方式 |
+|------|---------|-----------|---------|
+| **Claude Code** | `.claude/skills/{技能名}/SKILL.md` | `.claude/hooks/skill-forced-eval.js` | `Skill(技能名)` 工具调用 |
+| **Codex CLI** | `.codex/skills/{技能名}/SKILL.md` | 无独立 hook | 依赖 AGENTS.md 引导 |
+| **Cursor** | `.cursor/skills/{技能名}/SKILL.md` | `.cursor/hooks/cursor-skill-eval.js` | Read 文件读取 |
+
+### 技能系统工作原理
+
+**Claude Code**：
 ```
 用户提交问题
   ↓ skill-forced-eval.js Hook 触发
-注入技能评估指令
+注入技能评估指令（列出可用技能 + 触发词）
   ↓ AI 评估匹配的技能
 逐个调用 Skill(技能名)
   ↓ 读取 .claude/skills/{技能名}/SKILL.md
 AI 获得领域知识后开始实现
 ```
+
+**Cursor**：
+```
+用户提交问题
+  ↓ cursor-skill-eval.js Hook 触发
+扫描 skillMap 关键词匹配
+  ↓ 注入读取指令
+AI 读取 .cursor/skills/{技能名}/SKILL.md
+  ↓ 同时 skill-activation.mdc 规则也可触发读取
+AI 获得领域知识后开始实现
+```
+
+### 各平台注册位置速查
+
+新建技能需要修改以下文件：
+
+| # | 文件 | 作用 | 必须 |
+|---|------|------|------|
+| 1 | `.claude/skills/{技能名}/SKILL.md` | 技能主文件 | 是 |
+| 2 | `.claude/hooks/skill-forced-eval.js` | Claude Code 触发词注册 | 是 |
+| 3 | `AGENTS.md` | Codex 技能清单 | 是 |
+| 4 | `.cursor/skills/{技能名}/SKILL.md` | Cursor 技能文件 | 是 |
+| 5 | `.cursor/hooks/cursor-skill-eval.js` | Cursor 关键词映射 | 是 |
+| 6 | `.cursor/rules/skill-activation.mdc` | Cursor 规则触发 | 是 |
+| 7 | `.codex/skills/{技能名}/SKILL.md` | Codex 技能文件 | 是 |
 
 ---
 
@@ -60,58 +94,21 @@ description: |
 | **格式** | kebab-case（全小写，横线连接） | `json-serialization` |
 | **禁止** | 下划线、驼峰、空格 | ~~`json_serialization`~~, ~~`jsonSerialization`~~ |
 | **长度** | 1-4 个单词 | `ui-pc`, `crud-development`, `redis-cache` |
+| **leniu 前缀** | leniu 专项技能加 `leniu-` 前缀 | `leniu-crud-development` |
 
 ### description 第一行风格
-
-第一行没有强制格式，参考现有技能的两种常见风格：
 
 **风格 A：直述型**（多数技能采用）
 ```yaml
 description: |
-  后端 CRUD 开发规范。基于 RuoYi-Vue-Plus 三层架构。
-  后端安全开发规范。包含 Sa-Token 认证授权、数据脱敏。
-  后端工具类使用指南。包含 MapstructUtils、StringUtils 等。
+  后端 CRUD 开发规范。基于四层架构（Controller → Business → Service → Mapper）。
+  后端安全开发规范。包含认证授权、数据脱敏。
 ```
 
 **风格 B：触发型**
 ```yaml
 description: |
   当需要进行技术选型、对比方案时自动使用此 Skill。
-  当需要为框架增加新技能时自动使用此 Skill。
-```
-
-### 实际技能 YAML 头部示例
-
-```yaml
----
-name: crud-development
-description: |
-  后端 CRUD 开发规范。基于 RuoYi-Vue-Plus 三层架构（Controller → Service → Mapper），无独立 DAO 层。
-
-  触发场景：
-  - 新建业务模块的 CRUD 功能
-  - 创建 Entity、BO、VO、Service、Mapper、Controller
-  - 分页查询、新增、修改、删除、导出
-  - 查询条件构建（buildQueryWrapper）
-
-  触发词：CRUD、增删改查、新建模块、Entity、BO、VO、Service、Mapper、Controller、分页查询、buildQueryWrapper、@AutoMapper、BaseMapperPlus、TenantEntity
----
-```
-
-```yaml
----
-name: redis-cache
-description: |
-  当需要使用Redis缓存、分布式锁、限流等功能时自动使用此Skill。
-
-  触发场景：
-  - 使用Redis缓存数据
-  - 配置Spring Cache缓存注解
-  - 实现分布式锁
-  - 实现接口限流
-
-  触发词：Redis、缓存、Cache、@Cacheable、@CacheEvict、@CachePut、RedisUtils、CacheUtils、分布式锁、RLock、限流、RateLimiter
----
 ```
 
 ---
@@ -120,37 +117,26 @@ description: |
 
 ### 1.1 定义技能属性
 
-创建前先明确：
-
 | 属性 | 说明 | 示例 |
 |------|------|------|
-| **名称** | kebab-case 格式 | `payment-gateway` |
-| **类别** | 后端/通用/前端（需 plus-ui） | 后端 |
+| **名称** | kebab-case 格式 | `leniu-payment-gateway` |
+| **类别** | 后端/通用/前端 | 后端 |
 | **触发场景** | 至少 3 个具体场景 | 支付接入、退款处理、对账 |
 | **触发词** | 至少 5 个关键词 | 支付、退款、订单、对账、Payment |
-| **参考代码** | 项目中的真实代码位置 | `ruoyi-modules/ruoyi-system/` |
+| **参考代码** | 项目中的真实代码位置 | `sys-canteen/.../order/` |
 
 ### 1.2 检查范围冲突
 
 查看现有技能列表，确保不与已有技能重叠：
 
-**当前已有技能**（`.claude/skills/` 下 33 个）：
+```bash
+# 查看所有技能
+ls .claude/skills/
+```
 
-| 分类 | 技能 |
-|------|------|
-| 后端开发 | crud-development, api-development, database-ops, backend-annotations, utils-toolkit, error-handler |
-| 安全权限 | security-guard, data-permission, tenant-management |
-| 中间件 | redis-cache, json-serialization, scheduled-jobs, file-oss-management |
-| 通信集成 | websocket-sse, sms-mail, social-login, workflow-engine |
-| 质量保障 | test-development, bug-detective, performance-doctor, code-patterns |
-| 架构决策 | architecture-design, tech-decision, brainstorm, project-navigator |
-| 工具流程 | git-workflow, task-tracker, add-skill |
-| 前端（需 plus-ui） | ui-pc, store-pc |
-| 特殊功能 | banana-image, collaborating-with-codex, collaborating-with-gemini |
-
-如果新技能与现有技能有交集，在 SKILL.md 中用"注意"段落说明边界：
+如果新技能与现有技能有交集，在 SKILL.md 末尾用"注意"段落说明边界：
 ```markdown
-注意：如果是认证授权（登录、Token、Sa-Token），请使用 security-guard。
+注意：如果是认证授权（登录、Token），请使用 leniu-security-guard。
 ```
 
 ---
@@ -196,27 +182,30 @@ description: |
 ### 2.3 内容质量要点
 
 - **代码示例必须来自项目实际代码**，不要虚构类名、方法名
-- **包名统一 `org.dromara.*`**，不要出现 `com.ruoyi.*`
-- **三层架构**：Controller → Service → Mapper，无 DAO 层
-- **对象转换用 `MapstructUtils.convert()`**，不要写 BeanUtils
+- **包名统一 `net.xnzn.core.*`**，不要出现 `org.dromara.*` 或 `com.ruoyi.*`
+- **四层架构**：Controller → Business → Service → Mapper
+- **对象转换用 `BeanUtil.copyProperties()`**（Hutool），不要写 MapstructUtils
+- **异常用 `LeException`**，不要写 ServiceException
+- **审计字段**：`crby/crtime/upby/uptime`，不要写 createBy/createTime
 - 技能不需要固定行数要求，以内容实用为准（实际范围 200-650 行）
 
 ### 2.4 不同类型技能的侧重
 
 | 类型 | 侧重 | 示例 |
 |------|------|------|
-| 后端开发类 | 代码模板、标准写法、禁止项 | crud-development |
-| 工具类 | API 列表、使用示例、返回值 | utils-toolkit |
-| 中间件类 | 配置方法、集成步骤、注意事项 | redis-cache |
-| 流程类 | 步骤说明、决策树、检查清单 | brainstorm |
+| 后端开发类 | 代码模板、标准写法、禁止项 | leniu-crud-development |
+| 工具类 | API 列表、使用示例、返回值 | leniu-utils-toolkit |
+| 中间件类 | 配置方法、集成步骤、注意事项 | leniu-redis-cache |
+| 流程类 | 步骤说明、决策树、检查清单 | leniu-brainstorm |
+| 报表类 | SQL 模板、fix 模式、退款处理 | leniu-report-customization |
 
 ---
 
-## 第 3 步：注册技能
+## 第 3 步：注册技能（Claude Code）
 
-技能需要在两个位置注册，才能被系统识别和激活。
+技能需要在 **两个** 位置注册，才能被 Claude Code 识别和激活。
 
-### 3.1 在 Hook 中注册
+### 3.1 在 Claude Hook 中注册
 
 **文件**：`.claude/hooks/skill-forced-eval.js`
 
@@ -228,43 +217,97 @@ description: |
 
 **示例**：
 ```javascript
-- payment-gateway: 支付/退款/对账/Payment/支付宝/微信支付
+- leniu-payment-gateway: 支付/退款/对账/Payment/支付宝/微信支付
 ```
 
-**注意**：按逻辑分组插入，不是追加到末尾。
+**注意**：按逻辑分组插入（leniu 专项技能放在一起），不是追加到末尾。
 
 ### 3.2 在 AGENTS.md 中注册
 
 **文件**：`AGENTS.md` 的"技能清单与触发条件"表格
 
-在对应分类下添加一行：
-
 ```markdown
 | `{技能名}` | {触发条件简述} |
 ```
 
-**示例**：
-```markdown
-| `payment-gateway` | 支付接入、退款、对账、支付宝/微信支付 |
-```
-
-### 3.3 验证注册
+### 3.3 验证 Claude Code 注册
 
 ```bash
-# 检查 hook 文件
-grep "payment-gateway" .claude/hooks/skill-forced-eval.js
-
-# 检查 AGENTS.md
-grep "payment-gateway" AGENTS.md
+grep "{技能名}" .claude/hooks/skill-forced-eval.js
+grep "{技能名}" AGENTS.md
 ```
 
 ---
 
-## 第 4 步：Codex 同步
+## 第 4 步：注册技能（Cursor）
 
-项目同时支持 Claude Code（`.claude/`）和 Codex CLI（`.codex/`）两个系统。
+Cursor 有**三处**需要注册。
 
-### 同步步骤
+### 4.1 复制 SKILL.md 到 Cursor
+
+```bash
+mkdir -p .cursor/skills/{技能名}
+cp .claude/skills/{技能名}/SKILL.md .cursor/skills/{技能名}/SKILL.md
+```
+
+### 4.2 在 Cursor Hook 中注册
+
+**文件**：`.cursor/hooks/cursor-skill-eval.js`
+
+在 `skillMap` 数组的对应分组中添加条目：
+
+```javascript
+// 在 skillMap 数组中找到对应分组，添加：
+{
+  name: '{技能名}',
+  keywords: ['关键词1', '关键词2', '关键词3', '关键词4', '关键词5']
+},
+```
+
+**分组说明**（按注释标记）：
+- `// ========== leniu 专项技能 ==========` — leniu 前缀的技能
+- `// ========== OpenSpec 工作流 ==========` — openspec 技能
+- `// ========== 通用技能 ==========` — 通用技能（无 leniu 前缀）
+
+**示例**：
+```javascript
+{
+  name: 'leniu-payment-gateway',
+  keywords: ['leniu-支付', 'leniu-退款', 'leniu-对账', '支付宝', '微信支付']
+},
+```
+
+### 4.3 在 Cursor Rules 中注册
+
+**文件**：`.cursor/rules/skill-activation.mdc`
+
+在对应分组的表格中添加一行：
+
+```markdown
+| {触发词，用/分隔} | `.cursor/skills/{技能名}/SKILL.md` |
+```
+
+**分组说明**：
+- `### leniu 专项技能` — leniu 前缀的技能
+- `### OpenSpec 工作流技能` — openspec 技能
+- `### 通用技能` — 通用技能
+
+**示例**：
+```markdown
+| leniu-支付/leniu-退款/leniu-对账/支付宝/微信支付 | `.cursor/skills/leniu-payment-gateway/SKILL.md` |
+```
+
+### 4.4 验证 Cursor 注册
+
+```bash
+grep "{技能名}" .cursor/hooks/cursor-skill-eval.js
+grep "{技能名}" .cursor/rules/skill-activation.mdc
+ls .cursor/skills/{技能名}/SKILL.md
+```
+
+---
+
+## 第 5 步：Codex 同步
 
 ```bash
 # 1. 创建 Codex 目录
@@ -279,46 +322,94 @@ diff .claude/skills/{技能名}/SKILL.md .codex/skills/{技能名}/SKILL.md
 
 **注意**：
 - `.codex/skills/` 中额外存放斜杠命令型技能（如 dev, crud, check 等），这些不需要在 `.claude/` 中创建
-- 普通技能（非斜杠命令）需要保持两个目录一致
+- 普通技能（非斜杠命令）需要保持三个目录一致
 
 ---
 
-## 第 5 步：验证
+## 第 6 步：验证
 
 ### 完整检查清单
 
-**文件**：
+**主文件**：
 - [ ] `.claude/skills/{技能名}/SKILL.md` 已创建
+
+**Claude Code 注册**：
+- [ ] `.claude/hooks/skill-forced-eval.js` 已添加技能条目
+- [ ] `AGENTS.md` 已添加技能条目
+
+**Cursor 注册**：
+- [ ] `.cursor/skills/{技能名}/SKILL.md` 已同步
+- [ ] `.cursor/hooks/cursor-skill-eval.js` skillMap 已添加条目
+- [ ] `.cursor/rules/skill-activation.mdc` 已添加触发行
+
+**Codex 同步**：
 - [ ] `.codex/skills/{技能名}/SKILL.md` 已同步
 
 **YAML 头部**：
 - [ ] `name` 使用 kebab-case 格式
 - [ ] description 包含触发场景（至少 3 个）
 - [ ] description 包含触发词（至少 5 个）
-- [ ] 各部分之间有空行
-
-**注册**：
-- [ ] `.claude/hooks/skill-forced-eval.js` 已添加技能条目
-- [ ] `AGENTS.md` 已添加技能条目
 
 **内容**：
 - [ ] 代码示例来自项目实际代码，无虚构内容
-- [ ] 包名使用 `org.dromara.*`
+- [ ] 包名使用 `net.xnzn.core.*`
 - [ ] 与现有技能无范围冲突（或已说明边界）
+
+### 一键验证命令
+
+```bash
+SKILL_NAME="{技能名}"
+
+echo "=== Claude ===" && \
+ls .claude/skills/$SKILL_NAME/SKILL.md && \
+grep "$SKILL_NAME" .claude/hooks/skill-forced-eval.js && \
+grep "$SKILL_NAME" AGENTS.md && \
+echo "" && echo "=== Cursor ===" && \
+ls .cursor/skills/$SKILL_NAME/SKILL.md && \
+grep "$SKILL_NAME" .cursor/hooks/cursor-skill-eval.js && \
+grep "$SKILL_NAME" .cursor/rules/skill-activation.mdc && \
+echo "" && echo "=== Codex ===" && \
+ls .codex/skills/$SKILL_NAME/SKILL.md && \
+echo "" && echo "=== 三平台一致性 ===" && \
+diff .claude/skills/$SKILL_NAME/SKILL.md .cursor/skills/$SKILL_NAME/SKILL.md && \
+diff .claude/skills/$SKILL_NAME/SKILL.md .codex/skills/$SKILL_NAME/SKILL.md && \
+echo "全部通过"
+```
 
 ---
 
 ## 常见陷阱
 
-### 1. 遗漏注册
+### 1. 遗漏注册（最常见）
 
 **症状**：技能文件存在但从不被激活
 
-**原因**：只创建了 SKILL.md，没有在 Hook 和 AGENTS.md 中注册
+**原因**：只创建了 SKILL.md，没有完成注册。三平台共 **7 处**需要操作。
 
-**解决**：完成第 3 步的两处注册
+**解决**：对照第 6 步检查清单逐项确认
 
-### 2. 触发词过于宽泛
+### 2. Cursor Hook 遗漏
+
+**症状**：Claude Code 中正常，Cursor 中技能不激活
+
+**原因**：只注册了 `.cursor/rules/skill-activation.mdc`，忘了注册 `.cursor/hooks/cursor-skill-eval.js`（或反之）
+
+**解决**：Cursor 有两处需要注册——Hook 负责编程匹配触发，Rules 负责规则文本触发，**两处都需要**
+
+### 3. 三平台 SKILL.md 不一致
+
+**症状**：不同平台的 AI 给出不同的代码建议
+
+**原因**：修改了 `.claude/` 中的 SKILL.md 后，忘记同步到 `.cursor/` 和 `.codex/`
+
+**解决**：修改后执行同步：
+```bash
+SKILL_NAME="{技能名}"
+cp .claude/skills/$SKILL_NAME/SKILL.md .cursor/skills/$SKILL_NAME/SKILL.md
+cp .claude/skills/$SKILL_NAME/SKILL.md .codex/skills/$SKILL_NAME/SKILL.md
+```
+
+### 4. 触发词过于宽泛
 
 **症状**：技能在不相关场景被频繁误触发
 
@@ -326,27 +417,25 @@ diff .claude/skills/{技能名}/SKILL.md .codex/skills/{技能名}/SKILL.md
 
 **解决**：使用具体术语（如"CRUD开发"、"支付接入"）
 
-### 3. 代码示例虚构
+### 5. 代码示例虚构
 
 **症状**：AI 参考技能生成的代码使用了不存在的类或方法
 
-**原因**：编写技能时没有验证引用的类名、方法名在项目中真实存在
-
 **解决**：编写前用 Grep/Glob 搜索确认引用的类和方法确实存在
 
-### 4. 忘记同步到 Codex
-
-**症状**：Claude Code 中正常，Codex CLI 中找不到技能
-
-**原因**：只在 `.claude/skills/` 创建，未复制到 `.codex/skills/`
-
-**解决**：`cp .claude/skills/{技能名}/SKILL.md .codex/skills/{技能名}/SKILL.md`
-
-### 5. 技能范围与现有技能重叠
+### 6. 技能范围重叠
 
 **症状**：同一个问题触发多个技能，指导矛盾
 
-**解决**：在 SKILL.md 末尾添加"注意"段落说明边界，例如：
+**解决**：在 SKILL.md 末尾添加"注意"段落说明边界：
 ```
-注意：如果是行级数据权限（@DataPermission），请使用 data-permission。
+注意：如果是行级数据权限（@DataPermission），请使用 leniu-data-permission。
 ```
+
+### 7. 包名写错
+
+**症状**：生成的代码编译失败
+
+**原因**：技能中写了 `org.dromara.*`（旧包名）
+
+**解决**：leniu 项目统一使用 `net.xnzn.core.*`
