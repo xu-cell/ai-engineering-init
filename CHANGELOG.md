@@ -4,6 +4,23 @@
 
 ---
 
+## [v1.3.2] - 2026-03-03
+
+### 修复
+- **音效搜索路径升级为 4 层回退**：确保任何安装方式下音效都能正常播放
+  - `.claude/hooks/stop.js`：从单一路径升级为 4 层搜索（工作区 `.claude/` → `.cursor/` → 全局 `~/.claude/` → `~/.cursor/`）
+  - `.cursor/hooks/stop.js`：从 2 层搜索升级为 4 层搜索，补充全局路径回退
+  - 与全局 `~/.cursor/hooks/stop.js` 的搜索策略保持一致
+- **安装脚本补充 audio 目录**：`update` 和 `global` 命令现在会正确安装音效文件
+  - `UPDATE_RULES` 新增 `.claude/audio` 和 `.cursor/audio` 目录
+  - `GLOBAL_RULES` 新增 `audio` 目录到 `~/.claude/audio/` 和 `~/.cursor/audio/`
+  - 之前只有 `init`（整个目录复制）才会包含音效，`update`/`global` 会遗漏
+
+### 移除
+- **leniu-java-code-style 技能**：移除已合并到其他技能的冗余代码风格文档
+
+---
+
 ## [v1.3.1] - 2026-03-02
 
 ### 修复

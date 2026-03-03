@@ -29,10 +29,15 @@ const findAndDeleteNul = (dir, depth = 0) => {
 findAndDeleteNul(process.cwd());
 
 // 播放完成音效（可选）
-// 优先使用 .cursor/audio/，若不存在则尝试 .claude/audio/（兼容两者都安装的情况）
-const cursorAudio = path.join(process.cwd(), '.cursor', 'audio', 'completed.wav');
-const claudeAudio = path.join(process.cwd(), '.claude', 'audio', 'completed.wav');
-const audioFile = fs.existsSync(cursorAudio) ? cursorAudio : (fs.existsSync(claudeAudio) ? claudeAudio : null);
+// 查找顺序: 工作区 .cursor/audio/ → 工作区 .claude/audio/ → 全局 ~/.cursor/audio/ → 全局 ~/.claude/audio/
+const homeDir = require('os').homedir();
+const candidates = [
+  path.join(process.cwd(), '.cursor', 'audio', 'completed.wav'),
+  path.join(process.cwd(), '.claude', 'audio', 'completed.wav'),
+  path.join(homeDir, '.cursor', 'audio', 'completed.wav'),
+  path.join(homeDir, '.claude', 'audio', 'completed.wav'),
+];
+const audioFile = candidates.find(f => fs.existsSync(f)) || null;
 
 try {
   if (audioFile) {

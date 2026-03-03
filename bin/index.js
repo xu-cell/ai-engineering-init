@@ -149,6 +149,7 @@ const UPDATE_RULES = {
       { src: '.claude/agents',               dest: '.claude/agents',               label: 'Agents（子代理）',    isDir: true },
       { src: '.claude/hooks',                dest: '.claude/hooks',                label: 'Hooks（钩子脚本）',   isDir: true },
       { src: '.claude/templates',            dest: '.claude/templates',            label: 'Templates',          isDir: true },
+      { src: '.claude/audio',                dest: '.claude/audio',                label: 'Audio（完成音效）',   isDir: true },
       { src: '.claude/framework-config.json', dest: '.claude/framework-config.json', label: 'framework-config.json' },
     ],
     preserve: [
@@ -163,6 +164,7 @@ const UPDATE_RULES = {
       { src: '.cursor/skills',     dest: '.cursor/skills',     label: 'Skills（技能库）',  isDir: true },
       { src: '.cursor/agents',     dest: '.cursor/agents',     label: 'Agents（子代理）',  isDir: true },
       { src: '.cursor/hooks',      dest: '.cursor/hooks',      label: 'Hooks（钩子脚本）', isDir: true },
+      { src: '.cursor/audio',      dest: '.cursor/audio',      label: 'Audio（完成音效）', isDir: true },
       { src: '.cursor/hooks.json', dest: '.cursor/hooks.json', label: 'hooks.json（Hooks 配置）' },
     ],
     preserve: [
@@ -194,6 +196,7 @@ const GLOBAL_RULES = {
       { src: '.claude/commands',              dest: 'commands',              label: 'Commands（全局命令）',          isDir: true },
       { src: '.claude/agents',               dest: 'agents',               label: 'Agents（全局子代理）',          isDir: true },
       { src: '.claude/hooks',                dest: 'hooks',                label: 'Hooks（全局钩子）',             isDir: true },
+      { src: '.claude/audio',                dest: 'audio',                label: 'Audio（完成音效）',             isDir: true },
       { src: '.claude/framework-config.json', dest: 'framework-config.json', label: 'framework-config.json' },
       { src: '.claude/settings.json',         dest: 'settings.json',         label: 'settings.json（Hooks + MCP 配置）', merge: true, rewritePrefix: '.claude/' },
     ],
@@ -207,6 +210,7 @@ const GLOBAL_RULES = {
       { src: '.cursor/skills',     dest: 'skills',     label: 'Skills（全局技能库）',        isDir: true },
       { src: '.cursor/agents',     dest: 'agents',     label: 'Agents（全局子代理）',        isDir: true },
       { src: '.cursor/hooks',      dest: 'hooks',      label: 'Hooks（全局钩子脚本）',       isDir: true },
+      { src: '.cursor/audio',      dest: 'audio',      label: 'Audio（完成音效）',           isDir: true },
       { src: '.cursor/hooks.json', dest: 'hooks.json', label: 'hooks.json（Hooks 触发配置）', rewritePrefix: '.cursor/' },
       { src: '.cursor/mcp.json',   dest: 'mcp.json',   label: 'mcp.json（MCP 服务器配置）', merge: true },
     ],

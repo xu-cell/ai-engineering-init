@@ -29,9 +29,18 @@ const findAndDeleteNul = (dir, depth = 0) => {
 findAndDeleteNul(process.cwd());
 
 // 播放完成音效（可选）
-const audioFile = path.join(process.cwd(), '.claude', 'audio', 'completed.wav');
+// 查找顺序: 工作区 .claude/audio/ → 工作区 .cursor/audio/ → 全局 ~/.claude/audio/ → 全局 ~/.cursor/audio/
+const homeDir = require('os').homedir();
+const candidates = [
+  path.join(process.cwd(), '.claude', 'audio', 'completed.wav'),
+  path.join(process.cwd(), '.cursor', 'audio', 'completed.wav'),
+  path.join(homeDir, '.claude', 'audio', 'completed.wav'),
+  path.join(homeDir, '.cursor', 'audio', 'completed.wav'),
+];
+const audioFile = candidates.find(f => fs.existsSync(f)) || null;
+
 try {
-  if (fs.existsSync(audioFile)) {
+  if (audioFile) {
     const platform = process.platform;
     if (platform === 'darwin') {
       execSync(`afplay "${audioFile}"`, { stdio: ['pipe', 'pipe', 'pipe'] });
