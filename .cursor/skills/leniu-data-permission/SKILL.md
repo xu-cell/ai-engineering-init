@@ -269,3 +269,73 @@ public class TenantConfigProperties {
 3. 跨租户操作需要使用 `Executors.doInTenant()` 或 `Executors.readInTenant()`
 4. 事务会在方法执行结束后自动切回原来的数据源
 5. `TenantContextHolderFilter` 自动从请求头解析租户 ID
+
+---
+
+## 报表场景下的数据权限使用
+
+### 报表场景数据权限使用模式
+
+在定制报表（leniu-yunshitang 仓库）中，数据权限通过以下三层协作实现：
+
+**1. Service 层：获取权限参数**
+
+```java
+@Autowired
+private MgrAuthV2Api mgrAuthApi;
+
+@Autowired
+private ReportDataPermissionService reportDataPermissionService;
+
+// 在每个查询/导出方法中调用
+MgrUserAuthPO authPO = mgrAuthApi.getUserAuthPO();
+ReportDataPermissionParam dataPermission = reportDataPermissionService.getDataPermission(authPO);
+```
+
+**2. Mapper 接口：传递权限参数**
+
+```java
+List<XxxVO> listPage(@Param("param") XxxParam param,
+                     @Param("authPO") MgrUserAuthPO authPO,
+                     @Param("dataPermission") ReportDataPermissionParam dataPermission);
+
+XxxVO getTotal(@Param("param") XxxParam param,
+               @Param("authPO") MgrUserAuthPO authPO,
+               @Param("dataPermission") ReportDataPermissionParam dataPermission);
+```
+
+**3. MyBatis XML：引入公共权限片段**
+
+```xml
+<!-- 在 baseWhere 的 SQL 片段末尾加入 -->
+<sql id="baseWhere">
+    <!-- 业务过滤条件... -->
+    <include refid="net.xnzn.core.report.statistics.common.mapper.ReportDataPermissionMapper.dataPermission"/>
+</sql>
+```
+
+**完整调用链示例：**
+
+```java
+public ReportBaseTotalVO<DzMealDetailVO> pageWithTotal(DzMealDetailParam param) {
+    // 获取权限
+    MgrUserAuthPO authPO = mgrAuthApi.getUserAuthPO();
+    ReportDataPermissionParam dataPermission = reportDataPermissionService.getDataPermission(authPO);
+
+    ReportBaseTotalVO<DzMealDetailVO> result = new ReportBaseTotalVO<>();
+    // 查询合计行
+    if (CollUtil.isEmpty(param.getExportCols())) {
+        DzMealDetailVO totalLine = mapper.getTotal(param, authPO, dataPermission);
+        result.setTotalLine(Optional.ofNullable(totalLine).orElse(new DzMealDetailVO()));
+    }
+    // 查询列表
+    if (param.getPage() != null) {
+        PageMethod.startPage(param.getPage());
+    }
+    List<DzMealDetailVO> list = mapper.listPage(param, authPO, dataPermission);
+    result.setResultPage(PageVO.of(list));
+    return result;
+}
+```
+
+**注意：** 导出方法（exportXxx）中同样需要获取权限并传给 Mapper，不能省略。

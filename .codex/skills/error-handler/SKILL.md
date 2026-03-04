@@ -359,3 +359,13 @@ public void batchOperation() {
 | `log.error("失败: " + e.getMessage())` | `log.error("失败: {}", e.getMessage(), e)` |
 | `@Transactional` | `@Transactional(rollbackFor = Exception.class)` |
 | `throw new ServiceException("DB error")` | `throw new ServiceException("数据保存失败，请重试")` |
+
+---
+
+## 相关技能
+
+| 需要了解 | 激活 Skill |
+|---------|-----------|
+| Java 异常规范 | `java-exception` |
+| Service 层规范 | `java-service` |
+| Controller 层规范 | `java-controller` |

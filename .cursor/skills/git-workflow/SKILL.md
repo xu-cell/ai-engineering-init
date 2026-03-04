@@ -75,10 +75,22 @@ git commit -m "feat(system): 新增xxx功能"
 ### 不要提交的文件
 
 ```bash
-# ❌ 配置文件（绝对不提交）
+# ❌ 团队项目配置文件（绝对不提交，包含数据库/中间件/环境信息）
+core-base/src/main/resources/bootstrap.yml
+core-base/src/main/resources/bootstrap-dev.yml
+core-base/src/main/resources/ConfigSource.properties
+core-base/src/main/resources/license.dat
+core-base/src/main/resources/logback-spring.xml
+core-base/src/main/resources/message_*.properties
+
+# ❌ 通用配置文件（绝对不提交）
 ruoyi-admin/src/main/resources/application.yml
 ruoyi-admin/src/main/resources/application-*.yml
 ruoyi-common/**/resources/*.yml
+
+# ❌ 测试/迁移基础设施文件（包含本地数据源配置，不提交）
+**/WebMvcTestConfig.java
+**/DataSourceMigration.java
 
 # ❌ IDE 配置
 .idea/
@@ -335,14 +347,15 @@ git log --author="作者名"
 
 1. **不要强制推送到主分支**
    ```bash
-   # ❌ 禁止
-   git push --force origin 5.X
+   # ❌ 禁止（团队主分支为 master）
+   git push --force origin master
+   git push --force origin main
    ```
 
 2. **不要在主分支直接开发**
    ```bash
-   # ❌ 禁止
-   git checkout 5.X
+   # ❌ 禁止（团队主分支为 master，不在此分支直接提交）
+   git checkout master
    # 直接修改代码...
    ```
 
@@ -352,8 +365,17 @@ git log --author="作者名"
    application.yml
    application-dev.yml
    application-prod.yml
+   bootstrap.yml
+   bootstrap-dev.yml
+   ConfigSource.properties
+   license.dat
+   logback-spring.xml
+   message_*.properties
    credentials.json
    password.txt
+   # ❌ 禁止提交（包含本地数据源/测试环境配置）
+   WebMvcTestConfig.java
+   DataSourceMigration.java
    ```
 
 4. **不要自动 push（除非用户明确要求）**

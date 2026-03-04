@@ -2,3 +2,5 @@ node_modules/
 npm-debug.log*
 .DS_Store
 *.swp
+# MySQL 连接配置（含密码，禁止提交）
+.claude/mysql-config.json

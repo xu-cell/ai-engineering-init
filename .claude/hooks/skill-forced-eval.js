@@ -72,6 +72,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - ai-langchain4j: AI/大模型/ChatGPT/DeepSeek
 - media-processing: 图片处理/二维码/水印/Excel
 - bug-detective: Bug/报错/异常/不工作
+- mysql-debug: 查数据库/查表/执行SQL/查记录/mysql查询/数据库排查/验证数据/数据库调试/db查询
 - error-handler: 异常处理/ServiceException
 - performance-doctor: 性能/慢查询/优化/缓存
 - data-permission: 数据权限/@DataPermission/DataScope/行级权限
@@ -108,6 +109,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - leniu-java-total-line: 合计行/totalLine/报表合计/SUM合计/ReportBaseTotalVO/合计查询
 - leniu-report-customization: 定制报表/汇总报表/report_order_info/report_order_detail/report_account_flow/退款汇总/消费金额统计/订单报表/流水报表
 - leniu-report-standard-customization: 标准版报表/core-report/report_refund/report_refund_detail/经营分析/营业额分析/用户活跃度/菜品排行/操作员统计/账户日结/钱包消费汇总/商户消费汇总/ReportOrderConsumeService/ReportAccountConsumeService
+- leniu-customization-location: 定制开发/定制代码位置/Dz前缀/leniu-yunshitang/dz_表名/定制仓库/覆盖Service/@Primary/迁移core文件/定制开始/定制结束/net.xnzn.yunshitang/wuhanxiehe定制/bootstrap-ext
 - leniu-crud-development: CRUD/增删改查/新建模块/Business层/Service/Mapper/Controller/分页查询/LeRequest/PageDTO/PageVO/事务管理
 - leniu-database-ops: 数据库/SQL/建表/双库/商户库/系统库/审计字段/crby/crtime/del_flag
 - leniu-utils-toolkit: 工具类/BeanUtil/StrUtil/CollUtil/ObjectUtil/RedisUtil/JacksonUtil/LeBeanUtil

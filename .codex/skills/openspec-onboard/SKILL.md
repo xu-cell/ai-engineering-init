@@ -1,6 +1,14 @@
 ---
 name: openspec-onboard
-description: Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work.
+description: |
+  Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work.
+
+  触发场景：
+  - 首次使用 OpenSpec，需要引导式教学
+  - 想通过实际操作学习 OpenSpec 完整工作流
+  - 需要了解 OpenSpec 的所有命令和流程
+
+  触发词：入门、onboard、opsx:onboard、openspec 教程、学习 openspec、新手引导、openspec 入门
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
@@ -72,55 +80,13 @@ git log --oneline -10 2>/dev/null || echo "No git history"
 
 ### Present Suggestions
 
-From your analysis, present 3-4 specific suggestions:
+From your analysis, present 3-4 specific suggestions with location, scope estimate, and brief reason. Include a "Something else?" option. Let the user pick a number or describe their own.
 
-```
-## Task Suggestions
-
-Based on scanning your codebase, here are some good starter tasks:
-
-**1. [Most promising task]**
-   Location: `src/path/to/file.ts:42`
-   Scope: ~1-2 files, ~20-30 lines
-   Why it's good: [brief reason]
-
-**2. [Second task]**
-   Location: `src/another/file.ts`
-   Scope: ~1 file, ~15 lines
-   Why it's good: [brief reason]
-
-**3. [Third task]**
-   Location: [location]
-   Scope: [estimate]
-   Why it's good: [brief reason]
-
-**4. Something else?**
-   Tell me what you'd like to work on.
-
-Which task interests you? (Pick a number or describe your own)
-```
-
-**If nothing found:** Fall back to asking what the user wants to build:
-> I didn't find obvious quick wins in your codebase. What's something small you've been meaning to add or fix?
+**If nothing found:** Fall back to asking what the user wants to build.
 
 ### Scope Guardrail
 
-If the user picks or describes something too large (major feature, multi-day work):
-
-```
-That's a valuable task, but it's probably larger than ideal for your first OpenSpec run-through.
-
-For learning the workflow, smaller is better—it lets you see the full cycle without getting stuck in implementation details.
-
-**Options:**
-1. **Slice it smaller** - What's the smallest useful piece of [their task]? Maybe just [specific slice]?
-2. **Pick something else** - One of the other suggestions, or a different small task?
-3. **Do it anyway** - If you really want to tackle this, we can. Just know it'll take longer.
-
-What would you prefer?
-```
-
-Let the user override if they insist—this is a soft guardrail.
+If the user picks something too large (major feature, multi-day work), suggest slicing smaller or picking something else. Offer three options: slice it, pick another, or do it anyway. This is a soft guardrail—let the user override if they insist.
 
 ---
 
@@ -200,40 +166,7 @@ The proposal captures **why** we're making this change and **what** it involves 
 I'll draft one based on our task.
 ```
 
-**DO:** Draft the proposal content (don't save yet):
-
-```
-Here's a draft proposal:
-
----
-
-## Why
-
-[1-2 sentences explaining the problem/opportunity]
-
-## What Changes
-
-[Bullet points of what will be different]
-
-## Capabilities
-
-### New Capabilities
-- `<capability-name>`: [brief description]
-
-### Modified Capabilities
-<!-- If modifying existing behavior -->
-
-## Impact
-
-- `src/path/to/file.ts`: [what changes]
-- [other files if applicable]
-
----
-
-Does this capture the intent? I can adjust before we save it.
-```
-
-**PAUSE** - Wait for user approval/feedback.
+**DO:** Draft the proposal with sections: Why, What Changes, Capabilities (New/Modified), Impact. Show the draft and **PAUSE** for user approval/feedback before saving.
 
 After approval, save the proposal:
 ```bash
@@ -304,37 +237,7 @@ The design captures **how** we'll build it—technical decisions, tradeoffs, app
 For small changes, this might be brief. That's fine—not every change needs deep design discussion.
 ```
 
-**DO:** Draft design.md:
-
-```
-Here's the design:
-
----
-
-## Context
-
-[Brief context about the current state]
-
-## Goals / Non-Goals
-
-**Goals:**
-- [What we're trying to achieve]
-
-**Non-Goals:**
-- [What's explicitly out of scope]
-
-## Decisions
-
-### Decision 1: [Key decision]
-
-[Explanation of approach and rationale]
-
----
-
-For a small task, this captures the key decisions without over-engineering.
-```
-
-Save to `openspec/changes/<name>/design.md`.
+**DO:** Draft design.md with sections: Context, Goals/Non-Goals, Decisions. Keep it brief for small changes. Save to `openspec/changes/<name>/design.md`.
 
 ---
 
@@ -496,25 +399,7 @@ Exit gracefully without pressure.
 
 ### User just wants command reference
 
-If the user says they just want to see the commands or skip the tutorial:
-
-```
-## OpenSpec Quick Reference
-
-| Command | What it does |
-|---------|--------------|
-| `/opsx:explore` | Think through problems (no code changes) |
-| `/opsx:new <name>` | Start a new change, step by step |
-| `/opsx:ff <name>` | Fast-forward: all artifacts at once |
-| `/opsx:continue <name>` | Continue an existing change |
-| `/opsx:apply <name>` | Implement tasks |
-| `/opsx:verify <name>` | Verify implementation |
-| `/opsx:archive <name>` | Archive when done |
-
-Try `/opsx:new` to start your first change, or `/opsx:ff` if you want to move fast.
-```
-
-Exit gracefully.
+If the user says they just want to see the commands or skip the tutorial, show the Command Reference table from Phase 11 and exit gracefully.
 
 ---
 
