@@ -4,6 +4,14 @@
 
 ---
 
+## [v1.4.1] - 2026-03-04
+
+### 修复
+- **cursor hooks.json 路径兼容性**：将 `$(git rev-parse --show-toplevel)` 替换为跨平台 Node.js 目录遍历逻辑，解决非 git 仓库工作区和子目录场景下 hook 执行失败的问题；同时支持 Windows/macOS/Linux
+- **cursor-skill-eval.js 技能注册补全**：补充 9 个未注册技能（`add-skill`、`banana-image`、`collaborating-with-codex`、`collaborating-with-gemini`、`leniu-brainstorm`、`leniu-report-customization`、`leniu-report-standard-customization`、`mysql-debug`、`openspec-onboard`），技能注册数从 64 提升至 73，与技能目录完全对齐
+
+---
+
 ## [v1.4.0] - 2026-03-04
 
 ### 优化

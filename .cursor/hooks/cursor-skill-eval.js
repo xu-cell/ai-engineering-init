@@ -9,6 +9,10 @@
  */
 
 const fs = require('fs');
+const path = require('path');
+
+// 项目根目录：__dirname 是 .cursor/hooks/，向上两级
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 
 // 从 stdin 读取用户输入
 let inputData = '';
@@ -157,6 +161,12 @@ const skillMap = [
   {
     name: 'leniu-mealtime',
     keywords: ['餐次', '早餐', '午餐', '下午茶', '晚餐', '夜宵', 'mealtimeTypes']
+  },
+  {
+    name: 'leniu-customization-location',
+    keywords: ['定制开发', '定制代码位置', 'Dz前缀', 'leniu-yunshitang', 'dz_表名', '定制仓库',
+      '覆盖Service', '@Primary', '迁移core文件', '定制开始', '定制结束', 'net.xnzn.yunshitang',
+      'wuhanxiehe定制', 'bootstrap-ext']
   },
 
   // ========== OpenSpec 工作流 ==========
@@ -313,6 +323,48 @@ const skillMap = [
   {
     name: 'store-pc',
     keywords: ['Vuex', 'store', 'mapState', 'mapActions', '状态管理']
+  },
+  {
+    name: 'add-skill',
+    keywords: ['添加技能', '创建技能', '新技能', '技能开发', '写技能', 'SKILL.md', '新增skill']
+  },
+  {
+    name: 'banana-image',
+    keywords: ['生成图片', 'AI图片', '产品图', '海报', '缩略图', '4K图片', '高清图', '制作图片', '/image']
+  },
+  {
+    name: 'collaborating-with-codex',
+    keywords: ['codex协作', '委托codex', 'openai codex', 'codex分析', '多模型协作', '让codex']
+  },
+  {
+    name: 'collaborating-with-gemini',
+    keywords: ['gemini协作', '委托gemini', 'google gemini', 'gemini分析', '让gemini', 'gemini前端']
+  },
+  {
+    name: 'leniu-brainstorm',
+    keywords: ['leniu-头脑风暴', '云食堂方案', '云食堂设计', '云食堂功能规划', 'leniu-方案设计',
+      '云食堂怎么设计', '云食堂可行性']
+  },
+  {
+    name: 'leniu-report-customization',
+    keywords: ['定制报表', 'report_order_info', 'report_order_detail', 'report_account_flow',
+      '退款汇总', '消费金额统计', '订单报表', '流水报表', '汇总报表']
+  },
+  {
+    name: 'leniu-report-standard-customization',
+    keywords: ['标准版报表', 'core-report', 'report_refund', 'report_refund_detail',
+      '经营分析', '营业额分析', '用户活跃度', '菜品排行', '操作员统计', '账户日结',
+      'ReportOrderConsumeService', 'ReportAccountConsumeService']
+  },
+  {
+    name: 'mysql-debug',
+    keywords: ['mysql查询', '查数据库', '查表', '执行SQL', '数据库排查', '验证数据',
+      '数据库调试', 'db查询', 'mysql调试', '直接查库']
+  },
+  {
+    name: 'openspec-onboard',
+    keywords: ['openspec入门', 'opsx:onboard', 'openspec onboard', 'openspec教程',
+      'openspec新手', '学习openspec工作流']
   }
 ];
 
@@ -335,7 +387,7 @@ if (matchedSkills.length === 0) {
 }
 
 // 构建技能文档路径列表
-const skillPaths = matchedSkills.map(name => `.cursor/skills/${name}/SKILL.md`);
+const skillPaths = matchedSkills.map(name => path.join(PROJECT_ROOT, '.cursor', 'skills', name, 'SKILL.md'));
 
 const skillList = matchedSkills.map((name, i) => `- **${name}**: \`${skillPaths[i]}\``).join('\n');
 
