@@ -46,10 +46,12 @@ console.log('');
 
 // ── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-let command   = '';   // 'update' | 'global' | ''
+let command   = '';   // 'update' | 'global' | 'sync-back' | ''
 let tool      = '';
 let targetDir = process.cwd();
 let force     = false;
+let skillFilter = '';  // sync-back --skill <名称>
+let submitIssue = false; // sync-back --submit
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -59,6 +61,9 @@ for (let i = 0; i < args.length; i++) {
       break;
     case 'global':
       command = 'global';
+      break;
+    case 'sync-back':
+      command = 'sync-back';
       break;
     case '--tool': case '-t':
       if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
@@ -76,6 +81,16 @@ for (let i = 0; i < args.length; i++) {
       break;
     case '--force': case '-f':
       force = true;
+      break;
+    case '--skill': case '-s':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个技能名称`));
+        process.exit(1);
+      }
+      skillFilter = args[++i];
+      break;
+    case '--submit':
+      submitIssue = true;
       break;
     case '--help': case '-h':
       printHelp();
@@ -96,12 +111,15 @@ function printHelp() {
   console.log('命令:');
   console.log(`  ${fmt('bold', '(无)')}            交互式初始化（安装到当前项目目录）`);
   console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）`);
-  console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效\n`);
+  console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效`);
+  console.log(`  ${fmt('bold', 'sync-back')}        对比本地技能修改，生成 diff 或提交 GitHub Issue\n`);
   console.log('选项:');
-  console.log('  --tool, -t <工具>   指定工具: claude | cursor | codex | all');
-  console.log('  --dir,  -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）');
-  console.log('  --force,-f          强制覆盖（init 时覆盖已有文件；update/global 时同时更新保留文件）');
-  console.log('  --help, -h          显示此帮助\n');
+  console.log('  --tool,  -t <工具>   指定工具: claude | cursor | codex | all');
+  console.log('  --dir,   -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）');
+  console.log('  --force, -f          强制覆盖（init 时覆盖已有文件；update/global 时同时更新保留文件）');
+  console.log('  --skill, -s <技能>   sync-back 时只对比指定技能');
+  console.log('  --submit             sync-back 时自动创建 GitHub Issue（需要 gh CLI）');
+  console.log('  --help,  -h          显示此帮助\n');
   console.log('示例:');
   console.log('  npx ai-engineering-init --tool claude');
   console.log('  npx ai-engineering-init --tool all --dir /path/to/project');
@@ -109,7 +127,11 @@ function printHelp() {
   console.log('  npx ai-engineering-init update --tool claude # 只更新 Claude');
   console.log('  npx ai-engineering-init update --force       # 强制更新，包括保留文件');
   console.log('  npx ai-engineering-init global               # 全局安装所有工具');
-  console.log('  npx ai-engineering-init global --tool claude # 只全局安装 Claude\n');
+  console.log('  npx ai-engineering-init global --tool claude # 只全局安装 Claude');
+  console.log('  npx ai-engineering-init sync-back                        # 扫描所有已安装工具');
+  console.log('  npx ai-engineering-init sync-back --tool claude          # 只扫描 Claude');
+  console.log('  npx ai-engineering-init sync-back --skill bug-detective  # 只对比指定技能');
+  console.log('  npx ai-engineering-init sync-back --skill bug-detective --submit # 提交 Issue\n');
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────
@@ -675,11 +697,419 @@ function runUpdate(selectedTool) {
   if (totalFailed > 0) process.exitCode = 1;
 }
 
+// ── SYNC-BACK 逻辑 ─────────────────────────────────────────────────────────
+
+/** 技能目录名称到工具的映射 */
+const SKILL_DIRS = {
+  claude: '.claude/skills',
+  cursor: '.cursor/skills',
+  codex:  '.codex/skills',
+};
+
+/** 递归列出目录下所有文件（相对路径） */
+function listFilesRecursive(dir, prefix) {
+  prefix = prefix || '';
+  let results = [];
+  let entries;
+  try { entries = fs.readdirSync(dir); } catch { return results; }
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry);
+    const relPath = prefix ? prefix + '/' + entry : entry;
+    try {
+      if (fs.statSync(fullPath).isDirectory()) {
+        results = results.concat(listFilesRecursive(fullPath, relPath));
+      } else {
+        results.push(relPath);
+      }
+    } catch { /* 跳过不可读文件 */ }
+  }
+  return results;
+}
+
+/**
+ * 简易 unified diff 生成器（纯 Node.js，零依赖）
+ * 使用贪心 LCS 简化算法，输出标准 unified diff 格式
+ */
+function generateDiff(oldContent, newContent, oldLabel, newLabel) {
+  const oldLines = oldContent.split(/\r?\n/);
+  const newLines = newContent.split(/\r?\n/);
+
+  // 计算 LCS 表（简化版，O(n*m) 但对技能文件足够）
+  const m = oldLines.length;
+  const n = newLines.length;
+
+  // 对于大文件，跳过 LCS 直接标记全部替换
+  if (m * n > 1000000) {
+    const lines = [];
+    lines.push(`--- ${oldLabel}`);
+    lines.push(`+++ ${newLabel}`);
+    lines.push(`@@ -1,${m} +1,${n} @@`);
+    for (const line of oldLines) lines.push('-' + line);
+    for (const line of newLines) lines.push('+' + line);
+    return lines.join('\n');
+  }
+
+  // LCS 回溯表
+  const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (oldLines[i - 1] === newLines[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // 回溯生成编辑操作序列
+  const ops = []; // { type: 'equal'|'delete'|'insert', line }
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
+      ops.push({ type: 'equal', oldIdx: i, newIdx: j, line: oldLines[i - 1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.push({ type: 'insert', newIdx: j, line: newLines[j - 1] });
+      j--;
+    } else {
+      ops.push({ type: 'delete', oldIdx: i, line: oldLines[i - 1] });
+      i--;
+    }
+  }
+  ops.reverse();
+
+  // 将操作序列组织为 hunks（上下文 3 行）
+  const CTX = 3;
+  const hunks = [];
+  let hunkOps = [];
+  let lastChangeIdx = -999;
+
+  for (let k = 0; k < ops.length; k++) {
+    if (ops[k].type !== 'equal') {
+      // 如果距离上次变更超过 2*CTX+1，开始新 hunk
+      if (k - lastChangeIdx > 2 * CTX + 1 && hunkOps.length > 0) {
+        hunks.push(hunkOps);
+        hunkOps = [];
+        // 回退加上下文
+        const start = Math.max(k - CTX, lastChangeIdx + CTX + 1);
+        for (let c = start; c < k; c++) {
+          if (ops[c]) hunkOps.push(ops[c]);
+        }
+      } else if (hunkOps.length === 0) {
+        // 新 hunk 加前上下文
+        const start = Math.max(0, k - CTX);
+        for (let c = start; c < k; c++) {
+          hunkOps.push(ops[c]);
+        }
+      } else {
+        // 补充中间的上下文行
+        for (let c = lastChangeIdx + 1; c < k; c++) {
+          if (!hunkOps.includes(ops[c])) hunkOps.push(ops[c]);
+        }
+      }
+      hunkOps.push(ops[k]);
+      lastChangeIdx = k;
+    }
+  }
+  // 最后一个 hunk 加后上下文
+  if (hunkOps.length > 0) {
+    const end = Math.min(ops.length, lastChangeIdx + CTX + 1);
+    for (let c = lastChangeIdx + 1; c < end; c++) {
+      hunkOps.push(ops[c]);
+    }
+    hunks.push(hunkOps);
+  }
+
+  if (hunks.length === 0) return ''; // 无差异
+
+  // 格式化输出
+  const lines = [];
+  lines.push(`--- ${oldLabel}`);
+  lines.push(`+++ ${newLabel}`);
+
+  for (const hunk of hunks) {
+    // 计算 hunk 头
+    let oldStart = Infinity, oldCount = 0, newStart = Infinity, newCount = 0;
+    for (const op of hunk) {
+      if (op.type === 'equal' || op.type === 'delete') {
+        if (op.oldIdx < oldStart) oldStart = op.oldIdx;
+        oldCount++;
+      }
+      if (op.type === 'equal' || op.type === 'insert') {
+        if (op.newIdx < newStart) newStart = op.newIdx;
+        newCount++;
+      }
+    }
+    lines.push(`@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`);
+    for (const op of hunk) {
+      if (op.type === 'equal')  lines.push(' ' + op.line);
+      if (op.type === 'delete') lines.push('-' + op.line);
+      if (op.type === 'insert') lines.push('+' + op.line);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/** 统计 diff 中的增删行数 */
+function countDiffLines(diffText) {
+  let added = 0, removed = 0;
+  for (const line of diffText.split('\n')) {
+    if (line.startsWith('+') && !line.startsWith('+++')) added++;
+    if (line.startsWith('-') && !line.startsWith('---')) removed++;
+  }
+  return { added, removed };
+}
+
+/** 检测 gh CLI 是否可用 */
+function isGhAvailable() {
+  try {
+    const { execSync } = require('child_process');
+    execSync('gh --version', { stdio: 'pipe' });
+    return true;
+  } catch { return false; }
+}
+
+/** 通过 gh CLI 创建 GitHub Issue */
+function submitGitHubIssue(changes, allDiffText) {
+  const { execSync } = require('child_process');
+  const skillNames = changes.map(c => c.skillName).join(', ');
+  const title = `[sync-back] 技能改进：${skillNames}`;
+  const body = [
+    '## 技能修改反馈',
+    '',
+    `> 由 \`npx ai-engineering-init sync-back --submit\` 自动生成`,
+    '',
+    '### 修改的技能',
+    '',
+    ...changes.map(c => {
+      const files = c.files.map(f => `  - \`${f.relPath}\` (+${f.added}, -${f.removed})`).join('\n');
+      return `- **${c.skillName}**\n${files}`;
+    }),
+    '',
+    '### Diff',
+    '',
+    '```diff',
+    allDiffText,
+    '```',
+    '',
+    '---',
+    `CLI 版本: v${PKG_VERSION}`,
+  ].join('\n');
+
+  try {
+    const result = execSync(
+      `gh issue create --repo xu-cell/ai-engineering-init --title "${title.replace(/"/g, '\\"')}" --body-file -`,
+      { input: body, stdio: ['pipe', 'pipe', 'pipe'], encoding: 'utf8' }
+    );
+    return result.trim();
+  } catch (e) {
+    return null;
+  }
+}
+
+/** sync-back 命令主流程 */
+function runSyncBack(selectedTool, selectedSkill, doSubmit) {
+  console.log(`  目标目录: ${fmt('bold', targetDir)}`);
+  console.log(`  本机版本: ${fmt('bold', `v${PKG_VERSION}`)}`);
+  console.log('');
+
+  // 1. 确定扫描范围
+  let toolsToScan = [];
+  if (selectedTool && selectedTool !== 'all') {
+    if (!SKILL_DIRS[selectedTool]) {
+      console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
+      process.exit(1);
+    }
+    toolsToScan = [selectedTool];
+  } else {
+    toolsToScan = detectInstalledTools();
+  }
+
+  if (toolsToScan.length === 0) {
+    console.log(fmt('yellow', '⚠  当前目录未检测到已安装的 AI 工具配置。'));
+    console.log(`   请先运行: ${fmt('bold', hintCmd('--tool claude'))}\n`);
+    process.exit(1);
+  }
+
+  console.log(`  扫描工具: ${fmt('bold', toolsToScan.join(', '))}`);
+  console.log('');
+  console.log(fmt('bold', '🔍 正在对比技能文件...'));
+  console.log('');
+
+  // 2. 对比每个工具的 skills 目录
+  const allChanges = []; // { toolKey, skillName, files: [{ relPath, diff, added, removed }] }
+
+  for (const toolKey of toolsToScan) {
+    const skillDir = SKILL_DIRS[toolKey];
+    const userSkillsDir = path.join(targetDir, skillDir);
+    const srcSkillsDir  = path.join(SOURCE_DIR, skillDir);
+
+    if (!isRealDir(userSkillsDir) || !isRealDir(srcSkillsDir)) continue;
+
+    // 列出用户目录中的技能
+    let skillNames;
+    try { skillNames = fs.readdirSync(userSkillsDir); } catch { continue; }
+
+    for (const name of skillNames) {
+      if (selectedSkill && name !== selectedSkill) continue;
+
+      const userSkillDir = path.join(userSkillsDir, name);
+      const srcSkillDir  = path.join(srcSkillsDir, name);
+
+      if (!isRealDir(userSkillDir)) continue;
+
+      // 列出用户技能目录下所有文件
+      const userFiles = listFilesRecursive(userSkillDir);
+      const srcFiles  = isRealDir(srcSkillDir) ? listFilesRecursive(srcSkillDir) : [];
+      const allFiles = [...new Set([...userFiles, ...srcFiles])].sort();
+
+      const changedFiles = [];
+
+      for (const relFile of allFiles) {
+        const userFile = path.join(userSkillDir, relFile);
+        const srcFile  = path.join(srcSkillDir, relFile);
+
+        const userExists = fs.existsSync(userFile);
+        const srcExists  = fs.existsSync(srcFile);
+
+        if (userExists && srcExists) {
+          // 两边都有，对比内容
+          const userContent = fs.readFileSync(userFile, 'utf8');
+          const srcContent  = fs.readFileSync(srcFile, 'utf8');
+          if (userContent !== srcContent) {
+            const diff = generateDiff(srcContent, userContent,
+              `原版 (v${PKG_VERSION})`, '本地修改');
+            if (diff) {
+              const { added, removed } = countDiffLines(diff);
+              changedFiles.push({ relPath: relFile, diff, added, removed, status: 'modified' });
+            }
+          }
+        } else if (userExists && !srcExists) {
+          // 用户新增的文件
+          const content = fs.readFileSync(userFile, 'utf8');
+          const lineCount = content.split(/\r?\n/).length;
+          changedFiles.push({
+            relPath: relFile,
+            diff: `--- /dev/null\n+++ 本地新增\n@@ -0,0 +1,${lineCount} @@\n` +
+                  content.split(/\r?\n/).map(l => '+' + l).join('\n'),
+            added: lineCount, removed: 0, status: 'added'
+          });
+        }
+        // srcExists && !userExists: 用户删除的文件（不报告，可能是有意删除）
+      }
+
+      if (changedFiles.length > 0) {
+        // 去重：只保留第一个工具的结果（多工具 skills 内容相同）
+        const existing = allChanges.find(c => c.skillName === name);
+        if (!existing) {
+          allChanges.push({ toolKey, skillName: name, files: changedFiles });
+        }
+      }
+    }
+  }
+
+  // 3. 展示结果
+  if (allChanges.length === 0) {
+    console.log(fmt('green', '  ✓ 未检测到技能修改，所有技能与包版本一致。'));
+    console.log('');
+    return;
+  }
+
+  console.log(`  检测到 ${fmt('bold', String(allChanges.length))} 个技能有修改：`);
+  console.log('');
+
+  for (let idx = 0; idx < allChanges.length; idx++) {
+    const change = allChanges[idx];
+    console.log(`  ${fmt('bold', String(idx + 1) + '.')} ${fmt('cyan', change.skillName)}`);
+    for (const file of change.files) {
+      const statusLabel = file.status === 'added' ? fmt('green', '新增文件') : fmt('yellow', '修改文件');
+      console.log(`     ${statusLabel}: ${file.relPath} (${fmt('green', '+' + file.added)} 行, ${fmt('red', '-' + file.removed)} 行)`);
+    }
+    console.log('');
+  }
+
+  // 4. 展示 diff 详情
+  const allDiffParts = [];
+
+  for (const change of allChanges) {
+    for (const file of change.files) {
+      const header = `${change.skillName}/${file.relPath}`;
+      console.log(fmt('bold', '─'.repeat(Math.min(50, header.length + 10))));
+      console.log(`📋 ${fmt('bold', header)} 的变更：`);
+      console.log(fmt('bold', '─'.repeat(Math.min(50, header.length + 10))));
+
+      // 着色 diff 输出
+      for (const line of file.diff.split('\n')) {
+        if (line.startsWith('+++') || line.startsWith('---')) {
+          console.log(fmt('bold', line));
+        } else if (line.startsWith('+')) {
+          console.log(fmt('green', line));
+        } else if (line.startsWith('-')) {
+          console.log(fmt('red', line));
+        } else if (line.startsWith('@@')) {
+          console.log(fmt('cyan', line));
+        } else {
+          console.log(line);
+        }
+      }
+      console.log('');
+
+      allDiffParts.push(`# ${header}\n${file.diff}`);
+    }
+  }
+
+  const allDiffText = allDiffParts.join('\n\n');
+
+  // 5. 提交 Issue 或提示
+  if (doSubmit) {
+    console.log(fmt('bold', '📤 正在提交 GitHub Issue...'));
+    console.log('');
+
+    if (!isGhAvailable()) {
+      console.log(fmt('yellow', '⚠  未检测到 gh CLI，无法自动提交 Issue。'));
+      console.log(`   安装方法: ${fmt('bold', 'https://cli.github.com/')}`);
+      console.log('');
+      console.log(fmt('bold', '📋 请手动复制以下内容到 GitHub Issue：'));
+      console.log('');
+      console.log(fmt('cyan', '─'.repeat(50)));
+      console.log(`标题: [sync-back] 技能改进：${allChanges.map(c => c.skillName).join(', ')}`);
+      console.log(fmt('cyan', '─'.repeat(50)));
+      console.log(allDiffText);
+      console.log(fmt('cyan', '─'.repeat(50)));
+      console.log('');
+      console.log(`提交到: ${fmt('bold', 'https://github.com/xu-cell/ai-engineering-init/issues/new')}`);
+    } else {
+      const issueUrl = submitGitHubIssue(allChanges, allDiffText);
+      if (issueUrl) {
+        console.log(fmt('green', fmt('bold', '✅ Issue 已创建！')));
+        console.log(`  ${fmt('bold', issueUrl)}`);
+      } else {
+        console.log(fmt('red', '✗ Issue 创建失败，请检查 gh 认证状态（gh auth status）'));
+        console.log('');
+        console.log(fmt('bold', '📋 请手动复制上方 diff 到 GitHub Issue：'));
+        console.log(`  ${fmt('bold', 'https://github.com/xu-cell/ai-engineering-init/issues/new')}`);
+      }
+    }
+  } else {
+    console.log(fmt('cyan', '💡 提交方式：'));
+    if (allChanges.length === 1) {
+      console.log(`  → 运行 ${fmt('bold', hintCmd(`sync-back --skill ${allChanges[0].skillName} --submit`))}`);
+    } else {
+      console.log(`  → 运行 ${fmt('bold', hintCmd('sync-back --submit'))}`);
+    }
+    console.log(`  → 或手动复制上方 diff 到 ${fmt('bold', 'https://github.com/xu-cell/ai-engineering-init/issues/new')}`);
+  }
+  console.log('');
+}
+
 // ── 主入口 ────────────────────────────────────────────────────────────────
 if (command === 'update') {
   runUpdate(tool);
 } else if (command === 'global') {
   runGlobal(tool);
+} else if (command === 'sync-back') {
+  runSyncBack(tool, skillFilter, submitIssue);
 } else if (tool) {
   run(tool);
 } else {

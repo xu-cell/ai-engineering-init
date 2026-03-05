@@ -4,6 +4,19 @@
 
 ---
 
+## [v1.6.0] - 2026-03-05
+
+### 新增
+- **`sync-back` 命令**：对比本地技能修改与包版本的差异，生成 unified diff，支持自动提交 GitHub Issue
+  - `npx ai-engineering-init sync-back` — 扫描所有已安装工具，列出修改的技能
+  - `--tool claude` — 只扫描指定工具
+  - `--skill <名称>` — 只对比指定技能
+  - `--submit` — 自动通过 `gh` CLI 创建 GitHub Issue（需先安装 gh）
+  - 纯 Node.js 实现 unified diff（零外部依赖，跨平台兼容 Windows/macOS/Linux）
+  - 补全**安装 → 使用 → 发现问题 → sync-back → 维护者合并 → 重新发布**的闭环
+
+---
+
 ## [v1.5.0] - 2026-03-05
 
 ### 新增

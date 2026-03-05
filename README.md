@@ -7,267 +7,51 @@
 
 ## 快速开始
 
-### 方式一：npx（推荐，无需克隆）
-
 ```bash
-# 交互式选择
 npx ai-engineering-init
-
-# 直接指定工具
-npx ai-engineering-init --tool claude   # 初始化 Claude Code
-npx ai-engineering-init --tool cursor   # 初始化 Cursor
-npx ai-engineering-init --tool codex    # 初始化 OpenAI Codex
-npx ai-engineering-init --tool all      # 初始化全部
 ```
 
-### 方式二：Shell 脚本（远程执行）
+交互式选择工具，或直接指定：
 
 ```bash
-# 交互式
-bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh)
-
-# 直接指定工具
-bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh) --tool claude
-bash <(curl -fsSL https://raw.githubusercontent.com/xu-cell/ai-engineering-init/main/init.sh) --tool cursor
+npx ai-engineering-init --tool claude   # Claude Code
+npx ai-engineering-init --tool cursor   # Cursor
+npx ai-engineering-init --tool codex    # OpenAI Codex
+npx ai-engineering-init --tool all      # 全部
 ```
 
-### 方式三：克隆后初始化
+## 命令一览
 
-```bash
-git clone https://github.com/xu-cell/ai-engineering-init
-cd ai-engineering-init
-./init.sh --tool claude
-./init.sh --tool cursor
-```
-
-## 支持的工具
-
-| 工具 | 参数 | 初始化内容 |
-|------|------|-----------|
-| Claude Code | `--tool claude` | `.claude/` 目录 + `CLAUDE.md` |
-| Cursor | `--tool cursor` | `.cursor/` 目录（Skills + Agents + MCP） |
-| OpenAI Codex | `--tool codex` | `.codex/` 目录 + `AGENTS.md` |
-| 全部 | `--tool all` | 以上全部 |
-
-## 命令与选项
-
-```bash
-# 命令
-npx ai-engineering-init                 # 交互式初始化（安装到当前项目）
-npx ai-engineering-init update          # 更新已安装的框架文件
-npx ai-engineering-init global          # 全局安装到 ~/.claude 等，对所有项目生效
-
-# 选项
---tool, -t <工具>   指定工具: claude | cursor | codex | all
---dir,  -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）
---force,-f          强制覆盖（init 覆盖已有文件；update/global 同时更新保留文件）
---help, -h          显示帮助
-```
-
-## 包含内容
-
-### Claude Code（`.claude/`）
-
-| 目录/文件 | 说明 |
-|-----------|------|
-| `skills/`（68个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
-| `commands/`（10个） | 快捷命令：`/dev`、`/crud`、`/check`、`/start`、`/progress` 等 |
-| `agents/`（2个） | 子代理：`code-reviewer`（代码审查）、`project-manager`（项目管理） |
-| `hooks/` | 自动化钩子：技能强制评估（UserPromptSubmit）、代码规范检查（PreToolUse） |
-| `CLAUDE.md` | 项目规范说明（包名、架构、工具类、禁止事项等） |
-
-### Cursor（`.cursor/`）
-
-| 目录/文件 | 说明 |
-|-----------|------|
-| `skills/`（68个） | 与 `.claude/skills/` 完全同步，支持 `@技能名` 手动调用或 Agent 自动委托 |
-| `agents/`（2个） | Subagents：`code-reviewer`（`readonly: true`）、`project-manager` |
-| `mcp.json` | MCP 服务器配置：`sequential-thinking`、`context7`、`github` |
-| `hooks.json` | Hooks 配置：技能文档引导（beforeSubmitPrompt）、危险命令拦截（preToolUse）、完成音效（stop） |
-| `hooks/` | Hooks 脚本：`cursor-skill-eval.js`、`cursor-pre-tool-use.js` |
-
-### OpenAI Codex（`.codex/`）
-
-| 目录/文件 | 说明 |
-|-----------|------|
-| `skills/` | Codex 技能配置 |
-| `AGENTS.md` | AI Agent 项目规范说明 |
-
-> **MCP Server 支持**：Codex CLI 可通过 `codex mcp-server` 作为 MCP Server 暴露给 Claude Code，
-> 配置写入 `.claude/settings.json` 的 `mcpServers` 后，Claude 可直接调用 `codex` / `codex-reply` 工具进行代码审查。
->
-> **Windows 用户注意**：初始化后需将 `.claude/settings.json` 中 `mcpServers.codex.command` 的路径改为 Windows 上的实际路径，例如：
-> ```json
-> "command": "C:\\Users\\YourName\\AppData\\Roaming\\npm\\codex.cmd"
-> ```
-> 可通过 `where codex` 命令查询实际路径。
-
-## Skills 列表（69个）
-
-<details>
-<summary>展开查看完整列表</summary>
-
-**通用后端技能（34个）**
-
-| 技能 | 触发场景 |
-|------|---------|
-| `crud-development` | CRUD 开发、业务模块、Entity/Service/Controller |
-| `api-development` | RESTful API 设计、接口规范 |
-| `database-ops` | 建表、SQL、字典、菜单配置 |
-| `backend-annotations` | `@RateLimiter`、`@RepeatSubmit`、`@DataPermission` |
-| `utils-toolkit` | StringUtils、MapstructUtils、StreamUtils 等工具类 |
-| `architecture-design` | 系统架构、模块划分、代码重构 |
-| `code-patterns` | 编码规范、命名规范、禁止事项 |
-| `error-handler` | 异常处理、ServiceException、全局错误码 |
-| `security-guard` | Sa-Token 认证授权、数据脱敏、加密 |
-| `data-permission` | 行级数据权限、部门隔离 |
-| `performance-doctor` | 慢查询优化、缓存策略、N+1 问题 |
-| `redis-cache` | Redis 缓存、分布式锁、`@Cacheable` |
-| `json-serialization` | JSON 序列化、BigDecimal 精度、日期格式 |
-| `scheduled-jobs` | 定时任务、SnailJob、`@Scheduled` |
-| `websocket-sse` | WebSocket、SSE 实时推送、消息通知 |
-| `workflow-engine` | 工作流、审批流、WarmFlow |
-| `file-oss-management` | 文件上传、OSS、MinIO |
-| `sms-mail` | 短信、邮件、SMS4j |
-| `social-login` | 第三方登录、OAuth2、JustAuth |
-| `tenant-management` | 多租户隔离、TenantEntity |
-| `test-development` | 单元测试、JUnit5、Mockito |
-| `git-workflow` | Git 提交规范、分支策略 |
-| `bug-detective` | Bug 排查、异常定位 |
-| `brainstorm` | 方案设计、头脑风暴 |
-| `tech-decision` | 技术选型、方案对比 |
-| `task-tracker` | 任务进度跟踪 |
-| `project-navigator` | 项目结构导航、文件定位 |
-| `collaborating-with-codex` | 与 Codex 协同开发（支持 MCP Server 直调） |
-| `collaborating-with-gemini` | 与 Gemini 协同开发 |
-| `banana-image` | AI 图片生成、海报、缩略图 |
-| `add-skill` | 创建新技能 |
-| `ui-pc` | 前端 PC 端组件库 |
-| `store-pc` | 前端 Vuex 状态管理 |
-
-**leniu 云食堂专项技能（25个）**
-
-| 技能 | 说明 |
+| 命令 | 说明 |
 |------|------|
-| `leniu-crud-development` | 云食堂四层架构 CRUD（Controller→Business→Service→Mapper） |
-| `leniu-api-development` | 云食堂 API 规范（LeResult、LeRequest、LeException） |
-| `leniu-architecture-design` | 双库架构（商户库/系统库）、pigx-framework |
-| `leniu-database-ops` | 云食堂建表规范（审计字段、逻辑删除、雪花ID） |
-| `leniu-error-handler` | LeException、I18n 国际化异常处理 |
-| `leniu-backend-annotations` | `@RequiresAuthentication`、分组校验 |
-| `leniu-utils-toolkit` | BeanUtil、CollUtil、StrUtil、RedisUtil |
-| `leniu-code-patterns` | net.xnzn 包名规范、禁止事项 |
-| `leniu-brainstorm` | 云食堂方案头脑风暴 |
-| `leniu-data-permission` | 云食堂数据权限控制 |
-| `leniu-java-entity` | Entity/VO/DTO/Param 数据类规范 |
-| `leniu-java-mybatis` | MyBatis Plus、LambdaQueryWrapper、XML 映射 |
-| `leniu-java-amount-handling` | 金额分/元转换（Long 类型存储） |
-| `leniu-java-code-style` | 命名规范、注解风格 |
-| `leniu-java-concurrent` | CompletableFuture、线程池、分布式锁 |
-| `leniu-java-export` | Excel 异步导出 |
-| `leniu-java-logging` | `@Slf4j`、日志级别规范 |
-| `leniu-java-mq` | MqUtil、`@MqConsumer`、延迟消息 |
-| `leniu-java-report-query-param` | 报表查询入参 Param 类规范 |
-| `leniu-java-task` | XXL-Job 定时任务 |
-| `leniu-java-total-line` | 报表分页合计行 |
-| `leniu-mealtime` | 餐次（早/午/下午茶/晚/夜宵）处理 |
-| `leniu-redis-cache` | 云食堂 Redis 缓存规范 |
-| `leniu-security-guard` | SQL 注入防护、XSS 防护、限流 |
-| `leniu-marketing-price-rule-customizer` | 营销计费规则定制 |
-| `leniu-marketing-recharge-rule-customizer` | 营销充值规则定制 |
+| `npx ai-engineering-init` | 交互式初始化到当前项目 |
+| `npx ai-engineering-init@latest update` | 更新已安装的框架文件 |
+| `npx ai-engineering-init@latest global` | 全局安装到 `~/.claude` 等，所有项目生效 |
+| `npx ai-engineering-init sync-back` | 对比本地技能修改，反馈回源仓库 |
 
-**OpenSpec 工作流技能（10个）**
-
-`openspec-new-change`、`openspec-ff-change`、`openspec-apply-change`、`openspec-continue-change`、`openspec-archive-change`、`openspec-bulk-archive-change`、`openspec-explore`、`openspec-onboard`、`openspec-sync-specs`、`openspec-verify-change`
-
-</details>
+> 所有命令均支持 `--tool <claude|cursor|codex|all>` 指定工具。运行 `--help` 查看全部选项。
 
 ## 初始化后使用
 
 ### Claude Code
 
-1. 修改 `CLAUDE.md` 中的项目信息（包名、模块名、架构说明等）
-2. 输入 `/start` 快速了解项目
-3. 输入 `/dev` 开始开发新功能
-4. 输入 `/crud` 快速生成 CRUD 代码
-5. 输入 `/check` 检查代码规范
+1. 按需修改 `CLAUDE.md` 中的项目信息
+2. 输入 `/start` 快速了解项目，`/dev` 开发新功能，`/crud` 生成 CRUD，`/check` 检查规范
 
 ### Cursor
 
-1. 在 Chat 中输入 `/` 查看所有可用 Skills
-2. 输入 `@技能名` 手动调用指定技能（如 `@leniu-crud-development`）
-3. Subagents 会根据任务自动委托：`/code-reviewer`、`/project-manager`
-4. 在 Settings → MCP 中确认 MCP 服务器已连接
-
-#### OpenSpec 规格驱动开发（opsx 命令）
-
-基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的规格驱动开发工作流，在 Cursor Chat 中通过 `/opsx-*` 命令使用：
-
-| 命令 | 用途 |
-|------|------|
-| `/opsx-new` | 新建变更，描述需求并创建规格文档 |
-| `/opsx-ff` | 快速推进，一次性生成所有制品（规格+任务） |
-| `/opsx-apply` | 开始实现，按任务清单编码 |
-| `/opsx-continue` | 继续变更，创建下一个制品 |
-| `/opsx-verify` | 验证实现是否与规格匹配 |
-| `/opsx-sync` | 将 delta 规格同步到主规格 |
-| `/opsx-archive` | 归档已完成的变更 |
-| `/opsx-bulk-archive` | 批量归档多个变更 |
-| `/opsx-explore` | 探索模式，思维伙伴式问题分析 |
-| `/opsx-onboard` | 新手引导，完整工作流演示 |
-
-**标准开发流程**：`/opsx-new` → `/opsx-ff` → `/opsx-apply` → `/opsx-verify` → `/opsx-archive`
+1. 在 Chat 中输入 `/` 查看可用 Skills，或 `@技能名` 手动调用
+2. 在 Settings → MCP 中确认 MCP 服务器已连接
 
 ### OpenAI Codex
 
-1. 修改 `AGENTS.md` 中的项目说明
-2. 使用 `.codex/skills/` 下的技能辅助开发
-3. （可选）以 MCP Server 接入 Claude Code：`.claude/settings.json` → `mcpServers.codex`，重启后 Claude 可直接调用 `codex` / `codex-reply` 工具
-   - **Windows 用户**：将 `command` 路径改为 `where codex` 查询到的实际路径（如 `C:\Users\YourName\AppData\Roaming\npm\codex.cmd`）
+1. 按需修改 `AGENTS.md`，使用 `.codex/skills/` 下的技能辅助开发
 
-## 更新已安装的项目
+## 更多信息
 
-当有新版本发布时，在已安装的项目根目录执行：
+[参考文档](./docs/reference.md) — Skills 列表（69个）、包含内容、命令详情、其他安装方式、全部选项
 
-```bash
-# 必须加 @latest，确保使用最新源文件
-npx ai-engineering-init@latest update
-
-# 只更新指定工具
-npx ai-engineering-init@latest update --tool cursor
-npx ai-engineering-init@latest update --tool claude
-
-# 强制更新，包括 settings.json / CLAUDE.md 等保留文件
-npx ai-engineering-init@latest update --force
-```
-
-> **注意**：不加 `@latest` 会使用 npx 本地缓存的旧版本，源文件不是最新的。
-
-## 全局安装（v1.3.0+）
-
-一次安装，所有项目自动生效：
-
-```bash
-# 全局安装所有工具（~/.claude + ~/.cursor + ~/.codex）
-npx ai-engineering-init@latest global
-
-# 只全局安装指定工具
-npx ai-engineering-init@latest global --tool claude
-npx ai-engineering-init@latest global --tool cursor
-
-# 强制覆盖已有全局文件
-npx ai-engineering-init@latest global --force
-```
-
-> **说明**：全局安装将 Skills/Commands/Hooks 安装到 `~/.claude` / `~/.cursor` / `~/.codex`。`settings.json`、`mcp.json` 采用合并策略，不覆盖用户已有配置。项目级配置优先级高于全局配置，两者可共存。
-
-## 更新日志
-
-查看完整更新历史：[CHANGELOG.md](./CHANGELOG.md)
-
-**v1.3.0 新增**：`global` 命令，支持系统级全局安装，一次安装对所有项目生效。
-**v1.2.7 修复**：Cursor `beforeSubmitPrompt` hook 输出格式改为 JSON，修复技能注入失效。
-**v1.2.6 修复**：Cursor stop hook 自包含，不再依赖 Claude Code 安装。
+[更新日志](./CHANGELOG.md) — 完整版本变更记录
 
 ## License
 
