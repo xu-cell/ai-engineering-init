@@ -1,0 +1,22 @@
+{
+  "name": "电影海报",
+  "description": "电影级海报设计",
+  "prompt_template": "Design a cinematic movie poster for '{{title}}' about {{theme}}. Dramatic lighting, central hero composition, atmospheric fog or effects. Hollywood blockbuster aesthetic, detailed, vertical composition. No text, focus on visual art.",
+  "defaults": {
+    "model_tier": "pro",
+    "resolution": "4k",
+    "aspect_ratio": "2:3",
+    "enable_grounding": true,
+    "thinking_level": "high"
+  },
+  "placeholders": {
+    "title": {
+      "description": "电影标题",
+      "example": "The Last Guardian"
+    },
+    "theme": {
+      "description": "电影主题/故事",
+      "example": "a lone warrior protecting an ancient temple"
+    }
+  }
+}

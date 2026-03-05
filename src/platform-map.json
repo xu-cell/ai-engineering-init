@@ -1,0 +1,56 @@
+{
+  "description": "平台映射配置 - 定义每个技能分发到哪些平台",
+  "defaults": {
+    "platforms": ["claude", "codex", "cursor"]
+  },
+  "overrides": {
+    "codex-code-review": {
+      "platforms": ["claude"],
+      "note": "Codex 代码审查工作流，仅 Claude 平台使用"
+    },
+    "add-todo": {
+      "platforms": ["codex"],
+      "note": "快速添加待办，仅 Codex 平台 slash command"
+    },
+    "check": {
+      "platforms": ["codex"],
+      "note": "代码规范检查，仅 Codex 平台 slash command"
+    },
+    "crud": {
+      "platforms": ["codex"],
+      "note": "快速生成 CRUD，仅 Codex 平台 slash command"
+    },
+    "dev": {
+      "platforms": ["codex"],
+      "note": "开发新功能，仅 Codex 平台 slash command"
+    },
+    "init-docs": {
+      "platforms": ["codex"],
+      "note": "初始化业务文档，仅 Codex 平台 slash command"
+    },
+    "next": {
+      "platforms": ["codex"],
+      "note": "下一步建议，仅 Codex 平台 slash command"
+    },
+    "progress": {
+      "platforms": ["codex"],
+      "note": "项目进度梳理，仅 Codex 平台 slash command"
+    },
+    "start": {
+      "platforms": ["codex"],
+      "note": "项目快速了解，仅 Codex 平台 slash command"
+    },
+    "sync": {
+      "platforms": ["codex"],
+      "note": "项目代码状态同步，仅 Codex 平台 slash command"
+    },
+    "update-status": {
+      "platforms": ["codex"],
+      "note": "项目状态智能更新，仅 Codex 平台 slash command"
+    },
+    "leniu-java-code-style": {
+      "platforms": ["codex", "cursor"],
+      "note": "代码风格规范，Codex 和 Cursor 平台使用"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "ai-engineering-init",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "AI 工程化配置初始化工具 — 一键为 Claude Code、OpenAI Codex 等 AI 工具初始化 Skills 和项目规范",
   "keywords": [
     "claude-code",
@@ -16,11 +16,17 @@
     "url": "https://github.com/xu-cell/ai-engineering-init.git"
   },
   "license": "MIT",
+  "scripts": {
+    "build:skills": "node scripts/build-skills.js",
+    "check:skills": "node scripts/build-skills.js --check"
+  },
   "bin": {
     "ai-engineering-init": "./bin/index.js"
   },
   "files": [
     "bin/",
+    "src/",
+    "scripts/",
     ".claude/",
     ".cursor/",
     ".codex/",

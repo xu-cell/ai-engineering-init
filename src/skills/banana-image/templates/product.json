@@ -1,0 +1,17 @@
+{
+  "name": "产品图",
+  "description": "专业产品摄影风格",
+  "prompt_template": "Create a professional, high-end product photography shot of {{product}}. Studio lighting with softbox, rim lighting to highlight edges. Minimalist background, neutral color. Ultra-detailed, commercial advertisement standard, focus on texture and material quality.",
+  "defaults": {
+    "model_tier": "pro",
+    "resolution": "4k",
+    "aspect_ratio": "4:5",
+    "enable_grounding": true
+  },
+  "placeholders": {
+    "product": {
+      "description": "产品名称和描述",
+      "example": "a sleek black coffee maker with chrome accents"
+    }
+  }
+}

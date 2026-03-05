@@ -4,6 +4,21 @@
 
 ---
 
+## [v1.5.0] - 2026-03-05
+
+### 新增
+- **单一源架构（src/skills/）**：建立 `src/skills/` 作为唯一事实源（Single Source of Truth），彻底解决三平台同步遗忘问题
+- **构建脚本（build-skills.js）**：`npm run build:skills` 从 `src/skills/` 自动生成 `.claude/`、`.codex/`、`.cursor/` 三个平台目录
+- **一致性检查（check:skills）**：`npm run check:skills` 验证三平台与源文件一致性（CI 可用）
+- **平台映射配置（platform-map.json）**：精确定义每个技能分发到哪些平台，支持平台独有技能
+
+### 架构变更
+- 84 个技能统一管理于 `src/skills/`，通过构建分发到三平台
+- 平台分发规则：Claude 73 个、Codex 83 个、Cursor 73 个
+- 以前需要手动同步三个目录，现在**改一处 → 运行 build → 三平台自动一致**
+
+---
+
 ## [v1.4.3] - 2026-03-05
 
 ### 优化

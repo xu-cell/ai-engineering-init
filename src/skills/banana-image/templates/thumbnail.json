@@ -1,0 +1,17 @@
+{
+  "name": "YouTube缩略图",
+  "description": "吸引眼球的视频封面",
+  "prompt_template": "Design a click-worthy YouTube thumbnail for a video about {{topic}}. High contrast, vibrant colors, expressive focal point. Leave negative space for text overlay. Digital art style, dynamic composition, rule of thirds.",
+  "defaults": {
+    "model_tier": "flash",
+    "resolution": "2k",
+    "aspect_ratio": "16:9",
+    "enable_grounding": false
+  },
+  "placeholders": {
+    "topic": {
+      "description": "视频主题",
+      "example": "cooking Italian pasta from scratch"
+    }
+  }
+}
