@@ -1,305 +1,211 @@
 ---
 name: project-navigator
 description: |
-  当需要了解项目结构、查找文件、定位代码时自动使用此 Skill。提供项目结构导航和资源索引。
+  当需要了解项目结构、查找文件、定位代码时自动使用此 Skill。提供 leniu 云食堂项目的精确导航。
 
   触发场景：
-  - 不知道文件在哪里
-  - 想了解项目结构
-  - 查找某个功能的代码位置
-  - 了解模块职责
-  - 查看已有的工具类、组件、API、Store
-  - 寻找参考代码
+  - 询问某个功能/文件在哪里
+  - 新建模块时需要确认目录位置
+  - 查找参考代码（Controller/Service/Mapper/Entity 示例）
+  - 了解项目整体结构和模块划分
+  - 查找技能、命令、Hook 的位置
 
-  触发词：项目结构、文件在哪、目录、模块、代码位置、找、定位、结构、在哪里、哪个文件、参考、已有
+  触发词：项目结构、文件在哪、代码位置、目录结构、模块在哪、参考代码、怎么找、哪个文件、路径、在哪里
 ---
 
-# 项目导航指南
+# leniu 项目导航指南
 
-> **说明**：后端项目（RuoYi-Vue-Plus）在当前目录，前端项目在 `/Users/xujiajun/Developer/frontProj/web`（独立维护）。
-
-## 项目整体结构
+## 工程化配置项目
 
 ```
-RuoYi-Vue-Plus/
-├── ruoyi-admin/                      # 后端启动入口
-│   └── src/main/resources/
-│       ├── application.yml           # 主配置
-│       └── application-dev.yml       # 开发环境配置（数据库连接）
-│
-├── ruoyi-common/                     # 通用工具模块（24个子模块）
-│   ├── ruoyi-common-bom/            # BOM 依赖管理
-│   ├── ruoyi-common-core/           # 核心工具（StringUtils, MapstructUtils）
-│   ├── ruoyi-common-mybatis/        # MyBatis 扩展（BaseMapperPlus, TableDataInfo）
-│   ├── ruoyi-common-tenant/         # 多租户（TenantEntity）
-│   ├── ruoyi-common-redis/          # Redis 缓存
-│   ├── ruoyi-common-satoken/        # 权限认证
-│   ├── ruoyi-common-excel/          # Excel 导入导出
-│   ├── ruoyi-common-oss/            # 对象存储
-│   ├── ruoyi-common-doc/            # 接口文档
-│   ├── ruoyi-common-encrypt/        # 数据加密
-│   ├── ruoyi-common-idempotent/     # 幂等性
-│   ├── ruoyi-common-job/            # 定时任务
-│   ├── ruoyi-common-json/           # JSON 处理
-│   ├── ruoyi-common-log/            # 日志记录
-│   ├── ruoyi-common-mail/           # 邮件发送
-│   ├── ruoyi-common-ratelimiter/    # 限流
-│   ├── ruoyi-common-security/       # 安全
-│   ├── ruoyi-common-sensitive/      # 敏感数据
-│   ├── ruoyi-common-sms/            # 短信
-│   ├── ruoyi-common-social/         # 社交登录
-│   ├── ruoyi-common-sse/            # SSE 推送
-│   ├── ruoyi-common-translation/    # 翻译
-│   ├── ruoyi-common-web/            # Web 通用
-│   └── ruoyi-common-websocket/      # WebSocket
-│
-├── ruoyi-extend/                     # 扩展功能模块
-│
-├── ruoyi-modules/                    # 业务功能模块
-│   ├── ruoyi-system/                # 系统管理模块（用户、角色、菜单等）
-│   ├── ruoyi-demo/                  # 演示功能模块
-│   ├── ruoyi-job/                   # 定时任务模块
-│   ├── ruoyi-generator/             # 代码生成器
-│   └── ruoyi-workflow/              # 工作流模块
-│
-├── script/sql/                      # 数据库脚本
-│   ├── ry_vue_5.X.sql              # 系统表（用户、角色、菜单等）
-│   ├── ry_job.sql                  # 定时任务表
-│   └── ry_workflow.sql             # 工作流表
-│
-├── docs/                            # 项目文档
-├── .claude/                         # Claude AI 配置目录
-│   └── skills/                      # 技能库
-│
-└── pom.xml                          # Maven 项目配置
+ai-engineering-init/      # 当前工作目录（本仓库根目录）
+├── CLAUDE.md              # 项目规范（核心约束必读）
+├── AGENTS.md              # Agent 配置文档
+├── .claude/
+│   ├── skills/            # 73 个技能模块
+│   ├── commands/          # 10 个快速命令（/dev /crud /check 等）
+│   ├── hooks/             # Hooks（skill-forced-eval.js 强制技能评估）
+│   └── docs/              # 开发文档
+└── .codex/skills/         # Codex CLI 技能同步目录
 ```
 
 ---
 
-## 后端模块位置
+## 后端 Java 项目
 
-### 已有主要模块
+**根路径**：由用户在 `CLAUDE.md` 中配置，各安装者路径不同
 
-| 模块 | 位置 | 说明 |
-|------|------|------|
-| **系统管理** (System) | `ruoyi-modules/ruoyi-system/` | ⭐ 系统核心功能（用户、菜单、权限等） |
-| **演示模块** (Demo) | `ruoyi-modules/ruoyi-demo/` | 功能演示示例 |
-| **定时任务** (Job) | `ruoyi-modules/ruoyi-job/` | 任务调度功能 |
-| **代码生成** (Generator) | `ruoyi-modules/ruoyi-generator/` | 代码生成器 |
-| **工作流** (Workflow) | `ruoyi-modules/ruoyi-workflow/` | 工作流引擎 |
+### 业务模块（25 个 core-* 模块）
 
-### 🔴 标准模块代码结构（三层架构）
-
-> **重要**：本项目是三层架构（Controller → Service → Mapper），**没有 DAO 层**。
-
-```
-ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/
-├── controller/                      # 控制器
-│   └── system/
-│       └── SysXxxController.java   # @RestController
-├── service/                         # 服务层
-│   ├── ISysXxxService.java         # 服务接口
-│   └── impl/
-│       └── SysXxxServiceImpl.java  # 服务实现（包含 buildQueryWrapper）
-├── mapper/                          # Mapper 接口（extends BaseMapperPlus）
-│   └── SysXxxMapper.java
-├── domain/                          # 实体类和业务对象
-│   ├── SysXxx.java                 # 实体类（extends TenantEntity）
-│   ├── bo/                         # 业务对象
-│   │   └── SysXxxBo.java          # 业务对象（@AutoMapper）
-│   └── vo/                         # 视图对象
-│       └── SysXxxVo.java          # 视图对象
-├── listener/                        # 事件监听器
-└── runner/                          # 启动运行器
-```
-
-**关键点**：
-- Service 实现类**不继承任何基类**，直接注入 Mapper
-- `buildQueryWrapper()` 方法在 **Service 实现类**中
-- BO 使用 `@AutoMapper`（单数）注解；多目标映射时可用 `@AutoMappers`（复数）
-
-### 核心工具类位置
-
-| 工具类 | 位置 | 说明 |
-|--------|------|------|
-| `MapstructUtils` | `ruoyi-common-core` | 对象转换（必须使用） |
-| `StringUtils` | `ruoyi-common-core` | 字符串工具 |
-| `DateUtils` | `ruoyi-common-core` | 日期工具 |
-| `ServiceException` | `ruoyi-common-core` | 业务异常 |
-| `TenantEntity` | `ruoyi-common-tenant` | 租户实体基类 |
-| `BaseMapperPlus` | `ruoyi-common-mybatis` | Mapper 基类接口 |
-| `PageQuery` | `ruoyi-common-mybatis` | 分页查询参数 |
-| `TableDataInfo` | `ruoyi-common-mybatis` | 分页结果 |
-| `RedisUtils` | `ruoyi-common-redis` | Redis 缓存工具 |
-| `LoginHelper` | `ruoyi-common-satoken` | 登录用户信息 |
-
----
-
-## 配置文件位置
-
-| 配置 | 位置 | 说明 |
-|------|------|------|
-| 后端主配置 | `ruoyi-admin/src/main/resources/application.yml` | 主配置文件 |
-| 后端开发配置 | `ruoyi-admin/src/main/resources/application-dev.yml` | 开发环境配置（数据库连接） |
-| 后端生产配置 | `ruoyi-admin/src/main/resources/application-prod.yml` | 生产环境配置 |
-| 日志配置 | `ruoyi-admin/src/main/resources/logback-plus.xml` | 日志配置 |
-
----
-
-## 数据库脚本位置
-
-| 脚本 | 位置 | 说明 |
-|------|------|------|
-| 系统表初始化 | `script/sql/ry_vue_5.X.sql` | 用户、角色、菜单、系统表等 |
-| 任务表初始化 | `script/sql/ry_job.sql` | 定时任务相关表 |
-| 工作流表初始化 | `script/sql/ry_workflow.sql` | 工作流相关表 |
-| Oracle 脚本 | `script/sql/oracle/` | Oracle 数据库脚本 |
-| PostgreSQL 脚本 | `script/sql/postgres/` | PostgreSQL 数据库脚本 |
-| SQL Server 脚本 | `script/sql/sqlserver/` | SQL Server 数据库脚本 |
-
----
-
-## 快速查找
-
-### 我想找...
-
-| 需求 | 位置 |
+| 模块 | 职责 |
 |------|------|
-| 参考后端代码 | `ruoyi-modules/ruoyi-system/` 的系统模块 |
-| 看 Entity 怎么写 | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/domain/SysUser.java` |
-| 看 Service 怎么写 | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/service/impl/SysUserServiceImpl.java` |
-| 看 Controller 怎么写 | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/controller/system/SysUserController.java` |
-| 看 Mapper 怎么写 | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/mapper/SysUserMapper.java` |
-| 看 BO/VO 怎么写 | `ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/domain/bo/` |
-| 数据库表结构 | `script/sql/ry_vue_5.X.sql` |
-| 工具类 | `ruoyi-common/ruoyi-common-core/` |
-| MyBatis 扩展 | `ruoyi-common/ruoyi-common-mybatis/` |
-| Redis 工具 | `ruoyi-common/ruoyi-common-redis/` |
-| 权限认证 | `ruoyi-common/ruoyi-common-satoken/` |
-| **前端项目根目录** | `/Users/xujiajun/Developer/frontProj/web/` |
-| **前端 src 目录** | `/Users/xujiajun/Developer/frontProj/web/src/` |
-| 前端主入口 | `/Users/xujiajun/Developer/frontProj/web/src/main.js` |
-| 前端路由守卫 | `/Users/xujiajun/Developer/frontProj/web/src/permission.js` |
-| 前端路由配置 | `/Users/xujiajun/Developer/frontProj/web/src/router/` |
-| 前端 API 接口定义 | `/Users/xujiajun/Developer/frontProj/web/src/api/`（65个文件） |
-| 前端视图页面 | `/Users/xujiajun/Developer/frontProj/web/src/leniuview/`（34个业务模块） |
-| 前端业务组件 | `/Users/xujiajun/Developer/frontProj/web/src/leniu-components/` |
-| 前端公共组件 | `/Users/xujiajun/Developer/frontProj/web/src/components/`（~87个） |
-| 前端 Vuex Store | `/Users/xujiajun/Developer/frontProj/web/src/store/`（28个模块） |
-| 前端请求封装 | `/Users/xujiajun/Developer/frontProj/web/src/utils/request.js` |
-| 前端 Token/租户工具 | `/Users/xujiajun/Developer/frontProj/web/src/utils/auth.js` |
-| 前端全局工具函数 | `/Users/xujiajun/Developer/frontProj/web/src/utils/index.js` |
-| 前端 Mixin 文件 | `/Users/xujiajun/Developer/frontProj/web/src/mixins/` |
-| 前端国际化配置 | `/Users/xujiajun/Developer/frontProj/web/src/lang/` |
-| 前端自定义指令 | `/Users/xujiajun/Developer/frontProj/web/src/directive/` |
-| 前端全局样式 | `/Users/xujiajun/Developer/frontProj/web/src/styles/` |
-| 前端构建配置 | `/Users/xujiajun/Developer/frontProj/web/vue.config.js` |
-| 前端依赖配置 | `/Users/xujiajun/Developer/frontProj/web/package.json` |
+| `core-order` | 订单管理 |
+| `core-menu` | 菜品管理 |
+| `core-marketing` | 营销（充值/优惠） |
+| `core-report` | 报表统计 |
+| `core-pay` | 支付 |
+| `core-account` | 账号管理 |
+| `core-merchant` | 商户配置 |
+| `core-customer` | 用户/员工 |
+| `core-device` | 设备管理 |
+| `core-attendance` | 考勤 |
+| `core-kitchen` / `core-backfield` | 后场厨房 |
+| `core-drp` | 供应链 |
+| `core-dorm` | 宿舍管理 |
+| `core-notice` | 通知消息 |
+| `core-open` | 开放接口 |
+| `core-nutrition` | 营养管理 |
+| `core-supermarket` | 超市 |
+| `core-common` / `core-base` | 公共基础 |
+| `core-auth` / `core-starter` | 认证/启动 |
+
+### 标准包结构（四层架构）
+
+```
+net.xnzn.core.{module}/
+├── controller/
+│   ├── web/          # Web 管理端（/api/v2/web/{module}）
+│   ├── mobile/       # 移动端（/api/v2/mobile/{module}）
+│   ├── android/      # 设备端（/api/v2/android/{module}）
+│   └── open/         # 开放接口（/api/v2/open/{module}）
+├── business/impl/    # Business 层（跨 Service 编排）
+├── service/impl/     # Service 层（单表 CRUD、事务）
+├── mapper/           # Mapper + XML（同目录！非 resources/mapper/）
+├── model/            # Entity
+├── vo/               # 响应对象
+├── dto/              # 请求参数（含 Param）
+├── constants/        # 枚举、常量
+├── mq/               # 消息队列
+└── task/             # 定时任务
+```
+
+### 参考代码位置
+
+| 需要参考 | 路径 |
+|---------|------|
+| Controller 写法 | `core-order/.../order/web/controller/OrderInfoWebController.java` |
+| Business 层写法 | `core-order/.../order/web/business/impl/OrderWebBusiness.java` |
+| Service 写法 | `core-order/.../order/common/service/impl/OrderInfoService.java` |
+| Entity 写法 | `core-order/.../order/common/model/OrderInfo.java` |
+| 枚举写法 | `core-order/.../order/common/constants/OrderStateEnum.java` |
+| 配置文件 | `core-base/src/main/resources/bootstrap.yml` |
 
 ---
 
-## 模块与表前缀对应
+## 前端项目
 
-| 模块 | 表前缀 | 包路径 |
-|------|--------|--------|
-| system | `sys_` | `org.dromara.system` |
-| demo | `test_` | `org.dromara.demo` |
-| workflow | `flow_` | `org.dromara.workflow` |
-| 自定义业务 | 自定义 | `org.dromara.xxx` |
+**根路径**：由用户在 `CLAUDE.md` 中配置，各安装者路径不同
+
+### src/ 核心目录
+
+| 目录 | 说明 | 规模 |
+|------|------|------|
+| `api/` | 接口定义 | 63 个文件 |
+| `leniuview/` | 业务模块页面 | 33 个模块 |
+| `leniu-components/` | 业务组件库 | 12 个组件包 |
+| `components/` | 通用组件 | ~87 个 |
+| `store/` | Vuex 状态管理 | 30+ 个模块 |
+| `utils/` | 工具函数 | 37 个文件 |
+
+### 常用前端文件
+
+| 需要查找 | 路径 |
+|---------|------|
+| 主入口 | `src/main.js` |
+| 权限路由守卫 | `src/permission.js` |
+| 请求封装 | `src/utils/request.js` |
+| Token/租户工具 | `src/utils/auth.js` |
+| 全局工具 | `src/utils/index.js` |
+| Vuex 根配置 | `src/store/index.js` |
+| 构建配置 | `vue.config.js` |
+
+### 前端业务模块（leniuview 33 个）
+
+```
+accountCenter、canteenBackcourt、cost、dashboard、dataScreen、
+deviceMange、dormitory、marketing、menudish、orderCenter、
+purchase、reportCenter、stock、supplyChain、attendance、
+campus、approvalManage、noticeV2、personalV2 ...
+```
 
 ---
 
-## 常用查找命令
+## 技能系统导航
+
+**技能路径**：`.claude/skills/{技能名}/SKILL.md`
+
+### 按开发场景选择技能
+
+| 场景 | 技能 |
+|------|------|
+| 新建 CRUD 模块 | `leniu-crud-development` |
+| API 接口设计 | `leniu-api-development` |
+| 建表/SQL | `leniu-database-ops` |
+| Entity/VO/DTO | `leniu-java-entity` |
+| MyBatis/Mapper | `leniu-java-mybatis` |
+| 异常处理 | `leniu-error-handler` |
+| 工具类使用 | `leniu-utils-toolkit` |
+| 注解使用 | `leniu-backend-annotations` |
+| 代码规范 | `leniu-code-patterns` |
+| 数据权限/双库 | `leniu-data-permission` |
+| 定制报表 | `leniu-report-customization` |
+| 标准报表 | `leniu-report-standard-customization` |
+| 金额处理 | `leniu-java-amount-handling` |
+| 并发/异步 | `leniu-java-concurrent` |
+| 导出功能 | `leniu-java-export` |
+| 定时任务 | `leniu-java-task` |
+| 消息队列 | `leniu-java-mq` |
+| Redis 缓存 | `leniu-redis-cache` |
+| 合计行查询 | `leniu-java-total-line` |
+| 报表查询入参 | `leniu-java-report-query-param` |
+| 营销计费规则 | `leniu-marketing-price-rule-customizer` |
+| 营销充值规则 | `leniu-marketing-recharge-rule-customizer` |
+| 餐次处理 | `leniu-mealtime` |
+| 定制开发位置 | `leniu-customization-location` |
+| Bug 排查 | `bug-detective`（数据问题自动联动 `mysql-debug`） |
+| 数据库查询验证 | `mysql-debug` |
+| Codex 代码审查 | `codex-code-review` |
+| 前端组件/权限 | `ui-pc` |
+| 前端 Vuex | `store-pc` |
+| 方案设计 | `leniu-brainstorm` |
+| 架构设计 | `leniu-architecture-design` |
+| 安全认证 | `leniu-security-guard` |
+
+### 快速命令
+
+| 命令 | 用途 |
+|------|------|
+| `/dev` | 开发新功能 |
+| `/crud` | 快速生成 CRUD |
+| `/check` | 代码规范检查 |
+| `/start` | 项目快速了解 |
+| `/progress` | 查看项目进度 |
+| `/next` | 下一步建议 |
+| `/add-todo` | 添加待办事项 |
+
+---
+
+## 常用搜索模式
 
 ```bash
-# 查找 Java 类
-Glob ruoyi-modules/**/*[类名]*.java
-
-# 查找包含特定内容的文件
-Grep "[关键词]" ruoyi-modules/ --type java
-
-# 查找配置文件
-Glob ruoyi-admin/src/main/resources/application*.yml
+# 查找某模块的 Controller
+Glob core-order/**/*Controller*.java
 
 # 查找 Service 实现类
-Glob ruoyi-modules/**/impl/*ServiceImpl.java
+Glob core-order/**/impl/*Service*.java
 
-# 查找 Mapper 接口
-Glob ruoyi-modules/**/*Mapper.java
+# 查找 Mapper XML
+Glob core-order/**/*Mapper.xml
 
-# 查找 Entity 类
-Glob ruoyi-modules/**/domain/*.java
+# 查找 Entity
+Glob core-order/**/model/*.java
 
-# 查找工具类
-Glob ruoyi-common/**/*Utils.java
-```
+# 查找某接口路由
+Grep "/api/v2/web/order" --type java
 
----
+# 查找前端某页面
+Glob src/leniuview/**/index.vue
 
-## 三层架构代码示例
-
-### Service 实现类结构（重点参考）
-
-```java
-@Service
-public class TestDemoServiceImpl implements ITestDemoService {
-
-    private final TestDemoMapper baseMapper;  // 直接注入 Mapper，无 DAO 层
-
-    /**
-     * 构建查询条件（在 Service 层）
-     */
-    private LambdaQueryWrapper<TestDemo> buildQueryWrapper(TestDemoBo bo) {
-        Map<String, Object> params = bo.getParams();
-        LambdaQueryWrapper<TestDemo> lqw = Wrappers.lambdaQuery();
-        lqw.eq(bo.getDeptId() != null, TestDemo::getDeptId, bo.getDeptId());
-        lqw.like(StringUtils.isNotBlank(bo.getTestKey()), TestDemo::getTestKey, bo.getTestKey());
-        return lqw;
-    }
-
-    @Override
-    public TableDataInfo<TestDemoVo> queryPageList(TestDemoBo bo, PageQuery pageQuery) {
-        LambdaQueryWrapper<TestDemo> lqw = buildQueryWrapper(bo);
-        Page<TestDemoVo> result = baseMapper.selectVoPage(pageQuery.build(), lqw);
-        return TableDataInfo.build(result);
-    }
-}
-```
-
-### BO 类结构
-
-```java
-@Data
-@AutoMapper(target = TestDemo.class, reverseConvertGenerate = false)  // ✅ 单数
-public class TestDemoBo extends BaseEntity {
-    private Long id;
-    private String testKey;
-    // ...
-}
-```
-
-### Controller 结构
-
-```java
-@RestController
-@RequestMapping("/demo/demo")
-public class TestDemoController extends BaseController {
-
-    private final ITestDemoService testDemoService;
-
-    @GetMapping("/list")              // 分页查询
-    public TableDataInfo<TestDemoVo> list(TestDemoBo bo, PageQuery pageQuery) { }
-
-    @GetMapping("/{id}")              // 获取详情
-    public R<TestDemoVo> getInfo(@PathVariable Long id) { }
-
-    @PostMapping                      // 新增
-    public R<Void> add(@RequestBody TestDemoBo bo) { }
-
-    @PutMapping                       // 修改
-    public R<Void> edit(@RequestBody TestDemoBo bo) { }
-
-    @DeleteMapping("/{ids}")          // 删除
-    public R<Void> remove(@PathVariable Long[] ids) { }
-}
+# 查找前端接口定义
+Glob src/api/*.js
 ```

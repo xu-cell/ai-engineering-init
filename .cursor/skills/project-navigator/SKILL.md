@@ -16,7 +16,7 @@ description: |
 
 # 项目导航指南
 
-> **说明**：后端项目（RuoYi-Vue-Plus）在当前目录，前端项目在 `/Users/xujiajun/Developer/frontProj/web`（独立维护）。
+> **说明**：后端项目（RuoYi-Vue-Plus）在当前目录，前端项目在独立目录（路径由用户在 CLAUDE.md 中配置）。
 
 ## 项目整体结构
 
@@ -176,25 +176,25 @@ ruoyi-modules/ruoyi-system/src/main/java/org/dromara/system/
 | MyBatis 扩展 | `ruoyi-common/ruoyi-common-mybatis/` |
 | Redis 工具 | `ruoyi-common/ruoyi-common-redis/` |
 | 权限认证 | `ruoyi-common/ruoyi-common-satoken/` |
-| **前端项目根目录** | `/Users/xujiajun/Developer/frontProj/web/` |
-| **前端 src 目录** | `/Users/xujiajun/Developer/frontProj/web/src/` |
-| 前端主入口 | `/Users/xujiajun/Developer/frontProj/web/src/main.js` |
-| 前端路由守卫 | `/Users/xujiajun/Developer/frontProj/web/src/permission.js` |
-| 前端路由配置 | `/Users/xujiajun/Developer/frontProj/web/src/router/` |
-| 前端 API 接口定义 | `/Users/xujiajun/Developer/frontProj/web/src/api/`（65个文件） |
-| 前端视图页面 | `/Users/xujiajun/Developer/frontProj/web/src/leniuview/`（34个业务模块） |
-| 前端业务组件 | `/Users/xujiajun/Developer/frontProj/web/src/leniu-components/` |
-| 前端公共组件 | `/Users/xujiajun/Developer/frontProj/web/src/components/`（~87个） |
-| 前端 Vuex Store | `/Users/xujiajun/Developer/frontProj/web/src/store/`（28个模块） |
-| 前端请求封装 | `/Users/xujiajun/Developer/frontProj/web/src/utils/request.js` |
-| 前端 Token/租户工具 | `/Users/xujiajun/Developer/frontProj/web/src/utils/auth.js` |
-| 前端全局工具函数 | `/Users/xujiajun/Developer/frontProj/web/src/utils/index.js` |
-| 前端 Mixin 文件 | `/Users/xujiajun/Developer/frontProj/web/src/mixins/` |
-| 前端国际化配置 | `/Users/xujiajun/Developer/frontProj/web/src/lang/` |
-| 前端自定义指令 | `/Users/xujiajun/Developer/frontProj/web/src/directive/` |
-| 前端全局样式 | `/Users/xujiajun/Developer/frontProj/web/src/styles/` |
-| 前端构建配置 | `/Users/xujiajun/Developer/frontProj/web/vue.config.js` |
-| 前端依赖配置 | `/Users/xujiajun/Developer/frontProj/web/package.json` |
+| **前端项目根目录** | 由 CLAUDE.md 配置（各用户路径不同） |
+| **前端 src 目录** | `src/`（前端项目根目录下） |
+| 前端主入口 | `src/main.js` |
+| 前端路由守卫 | `src/permission.js` |
+| 前端路由配置 | `src/router/` |
+| 前端 API 接口定义 | `src/api/`（65个文件） |
+| 前端视图页面 | `src/leniuview/`（34个业务模块） |
+| 前端业务组件 | `src/leniu-components/` |
+| 前端公共组件 | `src/components/`（~87个） |
+| 前端 Vuex Store | `src/store/`（28个模块） |
+| 前端请求封装 | `src/utils/request.js` |
+| 前端 Token/租户工具 | `src/utils/auth.js` |
+| 前端全局工具函数 | `src/utils/index.js` |
+| 前端 Mixin 文件 | `src/mixins/` |
+| 前端国际化配置 | `src/lang/` |
+| 前端自定义指令 | `src/directive/` |
+| 前端全局样式 | `src/styles/` |
+| 前端构建配置 | `vue.config.js` |
+| 前端依赖配置 | `package.json` |
 
 ---
 
