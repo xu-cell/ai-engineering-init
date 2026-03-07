@@ -86,6 +86,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - brainstorm: 头脑风暴/创意/方案设计
 - collaborating-with-codex: Codex协作/多模型/算法分析
 - collaborating-with-gemini: Gemini协作/前端原型/UI设计
+- codex-code-review: 代码审查/review/代码检查/code review/审查代码/检查代码/代码质量
 - workflow-engine: 工作流/审批流/Flowable/流程
 - test-development: 测试/单元测试/@Test/JUnit5/Mockito
 - json-serialization: JSON/序列化/反序列化/JsonUtils/日期格式/BigDecimal/精度/类型转换
@@ -122,6 +123,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - leniu-data-permission: 多租户/数据权限/@UseSystem/Executors.doInTenant/readInSystem/TenantContextHolder/MERCHANT-ID/双库隔离/数据源切换
 - leniu-redis-cache: Redis/缓存/RedisUtil/分布式锁/RLock/getLock/setNx/ZSet/限流/缓存击穿
 - leniu-security-guard: 安全认证/SQL注入防护/XSS防护/数据脱敏/SM4加密/接口安全/限流
+- loki-log-query: 查日志/traceId/链路追踪/Loki/日志查询/线上日志/生产日志/错误日志/异常堆栈/日志排查
 - leniu-mealtime: 餐次/mealtime/mealtimeType/早餐/午餐/晚餐/下午茶/夜宵/AllocMealtimeTypeEnum
 - leniu-marketing-price-rule-customizer: 营销计费/计价规则/RulePriceHandler/RulePriceEnum/折扣规则/满减规则/限额规则/补贴规则
 - leniu-marketing-recharge-rule-customizer: 营销充值/充值规则/RuleRechargeHandler/RuleRechargeEnum/满赠规则/充值赠送/管理费规则

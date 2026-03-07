@@ -51,6 +51,10 @@
     "leniu-java-code-style": {
       "platforms": ["codex", "cursor"],
       "note": "代码风格规范，Codex 和 Cursor 平台使用"
+    },
+    "skill-creator": {
+      "platforms": ["codex", "cursor"],
+      "note": "技能创建元技能，Claude 平台有内置 add-skill，仅分发到 Codex 和 Cursor"
     }
   }
 }
