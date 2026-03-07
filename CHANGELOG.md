@@ -4,6 +4,32 @@
 
 ---
 
+## [v1.7.0] - 2026-03-07
+
+### 新增
+- **loki-log-query 技能**：通过 Grafana Loki API 查询线上日志，支持 5 环境管理、traceId 链路追踪、接口路径查询、关键词搜索
+- **yunxiao-task-management 技能**：阿里云云效任务管理，通过 Open API 查询/修改/流转工作项
+- **sync-back-merge 技能**：合并 sync-back Issue 到源仓库的标准流程
+- **skill-creator 技能**：技能创建元技能（仅分发到 Codex 和 Cursor，Claude 使用内置 add-skill）
+- **codex-code-review 技能重写**：改为两阶段审查（本地规范检查 + 代码逻辑审查），可选调用 Codex CLI
+- **CLI `mcp` 命令**：MCP Server 管理（列出/添加/移除/启用/禁用），支持多工具平台
+- **CLI `config` 命令**：查看和管理项目配置
+
+### 改进
+- **mysql-debug 技能**：新增三级降级连接（用户指定 > mysql-config.json > bootstrap-dev.yml 自动提取）+ mysql CLI 多路径查找（closes #5, #6）
+- **leniu-report-customization 技能**：新增 ONLY_FULL_GROUP_BY 兼容章节
+- **leniu-report-standard-customization 技能**：新增 ONLY_FULL_GROUP_BY 兼容章节
+- **code-reviewer agent**：精简冗余检查清单
+- **stop hook**：新增代码审查提示
+- **platform-map.json**：新增 skill-creator 平台分发配置
+
+### 关闭 Issue
+- closes #3（报表技能增强）
+- closes #5（mysql-debug CLI 路径查找）
+- closes #6（mysql-debug 三级降级连接）
+
+---
+
 ## [v1.6.0] - 2026-03-05
 
 ### 新增

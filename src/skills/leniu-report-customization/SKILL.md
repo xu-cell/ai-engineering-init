@@ -291,7 +291,83 @@ GROUP BY d.wallet_id
 
 ---
 
-## 九、开发检查清单
+## 九、MySQL only_full_group_by 规范（必须遵守）
+
+> 生产环境 MySQL 开启了 `sql_mode=only_full_group_by`，所有报表 SQL 必须满足此规则，否则报 `BadSqlGrammarException`。
+
+### 核心规则
+
+**SELECT 中所有非聚合字段，必须出现在 GROUP BY 中，且表达式必须完全一致。**
+
+### 常见错误：GROUP BY 表达式与 SELECT 不一致
+
+```sql
+-- ❌ 错误：SELECT 用 DATE_FORMAT，GROUP BY 用 DATE
+SELECT
+    DATE_FORMAT(atr.trade_time, '%Y-%m-%d') AS statisticDate,
+    SUM(atr.amount) AS totalAmount
+FROM acc_trade atr
+GROUP BY DATE(atr.trade_time)          -- ❌ 表达式不同，触发 only_full_group_by 报错
+ORDER BY DATE(atr.trade_time) ASC
+
+-- ✅ 正确：GROUP BY 与 SELECT 使用完全相同的表达式
+SELECT
+    DATE_FORMAT(atr.trade_time, '%Y-%m-%d') AS statisticDate,
+    SUM(atr.amount) AS totalAmount
+FROM acc_trade atr
+GROUP BY DATE_FORMAT(atr.trade_time, '%Y-%m-%d')   -- ✅ 与 SELECT 一致
+ORDER BY DATE_FORMAT(atr.trade_time, '%Y-%m-%d') ASC
+```
+
+### 常见错误：SELECT 包含非聚合字段未加入 GROUP BY
+
+```sql
+-- ❌ 错误：canteen_name 未在 GROUP BY 中
+SELECT
+    DATE(pay_time) AS orderDate,
+    canteen_name,                          -- ❌ 非聚合字段，未在 GROUP BY
+    SUM(real_amount) AS netAmount
+FROM report_order_info
+GROUP BY DATE(pay_time), canteen_id
+
+-- ✅ 正确：所有非聚合字段都加入 GROUP BY
+SELECT
+    DATE(pay_time) AS orderDate,
+    canteen_name,
+    SUM(real_amount) AS netAmount
+FROM report_order_info
+GROUP BY DATE(pay_time), canteen_id, canteen_name  -- ✅ 包含 canteen_name
+```
+
+### fix SQL 中的正确写法
+
+```xml
+<insert id="initFix">
+    INSERT INTO report_sum_xxx (id, statistic_date, canteen_id, canteen_name,
+        order_count, consume_amount, net_amount)
+    SELECT
+        #{id},
+        DATE(pay_time),              -- SELECT 用 DATE(pay_time)
+        canteen_id,
+        canteen_name,
+        COUNT(*),
+        SUM(CASE WHEN consume_type = 1 THEN real_amount ELSE 0 END),
+        SUM(real_amount)
+    FROM report_order_info
+    WHERE pay_time BETWEEN #{startTime} AND #{endTime}
+    GROUP BY DATE(pay_time), canteen_id, canteen_name  -- ✅ 与 SELECT 完全一致
+</insert>
+```
+
+### 开发检查项
+
+- [ ] SELECT 每个非聚合字段，在 GROUP BY 中都有对应
+- [ ] GROUP BY 的表达式与 SELECT 中的**完全一致**（`DATE_FORMAT(x, 'Y-m-d')` ≠ `DATE(x)`）
+- [ ] ORDER BY 也使用相同表达式（保持一致）
+
+---
+
+## 十、开发检查清单
 
 ### 建表
 - [ ] 分组维度字段 + 金额汇总字段 + 审计字段（crby/crtime/upby/uptime/del_flag），无 tenant_id
@@ -308,9 +384,13 @@ GROUP BY d.wallet_id
 ### 查询接口
 - [ ] 分页 + 合计行（PageVO + TotalVO）+ 三并行 CompletableFuture
 
+### SQL 合规（only_full_group_by）
+- [ ] SELECT 非聚合字段全部在 GROUP BY 中
+- [ ] GROUP BY 表达式与 SELECT 完全一致
+
 ---
 
-## 十、关键代码位置
+## 十一、关键代码位置
 
 | 类型 | 路径 |
 |------|------|

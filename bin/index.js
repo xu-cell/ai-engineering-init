@@ -62,8 +62,17 @@ for (let i = 0; i < args.length; i++) {
     case 'global':
       command = 'global';
       break;
+    case 'init':
+      command = 'init';
+      break;
     case 'sync-back':
       command = 'sync-back';
+      break;
+    case 'config':
+      command = 'config';
+      break;
+    case 'mcp':
+      command = 'mcp';
       break;
     case '--tool': case '-t':
       if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
@@ -109,10 +118,13 @@ for (let i = 0; i < args.length; i++) {
 function printHelp() {
   console.log(`用法: ${fmt('bold', 'npx ai-engineering-init')} [命令] [选项]\n`);
   console.log('命令:');
-  console.log(`  ${fmt('bold', '(无)')}            交互式初始化（安装到当前项目目录）`);
+  console.log(`  ${fmt('bold', 'init')}             交互式初始化（安装到当前项目目录）`);
   console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）`);
   console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效`);
-  console.log(`  ${fmt('bold', 'sync-back')}        对比本地技能修改，生成 diff 或提交 GitHub Issue\n`);
+  console.log(`  ${fmt('bold', 'sync-back')}        对比本地技能修改，生成 diff 或提交 GitHub Issue`);
+  console.log(`  ${fmt('bold', 'config')}           初始化数据库配置文件（.claude/mysql-config.json）`);
+  console.log(`  ${fmt('bold', 'mcp')}              MCP 服务器管理（安装/卸载/状态检查）\n`);
+  console.log(`无命令时显示交互式主菜单。\n`);
   console.log('选项:');
   console.log('  --tool,  -t <工具>   指定工具: claude | cursor | codex | all');
   console.log('  --dir,   -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）');
@@ -1103,43 +1115,613 @@ function runSyncBack(selectedTool, selectedSkill, doSubmit) {
   console.log('');
 }
 
-// ── 主入口 ────────────────────────────────────────────────────────────────
-if (command === 'update') {
-  runUpdate(tool);
-} else if (command === 'global') {
-  runGlobal(tool);
-} else if (command === 'sync-back') {
-  runSyncBack(tool, skillFilter, submitIssue);
-} else if (tool) {
-  run(tool);
-} else {
-  // 非 TTY 环境（CI/管道）无法交互，强制要求显式指定 --tool
+// ── 数据库配置初始化 ──────────────────────────────────────────────────────
+function runConfig() {
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：config 命令需要交互式终端'));
+    process.exit(1);
+  }
+
+  const configPath = path.join(targetDir, '.claude', 'mysql-config.json');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  const ask = (question) => new Promise((resolve) => {
+    rl.question(question, (answer) => resolve(answer.trim()));
+  });
+
+  const ENV_DEFAULTS = {
+    local: { host: '127.0.0.1', user: 'root', desc: '本地开发环境' },
+    dev:   { host: '',          user: '',     desc: '开发测试环境' },
+    test:  { host: '',          user: '',     desc: '测试环境' },
+    prod:  { host: '',          user: '',     desc: '生产环境' },
+  };
+
+  (async () => {
+    try {
+      // 1. 检测已有配置
+      if (fs.existsSync(configPath)) {
+        console.log(fmt('yellow', `⚠ 配置文件已存在：${configPath}`));
+        const overwrite = await ask(fmt('bold', '是否重新配置？[y/N]: '));
+        if (overwrite.toLowerCase() !== 'y') {
+          console.log('已取消。');
+          rl.close();
+          return;
+        }
+        console.log('');
+      }
+
+      // 2. 选择环境
+      console.log(fmt('cyan', '请选择要配置的数据库环境（多选，用逗号分隔）：'));
+      console.log('');
+      console.log(`  ${fmt('bold', '1')}) local  — 本地开发环境`);
+      console.log(`  ${fmt('bold', '2')}) dev    — 开发测试环境`);
+      console.log(`  ${fmt('bold', '3')}) test   — 测试环境`);
+      console.log(`  ${fmt('bold', '4')}) prod   — 生产环境`);
+      console.log('');
+      const envAnswer = await ask(fmt('bold', '请输入选项（如 1,2 或 1-3）: '));
+
+      // 解析选择
+      const envNames = ['local', 'dev', 'test', 'prod'];
+      const selected = new Set();
+      for (const part of envAnswer.split(',')) {
+        const trimmed = part.trim();
+        const rangeMatch = trimmed.match(/^(\d)-(\d)$/);
+        if (rangeMatch) {
+          const start = parseInt(rangeMatch[1], 10);
+          const end = parseInt(rangeMatch[2], 10);
+          for (let n = start; n <= end; n++) {
+            if (n >= 1 && n <= 4) selected.add(envNames[n - 1]);
+          }
+        } else {
+          const n = parseInt(trimmed, 10);
+          if (n >= 1 && n <= 4) selected.add(envNames[n - 1]);
+        }
+      }
+
+      const selectedEnvs = [...selected];
+      if (selectedEnvs.length === 0) {
+        console.error(fmt('red', '未选择任何环境，退出。'));
+        rl.close();
+        process.exit(1);
+      }
+
+      console.log('');
+      console.log(fmt('green', `已选择环境：${selectedEnvs.join(', ')}`));
+      console.log('');
+
+      // 3. 收集每个环境的配置
+      const environments = {};
+      for (const env of selectedEnvs) {
+        const defaults = ENV_DEFAULTS[env];
+        console.log(fmt('cyan', `── ${env} 环境配置 ──`));
+
+        const host = await ask(`  host [${defaults.host || '无默认'}]: `) || defaults.host;
+        const port = await ask('  port [3306]: ') || '3306';
+        const user = await ask(`  user [${defaults.user || '无默认'}]: `) || defaults.user;
+        const password = await ask('  password: ');
+        const desc = await ask(`  描述 [${defaults.desc}]: `) || defaults.desc;
+        console.log('');
+
+        if (!host) {
+          console.error(fmt('red', `错误：${env} 环境的 host 不能为空`));
+          rl.close();
+          process.exit(1);
+        }
+        if (!user) {
+          console.error(fmt('red', `错误：${env} 环境的 user 不能为空`));
+          rl.close();
+          process.exit(1);
+        }
+
+        environments[env] = {
+          host,
+          port: parseInt(port, 10),
+          user,
+          password,
+          description: desc,
+        };
+      }
+
+      // 4. 选择默认环境
+      let defaultEnv = selectedEnvs[0];
+      if (selectedEnvs.length > 1) {
+        console.log(fmt('cyan', '请选择默认环境：'));
+        selectedEnvs.forEach((env, i) => {
+          console.log(`  ${fmt('bold', String(i + 1))}) ${env}`);
+        });
+        const defaultAnswer = await ask(fmt('bold', `请输入选项 [1-${selectedEnvs.length}]: `));
+        const idx = parseInt(defaultAnswer, 10) - 1;
+        if (idx >= 0 && idx < selectedEnvs.length) {
+          defaultEnv = selectedEnvs[idx];
+        }
+        console.log('');
+      }
+
+      // 5. 写入配置文件
+      const config = { defaultEnv, environments };
+      const claudeDir = path.join(targetDir, '.claude');
+      if (!fs.existsSync(claudeDir)) {
+        fs.mkdirSync(claudeDir, { recursive: true });
+      }
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+      console.log(fmt('green', `✔ 配置已写入：${configPath}`));
+
+      // 6. 确保 .gitignore 包含该文件
+      const gitignorePath = path.join(targetDir, '.gitignore');
+      const ignoreEntry = '.claude/mysql-config.json';
+      let needAppend = true;
+      if (fs.existsSync(gitignorePath)) {
+        const content = fs.readFileSync(gitignorePath, 'utf-8');
+        if (content.split('\n').some(line => line.trim() === ignoreEntry)) {
+          needAppend = false;
+        }
+      }
+      if (needAppend) {
+        const separator = fs.existsSync(gitignorePath) ? '\n' : '';
+        fs.appendFileSync(gitignorePath, `${separator}${ignoreEntry}\n`, 'utf-8');
+        console.log(fmt('green', `✔ 已添加 ${ignoreEntry} 到 .gitignore`));
+      }
+
+      console.log('');
+      console.log(fmt('green', '数据库配置初始化完成！'));
+      console.log(`使用 ${fmt('bold', 'mysql-debug')} 技能时将自动读取此配置。`);
+    } finally {
+      rl.close();
+    }
+  })();
+}
+
+// ── MCP 服务器管理 ──────────────────────────────────────────────────────────
+
+const MCP_REGISTRY = [
+  {
+    name: 'sequential-thinking',
+    package: '@modelcontextprotocol/server-sequential-thinking',
+    description: '链式推理 — 深度分析、仔细思考、全面评估时使用',
+    env: {},
+    recommended: true,
+  },
+  {
+    name: 'context7',
+    package: '@upstash/context7-mcp',
+    description: '官方文档查询 — 最佳实践、官方文档、标准写法时使用',
+    env: {},
+    recommended: true,
+  },
+  {
+    name: 'github',
+    package: '@modelcontextprotocol/server-github',
+    description: 'GitHub 集成 — 查询 Issues、PR、仓库信息',
+    env: { GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_TOKEN}' },
+    recommended: true,
+  },
+  {
+    name: 'filesystem',
+    package: '@modelcontextprotocol/server-filesystem',
+    description: '文件系统访问 — 读写项目外的文件',
+    env: {},
+    recommended: false,
+  },
+  {
+    name: 'fetch',
+    package: '@anthropic-ai/mcp-fetch',
+    description: '网页抓取 — 获取网页内容',
+    env: {},
+    recommended: false,
+  },
+  {
+    name: 'yunxiao',
+    package: 'alibabacloud-devops-mcp-server',
+    description: '阿里云效 — DevOps 项目管理、代码仓库、流水线集成',
+    env: { YUNXIAO_ACCESS_TOKEN: '<YOUR_TOKEN>' },
+    recommended: false,
+  },
+  {
+    name: 'yuque',
+    package: 'yuque-mcp',
+    description: '语雀 — 知识库文档读写、搜索、团队协作',
+    env: { YUQUE_TOKEN: '<YOUR_TOKEN>' },
+    recommended: false,
+  },
+];
+
+/** MCP 配置文件路径映射 */
+const MCP_CONFIG_PATHS = {
+  claude: { file: '.claude/settings.json', key: 'mcpServers' },
+  cursor: { file: '.cursor/mcp.json',      key: 'mcpServers' },
+};
+
+/** 检测项目中已有的工具配置目录 */
+function detectMcpTools() {
+  const tools = [];
+  if (isRealDir(path.join(targetDir, '.claude'))) tools.push('claude');
+  if (isRealDir(path.join(targetDir, '.cursor'))) tools.push('cursor');
+  return tools;
+}
+
+/** 读取指定工具的 MCP 已配置服务器 */
+function getMcpServers(toolName) {
+  const config = MCP_CONFIG_PATHS[toolName];
+  if (!config) return {};
+  const filePath = path.join(targetDir, config.file);
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return data[config.key] || {};
+  } catch { return {}; }
+}
+
+/** 写入指定工具的 MCP 配置（保留文件其他字段） */
+function setMcpServers(toolName, mcpServers) {
+  const config = MCP_CONFIG_PATHS[toolName];
+  if (!config) return;
+  const filePath = path.join(targetDir, config.file);
+  let data = {};
+  try { data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { /* 新建 */ }
+  data[config.key] = mcpServers;
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
+}
+
+/** 构建单个 MCP 服务器的配置对象 */
+function buildMcpServerConfig(entry) {
+  const config = {
+    command: 'npx',
+    args: ['-y', entry.package],
+  };
+  if (Object.keys(entry.env).length > 0) {
+    config.env = { ...entry.env };
+  }
+  return config;
+}
+
+/** 获取所有工具中已安装的 MCP 服务器名称集合 */
+function getInstalledMcpNames(tools) {
+  const names = new Set();
+  for (const t of tools) {
+    const servers = getMcpServers(t);
+    for (const name of Object.keys(servers)) names.add(name);
+  }
+  return names;
+}
+
+function runMcp() {
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：mcp 命令需要交互式终端'));
+    process.exit(1);
+  }
+
+  const tools = detectMcpTools();
+  if (tools.length === 0) {
+    console.log(fmt('yellow', '⚠  当前目录未检测到 .claude/ 或 .cursor/ 配置目录。'));
+    console.log(`   请先运行: ${fmt('bold', hintCmd('init --tool claude'))}`);
+    console.log('');
+    process.exit(1);
+  }
+
+  console.log(`  检测到工具: ${fmt('bold', tools.join(', '))}`);
+  console.log('');
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const ask = (question) => new Promise((resolve) => {
+    rl.question(question, (answer) => resolve(answer.trim()));
+  });
+
+  (async () => {
+    try {
+      console.log(fmt('cyan', '请选择 MCP 操作：'));
+      console.log('');
+      console.log(`  ${fmt('bold', '1')}) ${fmt('green',  '安装 MCP 服务器')}    — 从预置列表选择并安装到配置`);
+      console.log(`  ${fmt('bold', '2')}) ${fmt('red',    '卸载 MCP 服务器')}    — 从已安装列表中移除`);
+      console.log(`  ${fmt('bold', '3')}) ${fmt('cyan',   '查看状态')}           — 检查已配置的 MCP 服务器`);
+      console.log(`  ${fmt('bold', '4')}) ${fmt('yellow', '一键推荐安装')}       — 安装所有推荐的 MCP 服务器`);
+      console.log('');
+      const action = await ask(fmt('bold', '请输入选项 [1-4]: '));
+      console.log('');
+
+      switch (action) {
+        case '1': await mcpInstall(tools, ask); break;
+        case '2': await mcpUninstall(tools, ask); break;
+        case '3': mcpStatus(tools); break;
+        case '4': await mcpRecommend(tools, ask); break;
+        default:
+          console.error(fmt('red', '无效选项，退出。'));
+          process.exit(1);
+      }
+    } finally {
+      rl.close();
+    }
+  })();
+}
+
+/** 安装 MCP 服务器 */
+async function mcpInstall(tools, ask) {
+  const installed = getInstalledMcpNames(tools);
+
+  console.log(fmt('cyan', '可用的 MCP 服务器：'));
+  console.log('');
+  for (let i = 0; i < MCP_REGISTRY.length; i++) {
+    const entry = MCP_REGISTRY[i];
+    const tags = [];
+    if (installed.has(entry.name)) tags.push(fmt('green', '[已安装]'));
+    if (entry.recommended) tags.push(fmt('yellow', '[推荐]'));
+    const tagStr = tags.length > 0 ? ' ' + tags.join(' ') : '';
+    console.log(`  ${fmt('bold', String(i + 1))}) ${fmt('bold', entry.name)}${tagStr}`);
+    console.log(`     ${entry.description}`);
+  }
+  console.log('');
+  const answer = await ask(fmt('bold', '请选择要安装的服务器（逗号分隔，如 1,2,3）: '));
+  const indices = answer.split(',').map(s => parseInt(s.trim(), 10) - 1).filter(i => i >= 0 && i < MCP_REGISTRY.length);
+
+  if (indices.length === 0) {
+    console.log(fmt('yellow', '未选择任何服务器，退出。'));
+    return;
+  }
+
+  const selected = indices.map(i => MCP_REGISTRY[i]);
+  console.log('');
+
+  // 处理需要 env 的服务器
+  for (const entry of selected) {
+    if (Object.keys(entry.env).length > 0) {
+      console.log(fmt('cyan', `── ${entry.name} 环境变量配置 ──`));
+      for (const [key, defaultVal] of Object.entries(entry.env)) {
+        const val = await ask(`  ${key} [${defaultVal}]: `);
+        if (val) entry.env[key] = val;
+      }
+      console.log('');
+    }
+  }
+
+  // 写入所有检测到的工具配置
+  for (const toolName of tools) {
+    const servers = getMcpServers(toolName);
+    for (const entry of selected) {
+      servers[entry.name] = buildMcpServerConfig(entry);
+    }
+    setMcpServers(toolName, servers);
+    console.log(`  ${fmt('green', '✓')}  ${toolName}: 已写入 ${selected.map(e => e.name).join(', ')}`);
+  }
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', `✅ 已安装 ${selected.length} 个 MCP 服务器！`)));
+  console.log('');
+}
+
+/** 卸载 MCP 服务器 */
+async function mcpUninstall(tools, ask) {
+  // 收集所有已安装的服务器（合并去重）
+  const allServers = new Map(); // name → 出现在哪些工具中
+  for (const toolName of tools) {
+    const servers = getMcpServers(toolName);
+    for (const name of Object.keys(servers)) {
+      if (!allServers.has(name)) allServers.set(name, []);
+      allServers.get(name).push(toolName);
+    }
+  }
+
+  if (allServers.size === 0) {
+    console.log(fmt('yellow', '  当前没有已安装的 MCP 服务器。'));
+    console.log(`  运行 ${fmt('bold', hintCmd('mcp'))} 安装服务器。`);
+    console.log('');
+    return;
+  }
+
+  const serverNames = [...allServers.keys()];
+  console.log(fmt('cyan', '已安装的 MCP 服务器：'));
+  console.log('');
+  for (let i = 0; i < serverNames.length; i++) {
+    const name = serverNames[i];
+    const toolList = allServers.get(name).join(', ');
+    console.log(`  ${fmt('bold', String(i + 1))}) ${fmt('bold', name)} ${fmt('magenta', `(${toolList})`)}`);
+  }
+  console.log('');
+  const answer = await ask(fmt('bold', '请选择要卸载的服务器（逗号分隔）: '));
+  const indices = answer.split(',').map(s => parseInt(s.trim(), 10) - 1).filter(i => i >= 0 && i < serverNames.length);
+
+  if (indices.length === 0) {
+    console.log(fmt('yellow', '未选择任何服务器，退出。'));
+    return;
+  }
+
+  const toRemove = indices.map(i => serverNames[i]);
+  console.log('');
+
+  for (const toolName of tools) {
+    const servers = getMcpServers(toolName);
+    let removed = 0;
+    for (const name of toRemove) {
+      if (name in servers) {
+        delete servers[name];
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      setMcpServers(toolName, servers);
+      console.log(`  ${fmt('green', '✓')}  ${toolName}: 已移除 ${toRemove.filter(n => !servers[n]).join(', ')}`);
+    }
+  }
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', `✅ 已卸载 ${toRemove.length} 个 MCP 服务器！`)));
+  console.log('');
+}
+
+/** 查看 MCP 状态 */
+function mcpStatus(tools) {
+  let hasAny = false;
+
+  for (const toolName of tools) {
+    const servers = getMcpServers(toolName);
+    const names = Object.keys(servers);
+
+    console.log(fmt('cyan', `[${toolName}]`) + ` ${MCP_CONFIG_PATHS[toolName].file}`);
+
+    if (names.length === 0) {
+      console.log(`  ${fmt('yellow', '（无已安装的 MCP 服务器）')}`);
+    } else {
+      hasAny = true;
+      for (const name of names) {
+        const srv = servers[name];
+        const pkg = (srv.args || []).find(a => a.startsWith('@')) || '—';
+        const envKeys = srv.env ? Object.keys(srv.env).join(', ') : '—';
+        console.log(`  ${fmt('green', '●')} ${fmt('bold', name)}`);
+        console.log(`    包: ${pkg}  |  环境变量: ${envKeys}`);
+      }
+    }
+    console.log('');
+  }
+
+  if (!hasAny) {
+    console.log(fmt('yellow', '💡 未安装任何 MCP 服务器。'));
+    console.log(`   运行 ${fmt('bold', hintCmd('mcp'))} 开始安装。`);
+    console.log('');
+  }
+}
+
+/** 一键推荐安装 */
+async function mcpRecommend(tools, ask) {
+  const installed = getInstalledMcpNames(tools);
+  const toInstall = MCP_REGISTRY.filter(e => e.recommended && !installed.has(e.name));
+
+  if (toInstall.length === 0) {
+    console.log(fmt('green', '  ✓ 所有推荐的 MCP 服务器已安装！'));
+    console.log('');
+    mcpStatus(tools);
+    return;
+  }
+
+  console.log(fmt('cyan', '将安装以下推荐服务器：'));
+  console.log('');
+  for (const entry of toInstall) {
+    console.log(`  ${fmt('green', '●')} ${fmt('bold', entry.name)} — ${entry.description}`);
+  }
+  console.log('');
+
+  // 处理需要 env 的服务器
+  for (const entry of toInstall) {
+    if (Object.keys(entry.env).length > 0) {
+      console.log(fmt('cyan', `── ${entry.name} 环境变量配置 ──`));
+      for (const [key, defaultVal] of Object.entries(entry.env)) {
+        const val = await ask(`  ${key} [${defaultVal}]: `);
+        if (val) entry.env[key] = val;
+      }
+      console.log('');
+    }
+  }
+
+  // 写入配置
+  for (const toolName of tools) {
+    const servers = getMcpServers(toolName);
+    for (const entry of toInstall) {
+      servers[entry.name] = buildMcpServerConfig(entry);
+    }
+    setMcpServers(toolName, servers);
+    console.log(`  ${fmt('green', '✓')}  ${toolName}: 已写入 ${toInstall.map(e => e.name).join(', ')}`);
+  }
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', `✅ 已安装 ${toInstall.length} 个推荐 MCP 服务器！`)));
+  console.log('');
+}
+
+// ── 工具选择菜单（init 用）─────────────────────────────────────────────────
+function showToolMenu() {
   if (!process.stdin.isTTY) {
     console.error(fmt('red', '错误：非交互环境下必须指定 --tool 参数'));
-    console.error(`  示例: ${fmt('bold', hintCmd('--tool claude'))}`);
+    console.error(`  示例: ${fmt('bold', hintCmd('init --tool claude'))}`);
     process.exit(1);
   }
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  console.log(fmt('cyan', '请选择操作：'));
+  console.log(fmt('cyan', '请选择要初始化的工具：'));
   console.log('');
-  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — 初始化到当前项目 .claude/ + CLAUDE.md`);
-  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — 初始化到当前项目 .cursor/（Skills + Agents）`);
-  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — 初始化到当前项目 .codex/ + AGENTS.md`);
-  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时初始化 Claude + Cursor + Codex 到当前项目`);
-  console.log(`  ${fmt('bold', '5')}) ${fmt('magenta', '全局安装')}       — 安装到 ~/.claude / ~/.cursor，对所有项目生效`);
+  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — .claude/ + CLAUDE.md`);
+  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — .cursor/（Skills + Agents）`);
+  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — .codex/ + AGENTS.md`);
+  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时初始化 Claude + Cursor + Codex`);
   console.log('');
-  rl.question(fmt('bold', '请输入选项 [1-5]: '), (answer) => {
+  rl.question(fmt('bold', '请输入选项 [1-4]: '), (answer) => {
     rl.close();
     const map = { '1': 'claude', '2': 'cursor', '3': 'codex', '4': 'all' };
     const selected = map[answer.trim()];
     console.log('');
-    if (answer.trim() === '5') {
-      runGlobal('all');
-    } else if (selected) {
+    if (selected) {
       run(selected);
     } else {
       console.error(fmt('red', '无效选项，退出。'));
       process.exit(1);
     }
   });
+}
+
+// ── 主菜单（无命令时展示）──────────────────────────────────────────────────
+function showMainMenu() {
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：非交互环境下必须指定命令'));
+    console.error(`  示例: ${fmt('bold', hintCmd('init --tool claude'))}`);
+    console.error(`  运行 ${fmt('bold', hintCmd('--help'))} 查看所有命令`);
+    process.exit(1);
+  }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  console.log(fmt('cyan', '请选择操作：'));
+  console.log('');
+  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   '初始化')}         — 安装 AI 工具配置到当前项目`);
+  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    '更新')}           — 更新已安装的框架文件`);
+  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  '全局安装')}       — 安装到 ~/.claude 等，对所有项目生效`);
+  console.log(`  ${fmt('bold', '4')}) ${fmt('magenta', '技能同步反馈')}   — 对比本地技能修改，生成 diff`);
+  console.log(`  ${fmt('bold', '5')}) ${fmt('blue',    '数据库配置')}     — 初始化 mysql-config.json（数据库连接信息）`);
+  console.log(`  ${fmt('bold', '6')}) ${fmt('green',   'MCP 管理')}       — MCP 服务器安装/卸载/状态检查`);
+  console.log('');
+  rl.question(fmt('bold', '请输入选项 [1-6]: '), (answer) => {
+    rl.close();
+    console.log('');
+    switch (answer.trim()) {
+      case '1':
+        showToolMenu();
+        break;
+      case '2':
+        runUpdate(tool);
+        break;
+      case '3':
+        runGlobal(tool || 'all');
+        break;
+      case '4':
+        runSyncBack(tool, skillFilter, submitIssue);
+        break;
+      case '5':
+        runConfig();
+        break;
+      case '6':
+        runMcp();
+        break;
+      default:
+        console.error(fmt('red', '无效选项，退出。'));
+        process.exit(1);
+    }
+  });
+}
+
+// ── 主入口 ────────────────────────────────────────────────────────────────
+if (command === 'init') {
+  // 显式 init 子命令
+  if (tool) {
+    run(tool);
+  } else {
+    showToolMenu();
+  }
+} else if (command === 'update') {
+  runUpdate(tool);
+} else if (command === 'global') {
+  runGlobal(tool);
+} else if (command === 'sync-back') {
+  runSyncBack(tool, skillFilter, submitIssue);
+} else if (command === 'config') {
+  runConfig();
+} else if (command === 'mcp') {
+  runMcp();
+} else if (tool) {
+  // 向后兼容：无 command 但有 --tool，当作 init 执行
+  run(tool);
+} else {
+  // 无命令无参数：显示主菜单
+  showMainMenu();
 }

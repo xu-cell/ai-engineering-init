@@ -286,7 +286,69 @@ public ReportBaseTotalVO<XxxVO> pageSummary(XxxParam param) {
 
 ---
 
-## 九、开发检查清单
+## 九、MySQL only_full_group_by 规范（必须遵守）
+
+> MySQL 默认开启 `sql_mode=ONLY_FULL_GROUP_BY`，SELECT 中所有非聚合列必须出现在 GROUP BY 中，且 GROUP BY 表达式必须与 SELECT 表达式**完全一致**。
+
+### 核心规则
+
+**SELECT 的表达式 == GROUP BY 的表达式**（字符级别完全一致）
+
+### ❌ 错误示例（GROUP BY 与 SELECT 不一致）
+
+```xml
+<!-- 报错：Expression #1 of SELECT list is not in GROUP BY clause -->
+SELECT
+    DATE_FORMAT(roi.consume_time, '%Y-%m-%d') AS statisticDate,
+    SUM(roi.real_amount)                       AS totalAmount
+FROM report_order_info roi
+GROUP BY DATE(roi.consume_time)   <!-- ❌ DATE() ≠ DATE_FORMAT(..., '%Y-%m-%d') -->
+ORDER BY DATE(roi.consume_time)
+```
+
+### ✅ 正确示例（GROUP BY 与 SELECT 完全一致）
+
+```xml
+SELECT
+    DATE_FORMAT(roi.consume_time, '%Y-%m-%d') AS statisticDate,
+    SUM(roi.real_amount)                       AS totalAmount
+FROM report_order_info roi
+GROUP BY DATE_FORMAT(roi.consume_time, '%Y-%m-%d')   <!-- ✅ 与 SELECT 完全一致 -->
+ORDER BY DATE_FORMAT(roi.consume_time, '%Y-%m-%d')   <!-- ✅ ORDER BY 也保持一致 -->
+```
+
+### ❌ 错误示例（SELECT 含非聚合列未加入 GROUP BY）
+
+```xml
+SELECT
+    roi.canteen_id,
+    roi.canteen_name,                         <!-- ❌ 非聚合列未在 GROUP BY 中 -->
+    SUM(roi.real_amount) AS totalAmount
+FROM report_order_info roi
+GROUP BY roi.canteen_id
+```
+
+### ✅ 正确示例（所有非聚合列都在 GROUP BY 中）
+
+```xml
+SELECT
+    roi.canteen_id,
+    roi.canteen_name,
+    SUM(roi.real_amount) AS totalAmount
+FROM report_order_info roi
+GROUP BY roi.canteen_id, roi.canteen_name     <!-- ✅ 所有非聚合列都在 GROUP BY -->
+```
+
+### 检查清单
+
+- [ ] SELECT 中按日期分组时使用 `DATE_FORMAT(col, '%Y-%m-%d')`，**不要用 `DATE()`**
+- [ ] GROUP BY 表达式与 SELECT 中对应列**逐字相同**（复制粘贴而非重写）
+- [ ] ORDER BY 中同样使用与 GROUP BY 一致的表达式
+- [ ] SELECT 中所有非聚合列（无 SUM/COUNT/AVG/MAX/MIN 包裹）都出现在 GROUP BY 中
+
+---
+
+## 十、开发检查清单
 
 ### 建表
 - [ ] 分组维度 + 金额汇总 + 审计字段（crby/crtime/upby/uptime/del_flag），无 tenant_id
@@ -302,10 +364,11 @@ public ReportBaseTotalVO<XxxVO> pageSummary(XxxParam param) {
 
 ### 查询
 - [ ] ReportBaseTotalVO + CompletableFuture 并行 + MgrUserAuthPO 权限
+- [ ] GROUP BY / ORDER BY 表达式与 SELECT 完全一致（only_full_group_by）
 
 ---
 
-## 十、关键代码位置
+## 十一、关键代码位置
 
 > 路径前缀均为 `core-report/.../statistics/`
 

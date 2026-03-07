@@ -27,41 +27,73 @@ description: |
 
 ---
 
-## 首次使用引导（必须执行）
+## 连接信息获取（三级降级，自动查找）
 
-当本技能被激活时，**必须先执行以下两项检查**，任一不通过则输出引导提示并停止查库操作：
+当本技能被激活时，**按以下优先级获取数据库连接信息**：
 
-### 检查 1：配置文件是否就绪
+### 优先级 1：用户对话中指定（最高优先级）
 
-读取 `.claude/mysql-config.json`，确定当前环境（用户指定 或 `default` 字段），检查该环境的 password 是否仍为占位符 `YOUR_PASSWORD`：
+用户直接给出连接信息，或指定环境名：
+- "连 dev 环境查一下" → 使用 `.claude/mysql-config.json` 中 dev 环境的配置
+- 直接给出 host/port/user/password → 直接使用
 
+### 优先级 2：`.claude/mysql-config.json`（显式配置，可选）
+
+如果文件存在且当前环境的 password 不是占位符 `YOUR_PASSWORD`，使用该配置。
+**此文件为可选**，主要用于连接非本地环境（dev/prod 远程数据库）。
+
+### 优先级 3：工程配置文件（零配置，本地开发默认）
+
+从项目的 `bootstrap-dev.yml` 中自动提取连接信息：
+
+**搜索路径**：
 ```
-如果文件不存在 或 当前环境的 password == "YOUR_PASSWORD"：
-  → 输出引导提示（见下方模板），不执行查库
+**/bootstrap-dev.yml
+**/bootstrap*.yml（降级）
 ```
 
-### 检查 2：mysql CLI 是否可用
+**解析位置**：`spring.dataset.system.master` 节点
 
-执行 `which mysql`，检查是否返回有效路径：
-
+**解析规则**：
+```yaml
+# 从以下字段提取：
+jdbcUrl: jdbc:mysql://127.0.0.1:3306/system_xxx
+username: root
+password: xxx
 ```
-如果 mysql 命令不存在：
-  → 输出引导提示（见下方模板），不执行查库
+
+**提取结果**：
+- host = `127.0.0.1`（从 jdbcUrl 解析）
+- port = `3306`（从 jdbcUrl 解析）
+- user = `root`（username 字段）
+- password = `xxx`（password 字段）
+- 注意：jdbcUrl 中的数据库名（`system_xxx`）为系统库，**不作为查询目标数据库**。查询目标数据库 = 租户ID（从日志提取或用户指定）
+
+### mysql CLI 查找（多路径）
+
+按顺序查找 mysql 客户端：
+
+```bash
+which mysql \
+  || ls /usr/local/mysql/bin/mysql \
+  || ls /opt/homebrew/bin/mysql \
+  || ls /opt/homebrew/opt/mysql-client/bin/mysql
 ```
 
-### 引导提示模板
+找到任一即可使用。如果全部不存在，输出安装提示：
+```
+brew install mysql-client
+```
 
-当检查不通过时，输出以下提示：
+### 引导提示（仅当连接信息和 mysql CLI 都无法获取时）
 
 ```
 ⚠️ 数据库查询功能需要先完成配置：
 
-1. 编辑 .claude/mysql-config.json，填入你的 MySQL 连接信息：
-   配置文件支持多环境（local / dev / prod），至少配置一个环境：
-   - host: 数据库地址
-   - port: 端口（默认 3306）
-   - user: 用户名
-   - password: 数据库密码（替换 YOUR_PASSWORD）
+1. 连接信息获取失败：
+   - 未找到 bootstrap-dev.yml 工程配置文件
+   - 未找到 .claude/mysql-config.json 配置文件
+   → 请创建 .claude/mysql-config.json 或确保项目中存在 bootstrap-dev.yml
 
 2. 安装 MySQL 客户端：
    brew install mysql-client
@@ -209,11 +241,15 @@ mysql -h 127.0.0.1 -P 3306 -u root -p'password' 546198574447230976 -e "SELECT ..
 
 ### 连接方式
 
-读取 `.claude/mysql-config.json` 获取 host/port/user/password，数据库名从日志提取或用户指定：
+按"连接信息获取"章节的优先级获取 host/port/user/password，数据库名从日志提取或用户指定：
 
 ```bash
-# 从配置读取连接信息 + 动态数据库名
-mysql -h {host} -P {port} -u {user} -p'{password}' {database_from_log} -e "{SQL}"
+# 连接信息来源：用户指定 > mysql-config.json > bootstrap-dev.yml 自动提取
+# 数据库名来源：用户指定 > 日志提取的租户ID
+mysql -h {host} -P {port} -u {user} -p'{password}' {database_from_log_or_user} -e "{SQL}"
+
+# mysql 路径：如果 which mysql 失败，尝试绝对路径
+/opt/homebrew/opt/mysql-client/bin/mysql -h {host} ...
 ```
 
 ### 常用排查查询模板
