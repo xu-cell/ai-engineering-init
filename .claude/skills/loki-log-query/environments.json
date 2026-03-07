@@ -1,0 +1,155 @@
+{
+  "_comment": "Loki 多环境配置。每个环境需要独立的 Grafana Service Account Token。",
+  "_usage": "用户说'查 test13 的日志'或'去 monitor-dev 查'时，匹配对应环境。",
+  "_setup": "Token 创建：Grafana → Administration → Service accounts → Add（Viewer 角色）→ Add token → 复制到对应环境的 token 字段。",
+  "active": "test13",
+  "environments": {
+    "test13": {
+      "name": "测试13（主测试环境）",
+      "url": "https://test13.xnzn.net/grafana",
+      "token": "",
+      "aliases": [
+        "test13",
+        "13"
+      ],
+      "projects": [
+        "test13",
+        "test14",
+        "test15",
+        "test16",
+        "test17",
+        "test18",
+        "test19",
+        "test20",
+        "test21",
+        "test22",
+        "test23",
+        "test24",
+        "test25",
+        "test26",
+        "test27",
+        "test28",
+        "test31",
+        "ywcs"
+      ]
+    },
+    "monitor-test": {
+      "name": "Monitor 测试环境",
+      "url": "https://monitor-test.xnzn.net/grafana",
+      "token": "",
+      "aliases": [
+        "monitor-test",
+        "mtest"
+      ],
+      "projects": [
+        "test01",
+        "test02",
+        "test03",
+        "test04",
+        "test05",
+        "test06",
+        "test07",
+        "test08",
+        "test09",
+        "test10",
+        "test11",
+        "test12"
+      ]
+    },
+    "monitor-dev": {
+      "name": "Monitor 开发环境",
+      "url": "https://monitor-dev.xnzn.net/grafana",
+      "token": "",
+      "aliases": [
+        "monitor-dev",
+        "mdev",
+        "dev"
+      ],
+      "projects": [
+        "dev01",
+        "dev02",
+        "dev03",
+        "dev04",
+        "dev05",
+        "dev06",
+        "dev07",
+        "dev08",
+        "dev09",
+        "dev10",
+        "dev11",
+        "dev12",
+        "dev13",
+        "dev14",
+        "dev15"
+      ]
+    },
+    "monitor02-dev": {
+      "name": "Monitor02 开发环境",
+      "url": "https://monitor02-dev.xnzn.net/grafana",
+      "token": "",
+      "aliases": [
+        "monitor02-dev",
+        "m02",
+        "monitor02"
+      ],
+      "projects": [
+        "dev16",
+        "dev17",
+        "dev19",
+        "dev21",
+        "dev22",
+        "dev23",
+        "dev24",
+        "dev25",
+        "dev26",
+        "dev28",
+        "dev29",
+        "dev30",
+        "dev31",
+        "dev32",
+        "dev33",
+        "dev34",
+        "dev35",
+        "dev36",
+        "dev37",
+        "dev38",
+        "dev39",
+        "dev40",
+        "dev41",
+        "dev42"
+      ]
+    },
+    "monitor-tyy-dev": {
+      "name": "Monitor 体验园开发环境",
+      "url": "https://monitor-tyy-dev.xnzn.net/grafana",
+      "token": "",
+      "aliases": [
+        "monitor-tyy",
+        "tyy",
+        "体验园"
+      ],
+      "projects": [
+        "dev44",
+        "dev45",
+        "dev46",
+        "dev47",
+        "dev48",
+        "dev49",
+        "dev50",
+        "dev51",
+        "dev52",
+        "dev53",
+        "dev54",
+        "dev55",
+        "dev56",
+        "dev57",
+        "dev58",
+        "dev60",
+        "dev61",
+        "dev63",
+        "dev64",
+        "grafana"
+      ]
+    }
+  }
+}
