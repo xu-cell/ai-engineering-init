@@ -4,3 +4,5 @@ npm-debug.log*
 *.swp
 # MySQL 连接配置（含密码，禁止提交）
 .claude/mysql-config.json
+# Loki 环境配置（含 Token，禁止提交）
+.claude/skills/loki-log-query/environments.json
