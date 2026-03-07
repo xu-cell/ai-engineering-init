@@ -525,9 +525,12 @@ function showDoneHint(toolKey) {
   console.log('');
   if (toolKey === 'claude' || toolKey === 'all') {
     console.log(fmt('cyan', 'Claude Code 使用：'));
-    console.log(`  1. 按需修改 ${fmt('bold', 'CLAUDE.md')} 中的项目信息`);
+    console.log(`  1. ${fmt('bold', '必做')}：修改 ${fmt('bold', 'CLAUDE.md')} — 把 [你的xxx] 占位符替换为项目实际信息`);
     console.log(`  2. 在 Claude Code 中输入 ${fmt('bold', '/start')} 快速了解项目`);
     console.log(`  3. 输入 ${fmt('bold', '/dev')} 开始开发新功能`);
+    console.log('');
+    console.log(fmt('yellow', '  💡 CLAUDE.md 和 AGENTS.md 是示例模板，务必替换占位符后使用'));
+    console.log(fmt('yellow', `  💡 运行 ${fmt('bold', hintCmd('mcp'))} 管理 MCP 服务器（云效、语雀等）`));
     console.log('');
   }
   if (toolKey === 'cursor' || toolKey === 'all') {
@@ -535,6 +538,7 @@ function showDoneHint(toolKey) {
     console.log(`  1. 在 Cursor Chat 中输入 ${fmt('bold', '/')} 查看所有可用 Skills`);
     console.log(`  2. 输入 ${fmt('bold', '@技能名')} 手动调用指定技能`);
     console.log(`  3. 在 Settings → MCP 中确认 MCP 服务器已连接`);
+    console.log(fmt('yellow', `  💡 运行 ${fmt('bold', hintCmd('mcp'))} 管理 MCP 服务器（云效、语雀等）`));
     console.log('');
   }
   if (toolKey === 'codex' || toolKey === 'all') {

@@ -10,246 +10,251 @@ description: |
   - 文件元数据管理
   - OSS服务商切换
 
-  触发词：文件上传、OSS、云存储、MinIO、阿里云、腾讯云、七牛、图片上传、文件下载、预签名、presigned、OssClient、OssFactory
+  触发词：文件上传、OSS、云存储、MinIO、阿里云、腾讯云、七牛、图片上传、文件下载、预签名、presigned、S3
 ---
 
 # 文件与云存储指南
 
-> 模块位置：`ruoyi-common/ruoyi-common-oss`
 > 统一协议：基于 AWS S3 SDK v2，兼容所有 S3 协议云服务
 
-## 核心类
+## 架构概述
 
-| 类 | 说明 |
+| 组件 | 说明 |
 |----|------|
-| `OssFactory` | 获取 OssClient 实例（只有2个方法） |
-| `OssClient` | 统一操作入口（基于 AWS S3 SDK v2） |
+| `[你的OssClient]` | 统一操作入口（基于 AWS S3 SDK v2） |
+| `S3Client` | AWS SDK 底层客户端 |
 | `UploadResult` | 上传结果（url, filename, eTag） |
-| `ISysOssService` | OSS 文件管理服务接口 |
 
 ---
 
-## 一、获取 OssClient
+## 一、S3 Client 初始化
 
 ```java
-import org.dromara.common.oss.factory.OssFactory;
-import org.dromara.common.oss.core.OssClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.regions.Region;
 
-OssClient client = OssFactory.instance();            // 默认配置
-OssClient client = OssFactory.instance("aliyun");    // 指定配置（字符串，非枚举）
-OssClient client = OssFactory.instance("minio");
-
-// ❌ 不存在 OssType 枚举参数
-OssClient client = OssFactory.instance(OssType.ALIYUN);  // 编译错误！
+// 通用 S3 客户端构建（兼容 MinIO / 阿里云 / 腾讯云等）
+S3Client s3Client = S3Client.builder()
+    .endpointOverride(URI.create(endpoint))
+    .credentialsProvider(StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(accessKey, secretKey)))
+    .region(Region.of(region))
+    .forcePathStyle(true)   // MinIO 需要开启
+    .build();
 ```
-
-> 内部使用 ConcurrentHashMap + ReentrantLock 双检锁缓存实例，支持多租户隔离。
 
 ---
 
 ## 二、文件上传
 
+### 基础上传
+
 ```java
-import org.dromara.common.oss.entity.UploadResult;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.core.sync.RequestBody;
 
-// 1. 上传字节数组，自动生成路径（推荐）
-UploadResult result = client.uploadSuffix(data, ".jpg", "image/jpeg");
+// 上传文件
+PutObjectRequest request = PutObjectRequest.builder()
+    .bucket(bucketName)
+    .key("images/photo.jpg")
+    .contentType("image/jpeg")
+    .build();
 
-// 2. 上传输入流，自动生成路径
-UploadResult result = client.uploadSuffix(is, ".jpg", fileSize, "image/jpeg");
+s3Client.putObject(request, RequestBody.fromFile(file.toPath()));
 
-// 3. 上传 File 对象，自动生成路径
-UploadResult result = client.uploadSuffix(file, ".jpg");
+// 上传输入流
+s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
 
-// 4. 上传到指定路径
-UploadResult result = client.upload(file.toPath(), "avatar/user123.jpg", null, "image/jpeg");
-
-// 5. 上传流到指定路径
-UploadResult result = client.upload(is, "images/photo.jpg", fileSize, "image/jpeg");
+// 上传字节数组
+s3Client.putObject(request, RequestBody.fromBytes(data));
 ```
 
-**方法签名：**
-```java
-UploadResult upload(Path filePath, String key, String md5Digest, String contentType)
-UploadResult upload(InputStream inputStream, String key, Long length, String contentType)
-UploadResult uploadSuffix(byte[] data, String suffix, String contentType)
-UploadResult uploadSuffix(InputStream inputStream, String suffix, Long length, String contentType)
-UploadResult uploadSuffix(File file, String suffix)
-```
-
----
-
-## 三、UploadResult 字段
-
-> 只有 3 个字段，使用 Lombok `@Builder`。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `url` | String | 文件访问URL |
-| `filename` | String | 文件名/对象键（**小写 n**） |
-| `eTag` | String | 文件校验标记 |
+### 封装上传服务（推荐模式）
 
 ```java
-String url = result.getUrl();
-String filename = result.getFilename();   // ✅ 小写 'n'
-// ❌ result.getFileName() / result.getFileSize() / result.getContentType() 不存在
-```
+@Service
+@RequiredArgsConstructor
+public class OssService {
 
----
+    private final S3Client s3Client;
+    private final OssProperties properties;
 
-## 四、文件下载
+    /**
+     * 上传文件，自动生成路径
+     */
+    public UploadResult upload(MultipartFile file) {
+        String suffix = getFileSuffix(file.getOriginalFilename());
+        String key = generateObjectKey(suffix);  // 如 2026/03/07/uuid.jpg
 
-```java
-// 下载到临时文件
-Path tempFile = client.fileDownload("images/photo.jpg");
+        PutObjectRequest request = PutObjectRequest.builder()
+            .bucket(properties.getBucketName())
+            .key(key)
+            .contentType(file.getContentType())
+            .build();
 
-// 下载到输出流（推荐用于HTTP响应）
-client.download("images/photo.jpg", out, contentLength -> {
-    response.setContentLengthLong(contentLength);
-});
+        s3Client.putObject(request,
+            RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-// 获取文件输入流（内部创建临时文件，使用后自动删除）
-InputStream is = client.getObjectContent("images/photo.jpg");
-```
+        return UploadResult.builder()
+            .url(properties.getDomain() + "/" + key)
+            .filename(key)
+            .build();
+    }
 
----
-
-## 五、文件删除与预签名URL
-
-```java
-// 删除
-client.delete("images/photo.jpg");
-// ❌ client.copyFile() / client.getFileMetadata() / client.listFiles() 不存在
-
-// 下载预签名URL
-String url = client.createPresignedGetUrl("images/photo.jpg", Duration.ofMinutes(60));
-
-// 上传预签名URL（前端直传）
-String url = client.createPresignedPutUrl("images/upload.jpg", Duration.ofHours(1), metadata);
-// ❌ client.generatePresignedUrl() / client.generatePublicUrl() 不存在
-```
-
----
-
-## 六、OssClient 工具方法
-
-```java
-String baseUrl = client.getUrl();                  // 基础URL
-String endpoint = client.getEndpoint();            // 终端点URL
-String domain = client.getDomain();                // 自定义域名
-String configKey = client.getConfigKey();           // 配置键
-AccessPolicyType policy = client.getAccessPolicy(); // 桶权限（PUBLIC/PRIVATE）
-String path = client.getPath("", ".jpg");          // 生成对象键路径
-String relative = client.removeBaseUrl(fullUrl);   // 获取相对路径
-boolean same = client.checkPropertiesSame(props);  // 配置是否相同
-```
-
----
-
-## 七、Controller 接口（SysOssController）
-
-| 操作 | HTTP | 路径 | 权限 |
-|------|------|------|------|
-| 查询列表 | GET | `/resource/oss/list` | `system:oss:list` |
-| 批量查询 | GET | `/resource/oss/listByIds/{ossIds}` | `system:oss:query` |
-| 上传文件 | POST | `/resource/oss/upload` | `system:oss:upload` |
-| 下载文件 | GET | `/resource/oss/download/{ossId}` | `system:oss:download` |
-| 删除文件 | DELETE | `/resource/oss/{ossIds}` | `system:oss:remove` |
-
-**上传接口规范：**
-```java
-// 必须使用 @RequestPart("file")，必须指定 consumes
-@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public R<SysOssUploadVo> upload(@RequestPart("file") MultipartFile file) {
-    SysOssVo oss = ossService.upload(file);
-    SysOssUploadVo uploadVo = new SysOssUploadVo();
-    uploadVo.setUrl(oss.getUrl());
-    uploadVo.setFileName(oss.getOriginalName());
-    uploadVo.setOssId(oss.getOssId().toString());
-    return R.ok(uploadVo);
+    private String generateObjectKey(String suffix) {
+        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        return datePath + "/" + UUID.randomUUID() + suffix;
+    }
 }
 ```
 
-**SysOssUploadVo**：`url`(String) / `fileName`(String) / `ossId`(String)
-
 ---
 
-## 八、Service 层接口（ISysOssService）
+## 三、文件下载
 
 ```java
-TableDataInfo<SysOssVo> queryPageList(SysOssBo sysOss, PageQuery pageQuery);
-List<SysOssVo> listByIds(Collection<Long> ossIds);
-@Cacheable(cacheNames = CacheNames.SYS_OSS, key = "#ossId")
-SysOssVo getById(Long ossId);
-SysOssVo upload(MultipartFile file);
-SysOssVo upload(File file);
-void download(Long ossId, HttpServletResponse response) throws IOException;
-Boolean deleteWithValidByIds(Collection<Long> ids, Boolean isValid);
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.core.ResponseInputStream;
+
+// 下载到输出流（推荐用于HTTP响应）
+GetObjectRequest getRequest = GetObjectRequest.builder()
+    .bucket(bucketName)
+    .key("images/photo.jpg")
+    .build();
+
+ResponseInputStream<?> response = s3Client.getObject(getRequest);
+
+// 写入 HTTP 响应
+try (InputStream is = response) {
+    httpResponse.setContentType("image/jpeg");
+    httpResponse.setContentLengthLong(response.response().contentLength());
+    is.transferTo(httpResponse.getOutputStream());
+}
 ```
 
-> 推荐通过 `ISysOssService.upload()` 上传，会自动保存数据库记录。
-> 直接使用 `OssClient` 上传不会有数据库记录。
+---
 
-> 完整 Service 实现代码详见 [references/service-impl.md](references/service-impl.md)
+## 四、文件删除
+
+```java
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+
+DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+    .bucket(bucketName)
+    .key("images/photo.jpg")
+    .build();
+
+s3Client.deleteObject(deleteRequest);
+```
 
 ---
 
-## 九、数据库实体
+## 五、预签名 URL
 
-> 完整实体/VO/BO 定义详见 [references/entities.md](references/entities.md)
+```java
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.*;
 
-**SysOss 关键字段：**
+S3Presigner presigner = S3Presigner.builder()
+    .endpointOverride(URI.create(endpoint))
+    .credentialsProvider(credentialsProvider)
+    .region(Region.of(region))
+    .build();
 
-| 字段 | 说明 |
-|------|------|
-| `ossId` | 主键 |
-| `fileName` | OSS对象键 |
-| `originalName` | 原始文件名 |
-| `fileSuffix` | 后缀名 |
-| `url` | 访问URL |
-| `ext1` | 扩展字段（JSON，存储 SysOssExt） |
-| `service` | 服务商标识 |
+// 下载预签名URL
+GetObjectPresignRequest getPresignRequest = GetObjectPresignRequest.builder()
+    .signatureDuration(Duration.ofMinutes(60))
+    .getObjectRequest(b -> b.bucket(bucketName).key("images/photo.jpg"))
+    .build();
+String downloadUrl = presigner.presignGetObject(getPresignRequest).url().toString();
 
----
-
-## 十、配置（sys_oss_config 表）
-
-| 字段 | 说明 |
-|------|------|
-| `config_key` | 配置标识（aliyun、minio等） |
-| `access_key` / `secret_key` | 认证信息 |
-| `bucket_name` | 存储桶 |
-| `prefix` | 路径前缀 |
-| `endpoint` | 服务端点 |
-| `domain` | 自定义域名 |
-| `is_https` | 是否HTTPS（Y/N） |
-| `region` | 区域 |
-| `access_policy` | 0-private, 1-public, 2-custom |
-
-> 配置从 Redis 读取（`CacheNames.SYS_OSS_CONFIG`），私有桶文件自动生成 120 秒预签名URL。
+// 上传预签名URL（前端直传）
+PutObjectPresignRequest putPresignRequest = PutObjectPresignRequest.builder()
+    .signatureDuration(Duration.ofHours(1))
+    .putObjectRequest(b -> b.bucket(bucketName).key("images/upload.jpg"))
+    .build();
+String uploadUrl = presigner.presignPutObject(putPresignRequest).url().toString();
+```
 
 ---
 
-## 十一、快速对照表
+## 六、Controller 接口（设计模式）
 
-| 错误 | 正确 |
-|------|------|
-| `OssFactory.instance(OssType.ALIYUN)` | `OssFactory.instance("aliyun")` |
-| `result.getFileName()` | `result.getFilename()` |
-| `result.getFileSize()` | 不存在 |
-| `client.downloadToTempFile(path)` | `client.fileDownload(path)` |
-| `client.generatePresignedUrl(...)` | `client.createPresignedGetUrl(...)` |
-| `throw ServiceException.of("msg")` | `throw new ServiceException("msg")` |
-| `client.copyFile/listFiles/getFileMetadata` | 不存在 |
+```java
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/oss")
+public class OssController {
+
+    private final OssService ossService;
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UploadResult upload(@RequestPart("file") MultipartFile file) {
+        return ossService.upload(file);
+    }
+
+    @GetMapping("/download/{id}")
+    public void download(@PathVariable Long id, HttpServletResponse response) throws IOException {
+        ossService.download(id, response);
+    }
+
+    @DeleteMapping("/{ids}")
+    public void delete(@PathVariable List<Long> ids) {
+        ossService.deleteByIds(ids);
+    }
+}
+```
 
 ---
 
-## 核心文件位置
+## 七、配置模型
 
-| 类型 | 位置 |
-|------|------|
-| OssFactory | `ruoyi-common/ruoyi-common-oss/.../factory/OssFactory.java` |
-| OssClient | `ruoyi-common/ruoyi-common-oss/.../core/OssClient.java` |
-| UploadResult | `ruoyi-common/ruoyi-common-oss/.../entity/UploadResult.java` |
-| SysOssController | `ruoyi-modules/ruoyi-system/.../controller/system/SysOssController.java` |
-| SysOssServiceImpl | `ruoyi-modules/ruoyi-system/.../service/impl/SysOssServiceImpl.java` |
+```yaml
+# application.yml
+oss:
+  endpoint: https://s3.amazonaws.com    # 或 MinIO/阿里云/腾讯云端点
+  access-key: your-access-key
+  secret-key: your-secret-key
+  bucket-name: your-bucket
+  region: us-east-1
+  domain: https://cdn.example.com       # 自定义域名（可选）
+```
+
+```java
+@Data
+@ConfigurationProperties(prefix = "oss")
+public class OssProperties {
+    private String endpoint;
+    private String accessKey;
+    private String secretKey;
+    private String bucketName;
+    private String region;
+    private String domain;
+}
+```
+
+---
+
+## 八、服务商对照
+
+| 服务商 | endpoint 示例 | 备注 |
+|--------|-------------|------|
+| 阿里云 OSS | `https://oss-cn-hangzhou.aliyuncs.com` | S3 兼容 |
+| 腾讯云 COS | `https://cos.ap-guangzhou.myqcloud.com` | S3 兼容 |
+| 七牛云 | `https://s3-cn-south-1.qiniucs.com` | S3 兼容 |
+| MinIO | `http://localhost:9000` | 需 `forcePathStyle(true)` |
+| AWS S3 | `https://s3.amazonaws.com` | 原生支持 |
+
+---
+
+## 九、设计要点
+
+1. **统一封装**：通过 S3 协议统一对接多个云服务商，切换只需改配置
+2. **路径生成**：按日期+UUID生成对象路径，避免冲突
+3. **私有桶**：私有桶文件通过预签名URL访问，设置合理的过期时间
+4. **文件记录**：上传后保存数据库记录，关联业务数据
+5. **大文件**：超过 100MB 考虑分片上传（`CreateMultipartUpload`）
+6. **安全**：前端直传使用预签名URL，不暴露密钥

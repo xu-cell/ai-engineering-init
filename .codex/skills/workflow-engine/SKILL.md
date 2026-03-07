@@ -1,321 +1,249 @@
 ---
 name: workflow-engine
 description: |
-  工作流引擎开发、流程管理、任务办理。基于 WarmFlow 实现审批流、业务流程集成。
-
+  通用工作流引擎开发指南。涵盖状态机模式、流程引擎选型（Flowable/Camunda/Activiti 对比）、业务集成模式。
   触发场景：
-  - 启动工作流程（发起审批、提交申请）
-  - 办理任务（审批通过、驳回、转办、委派）
-  - 流程定义管理（设计流程、配置节点）
-  - 业务模块集成工作流（订单审批、请假申请）
-  - 监听工作流事件（流程状态变更通知）
-  - 配置办理人（用户、角色、部门、岗位、SpEL表达式）
-
-  触发词：工作流、流程、审批、WarmFlow、FlowEngine、任务、办理、驳回、转办、委派、加签、减签、抄送、流程实例、流程定义、办理人、GlobalListener、ProcessEvent
+  - 设计审批流程（请假、报销、订单审批）
+  - 选择工作流引擎
+  - 实现任务办理（审批、驳回、转办、委派）
+  - 业务模块集成工作流
+  - 监听流程状态变更
+  触发词：工作流、流程、审批、驳回、转办、委派、加签、抄送、流程引擎、Flowable、Camunda、Activiti、状态机、BPMN
+  注意：如果项目有专属技能，优先使用专属版本。
 ---
 
-# 工作流引擎开发规范（WarmFlow）
+# 工作流引擎开发指南
 
-> 基于 **WarmFlow** 实现，架构层次：Controller → Service → WarmFlow Core (FlowEngine) → Mapper → Listener/Handler
+> 通用模板。如果项目有专属技能，优先使用。
 
-## 一、FlowEngine 核心服务
+## 设计原则
 
-```java
-import org.dromara.warm.flow.core.FlowEngine;
+1. **流程与业务分离**：流程引擎负责流转控制，业务逻辑通过事件监听器/回调接入。
+2. **状态可追溯**：每次流转记录操作人、操作时间、操作意见，形成完整审批链。
+3. **灵活可配**：流程定义应支持可视化设计、动态修改，无需改代码。
+4. **异常可恢复**：流程实例支持挂起、恢复、终止、撤销等操作。
 
-FlowEngine.taskService()      // 任务服务
-FlowEngine.insService()       // 实例服务
-FlowEngine.defService()       // 流程定义服务
-FlowEngine.nodeService()      // 节点服务
-FlowEngine.hisTaskService()   // 历史任务服务
-FlowEngine.userService()      // 用户服务
+---
+
+## 流程引擎选型对比
+
+| 维度 | Flowable | Camunda | Activiti | 轻量方案（WarmFlow 等） |
+|------|----------|---------|----------|----------------------|
+| 成熟度 | 高 | 高 | 高（社区版停滞） | 中 |
+| 学习曲线 | 中等 | 中等 | 中等 | 低 |
+| BPMN 2.0 | 完整支持 | 完整支持 | 完整支持 | 部分支持 |
+| DMN 决策表 | 支持 | 支持 | 有限 | 不支持 |
+| CMMN 案例 | 支持 | 支持 | 不支持 | 不支持 |
+| 流程设计器 | 内置 Web | 内置 Web + Desktop | 旧版 Eclipse | 简易 Web |
+| 性能 | 优秀 | 优秀 | 良好 | 轻量高效 |
+| Spring Boot | 原生支持 | 原生支持 | 原生支持 | 通常支持 |
+| 商业版 | 有 | 有 | N/A | 通常免费 |
+| 适用场景 | 企业级复杂流程 | 企业级复杂流程 | 已有项目维护 | 简单审批流 |
+
+### 选型决策树
+
+```
+流程复杂度？
+├── 简单审批（3-5步线性流程）
+│   └── 状态机模式 或 轻量流程引擎
+├── 中等（分支、并行、会签）
+│   └── Flowable / Camunda
+└── 复杂（子流程、多实例、DMN、事件）
+    └── Flowable / Camunda
 ```
 
-## 二、关键枚举
+---
 
-### 任务状态 TaskStatusEnum
+## 实现模式
+
+### 模式一：状态机（简单场景）
+
+适用于线性或简单分支的审批流程。
 
 ```java
-package org.dromara.workflow.common.enums;
-
-public enum TaskStatusEnum {
-    CANCEL("cancel", "撤销"),    PASS("pass", "通过"),
-    WAITING("waiting", "待审核"), INVALID("invalid", "作废"),
-    BACK("back", "退回"),        TERMINATION("termination", "终止"),
-    TRANSFER("transfer", "转办"), DEPUTE("depute", "委托"),
-    COPY("copy", "抄送"),        SIGN("sign", "加签"),
-    SIGN_OFF("sign_off", "减签"), TIMEOUT("timeout", "超时");
-
-    // 判断是否为通过或退回
-    public static boolean isPassOrBack(String status) { ... }
+// 状态枚举
+public enum OrderStatus {
+    DRAFT,      // 草稿
+    PENDING,    // 待审批
+    APPROVED,   // 已通过
+    REJECTED,   // 已驳回
+    CANCELLED;  // 已撤销
 }
-```
 
-### 办理人类型 TaskAssigneeEnum
+// 状态流转规则
+public class OrderStateMachine {
 
-> **注意**：USER 和 SPEL 类型没有前缀！
+    private static final Map<OrderStatus, Set<OrderStatus>> TRANSITIONS = Map.of(
+        OrderStatus.DRAFT,    Set.of(OrderStatus.PENDING, OrderStatus.CANCELLED),
+        OrderStatus.PENDING,  Set.of(OrderStatus.APPROVED, OrderStatus.REJECTED),
+        OrderStatus.REJECTED, Set.of(OrderStatus.PENDING, OrderStatus.CANCELLED)
+    );
 
-```java
-public enum TaskAssigneeEnum {
-    USER("用户", ""),           // 无前缀
-    ROLE("角色", "role:"),
-    DEPT("部门", "dept:"),
-    POST("岗位", "post:"),
-    SPEL("SpEL表达式", "");     // 无前缀，通过 $ 或 # 开头判断
-
-    public static boolean isSpelExpression(String value) {
-        return StringUtils.startsWith(value, "$") || StringUtils.startsWith(value, "#");
+    public void transition(Order order, OrderStatus targetStatus, String operator, String comment) {
+        OrderStatus current = order.getStatus();
+        if (!TRANSITIONS.getOrDefault(current, Set.of()).contains(targetStatus)) {
+            throw new [你的异常类](
+                String.format("不允许从 %s 流转到 %s", current, targetStatus));
+        }
+        order.setStatus(targetStatus);
+        // 记录流转日志
+        saveFlowLog(order.getId(), current, targetStatus, operator, comment);
     }
 }
 ```
 
-**storageId 格式**：`123`(用户) | `role:456` | `dept:789` | `post:101` | `#{expr}` | `${var}`
+### 模式二：流程引擎集成
 
----
+#### 核心概念
 
-## 三、常用操作
+| 概念 | 说明 |
+|------|------|
+| 流程定义（Definition） | 流程模板（BPMN XML），可版本化管理 |
+| 流程实例（Instance） | 基于定义创建的运行时实例 |
+| 任务（Task） | 等待人工处理的节点 |
+| 历史（History） | 已完成的流程/任务记录 |
+| 变量（Variable） | 流程运行时数据，用于条件判断 |
 
-### 3.1 启动流程
-
-```java
-@Autowired
-private IFlwTaskService flwTaskService;
-
-StartProcessBo bo = new StartProcessBo();
-bo.setFlowCode("leave_apply");
-bo.setBusinessId("order_123");
-bo.setVariables(Map.of("amount", 1000));
-StartProcessReturnDTO result = flwTaskService.startWorkFlow(bo);
-```
+#### 启动流程
 
 ```java
-// 供其他模块调用
-@Autowired
-private WorkflowService workflowService;
+@Service
+public class WorkflowService {
 
-StartProcessDTO dto = new StartProcessDTO();
-dto.setFlowCode("leave_apply");
-dto.setBusinessId("order_123");
-StartProcessReturnDTO result = workflowService.startWorkFlow(dto);
+    @Autowired
+    private [你的流程引擎] engine;
+
+    // 启动流程
+    public String startProcess(String processKey, String businessId, Map<String, Object> variables) {
+        variables.put("businessId", businessId);
+        variables.put("initiator", [你的安全工具类].getCurrentUserId());
+
+        // 启动流程实例
+        var instance = engine.startProcessByKey(processKey, businessId, variables);
+        return instance.getId();
+    }
+
+    // 办理任务（审批通过）
+    public void completeTask(String taskId, String comment, Map<String, Object> variables) {
+        // 记录审批意见
+        engine.addComment(taskId, comment);
+        // 完成任务
+        engine.completeTask(taskId, variables);
+    }
+
+    // 驳回
+    public void rejectTask(String taskId, String targetNodeId, String comment) {
+        engine.addComment(taskId, comment);
+        engine.rejectToNode(taskId, targetNodeId);
+    }
+
+    // 转办
+    public void transferTask(String taskId, String targetUserId, String comment) {
+        engine.addComment(taskId, comment);
+        engine.setAssignee(taskId, targetUserId);
+    }
+
+    // 撤销
+    public void cancelProcess(String instanceId, String comment) {
+        engine.deleteProcessInstance(instanceId, comment);
+    }
+}
 ```
 
-### 3.2 办理任务
-
-```java
-CompleteTaskBo bo = new CompleteTaskBo();
-bo.setTaskId(taskId);
-bo.setMessage("同意");
-bo.setVariables(Map.of("approved", true));
-bo.setAssigneeMap(Map.of("pass:nodeCode", "user:1,user:2")); // 可选：指定下一节点办理人
-flwTaskService.completeTask(bo);
-```
-
-### 3.3 驳回
-
-```java
-BackProcessBo bo = new BackProcessBo();
-bo.setTaskId(taskId);
-bo.setNodeCode("apply_node");
-bo.setMessage("资料不完整");
-flwTaskService.backProcess(bo);
-```
-
-### 3.4 转办 / 委派 / 加签 / 减签
-
-```java
-TaskOperationBo bo = new TaskOperationBo();
-bo.setTaskId(taskId);
-bo.setUserId("targetUserId");
-bo.setMessage("转交处理");
-
-// 转办（转给他人，自己不再参与）
-flwTaskService.taskOperation(bo, FlowConstant.TRANSFER_TASK);
-
-// 委派（委托代办，最终还需自己确认）
-flwTaskService.taskOperation(bo, FlowConstant.DELEGATE_TASK);
-
-// 加签 / 减签
-bo.setUserIds(List.of("user1", "user2"));
-flwTaskService.taskOperation(bo, FlowConstant.ADD_SIGNATURE);
-flwTaskService.taskOperation(bo, FlowConstant.REDUCTION_SIGNATURE);
-```
-
-### 3.5 查询任务
-
-```java
-flwTaskService.pageByTaskWait(bo, pageQuery);      // 当前用户待办
-flwTaskService.pageByTaskFinish(bo, pageQuery);     // 当前用户已办
-flwTaskService.pageByAllTaskWait(bo, pageQuery);    // 所有待办（管理员）
-flwTaskService.pageByAllTaskFinish(bo, pageQuery);  // 所有已办（管理员）
-flwTaskService.pageByTaskCopy(bo, pageQuery);       // 抄送任务
-```
-
----
-
-## 四、业务集成 - 事件监听
-
-> 事件类位于 `org.dromara.common.core.domain.event` 包
-
-| 事件类 | 触发时机 | 主要字段 |
-|-------|---------|---------|
-| `ProcessEvent` | 流程状态变更 | flowCode, businessId, status, submit |
-| `ProcessTaskEvent` | 任务创建 | flowCode, businessId, taskId, nodeCode |
-| `ProcessDeleteEvent` | 流程删除 | flowCode, businessId |
+#### 业务集成 - 事件监听
 
 ```java
 @Component
 public class OrderWorkflowListener {
 
-    @EventListener(condition = "#event.flowCode == 'order_approve'")
-    public void onProcessEvent(ProcessEvent event) {
+    @Autowired
+    private OrderService orderService;
+
+    // 监听流程状态变更事件
+    @EventListener(condition = "#event.processKey == 'order_approve'")
+    public void onProcessEvent(ProcessStatusEvent event) {
         String businessId = event.getBusinessId();
-        if (event.isSubmit()) {
-            orderService.updateStatus(businessId, "PENDING");
-            return;
-        }
         switch (event.getStatus()) {
-            case "finish" -> orderService.updateStatus(businessId, "APPROVED");
-            case "back" -> orderService.updateStatus(businessId, "REJECTED");
-            case "cancel" -> orderService.updateStatus(businessId, "CANCELLED");
-            case "termination" -> orderService.updateStatus(businessId, "TERMINATED");
-            case "invalid" -> orderService.updateStatus(businessId, "INVALID");
+            case "submitted" -> orderService.updateStatus(businessId, "PENDING");
+            case "approved"  -> orderService.updateStatus(businessId, "APPROVED");
+            case "rejected"  -> orderService.updateStatus(businessId, "REJECTED");
+            case "cancelled" -> orderService.updateStatus(businessId, "CANCELLED");
         }
     }
 
-    @EventListener(condition = "#event.flowCode == 'order_approve'")
-    public void onTaskCreated(ProcessTaskEvent event) {
-        sendNotification(event.getTaskId());
+    // 监听任务创建事件（发送通知）
+    @EventListener(condition = "#event.processKey == 'order_approve'")
+    public void onTaskCreated(TaskCreatedEvent event) {
+        notificationService.sendNotice(
+            event.getAssignee(),
+            "您有新的审批任务：" + event.getTaskName()
+        );
     }
 }
 ```
 
----
+#### 办理人类型设计
 
-## 五、全局监听器 WorkflowGlobalListener
-
-实现 `GlobalListener` 接口，在任务生命周期关键节点执行：
-
-```java
-@Component
-public class WorkflowGlobalListener implements GlobalListener {
-    @Override
-    public void create(ListenerVariable var) { /* 任务创建 */ }
-
-    @Override
-    public void start(ListenerVariable var) {
-        // 任务开始办理：处理抄送、自定义变量
-        String ext = var.getNode().getExt();
-        Map<String, Object> variable = var.getVariable();
-    }
-
-    @Override
-    public void assignment(ListenerVariable var) {
-        // 分派：动态修改待办任务的办理人
-        List<Task> nextTasks = var.getNextTasks();
-        FlowParams flowParams = var.getFlowParams();
-    }
-
-    @Override
-    public void finish(ListenerVariable var) {
-        // 完成：状态更新、消息通知、事件发布
-        Instance instance = var.getInstance();
-        Definition definition = var.getDefinition();
-    }
-}
-```
+| 类型 | 标识格式 | 示例 |
+|------|---------|------|
+| 指定用户 | 用户ID | `1001` |
+| 角色 | `role:角色编码` | `role:finance_manager` |
+| 部门 | `dept:部门ID` | `dept:100` |
+| 岗位 | `post:岗位编码` | `post:cfo` |
+| 表达式 | SpEL / UEL | `${order.amount > 10000 ? 'role:director' : 'role:manager'}` |
 
 ---
 
-## 六、流程常量 FlowConstant
+## API 接口设计参考
 
-```java
-package org.dromara.workflow.common.constant;
-
-public interface FlowConstant {
-    String INITIATOR = "initiator";               // 发起人
-    String INITIATOR_DEPT_ID = "initiatorDeptId"; // 发起人部门
-    String BUSINESS_ID = "businessId";
-    String SUBMIT = "submit";                     // 提交标识
-
-    String DELEGATE_TASK = "delegateTask";        // 委托
-    String TRANSFER_TASK = "transferTask";        // 转办
-    String ADD_SIGNATURE = "addSignature";        // 加签
-    String REDUCTION_SIGNATURE = "reductionSignature"; // 减签
-
-    String FLOW_COPY_LIST = "flowCopyList";       // 抄送人列表
-    String MESSAGE_TYPE = "messageType";
-    String MESSAGE_NOTICE = "messageNotice";
-    String AUTO_PASS = "autoPass";                // 自动通过
-
-    String VAR_IGNORE = "ignore";                 // 忽略办理权限校验
-    String VAR_IGNORE_DEPUTE = "ignoreDepute";
-    String VAR_IGNORE_COOPERATE = "ignoreCooperate";
-}
-```
-
-### 消息通知
-
-```java
-// MessageTypeEnum: "1"=站内信, "2"=邮箱, "3"=短信
-Map<String, Object> variable = new HashMap<>();
-variable.put(FlowConstant.MESSAGE_TYPE, List.of("1", "2"));
-variable.put(FlowConstant.MESSAGE_NOTICE, "您有新的审批任务");
-```
-
----
-
-## 七、API 接口速查
-
-### 任务 /workflow/task
+### 任务相关
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| `/startWorkFlow` | POST | 启动流程 |
-| `/completeTask` | POST | 办理任务 |
-| `/backProcess` | POST | 驳回 |
-| `/pageByTaskWait` | GET | 当前用户待办 |
-| `/pageByTaskFinish` | GET | 当前用户已办 |
-| `/pageByTaskCopy` | GET | 抄送任务 |
-| `/getNextNodeList` | POST | 下一节点信息 |
-| `/terminationTask` | POST | 终止流程 |
-| `/{taskOperation}` | POST | 委派/转办/加签/减签 |
-| `/urgeTask` | POST | 催办 |
+| `/workflow/start` | POST | 启动流程 |
+| `/workflow/task/complete` | POST | 办理任务（审批通过） |
+| `/workflow/task/reject` | POST | 驳回 |
+| `/workflow/task/transfer` | POST | 转办 |
+| `/workflow/task/delegate` | POST | 委派 |
+| `/workflow/task/todo` | GET | 当前用户待办列表 |
+| `/workflow/task/done` | GET | 当前用户已办列表 |
+| `/workflow/task/copy` | GET | 抄送列表 |
 
-### 实例 /workflow/instance
+### 实例相关
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| `/pageByRunning` | GET | 运行中实例 |
-| `/pageByFinish` | GET | 已完成实例 |
-| `/pageByCurrent` | GET | 当前用户发起 |
-| `/cancelProcessApply` | PUT | 撤销申请 |
-| `/invalid` | POST | 作废 |
-| `/flowHisTaskList/{businessId}` | GET | 流程图+审批记录 |
-
-### 定义 /workflow/definition
-
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/list` | GET | 已发布定义 |
-| `/publish/{id}` | PUT | 发布 |
-| `/unPublish/{id}` | PUT | 取消发布 |
-| `/copy/{id}` | POST | 复制 |
-| `/importDef` | POST | 导入 |
-| `/exportDef/{id}` | POST | 导出 |
+| `/workflow/instance/running` | GET | 运行中实例 |
+| `/workflow/instance/finished` | GET | 已完成实例 |
+| `/workflow/instance/cancel` | PUT | 撤销申请 |
+| `/workflow/instance/history/{businessId}` | GET | 审批记录 |
 
 ---
 
-## 八、核心文件位置
+## 常见错误
 
-```
-ruoyi-modules/ruoyi-workflow/src/main/java/org/dromara/workflow/
-├── controller/          # FlwTaskController, FlwInstanceController, FlwDefinitionController
-├── service/impl/        # FlwTaskServiceImpl, WorkflowServiceImpl
-├── mapper/              # FlwTaskMapper, FlwInstanceMapper
-├── listener/            # WorkflowGlobalListener
-├── handler/             # FlowProcessEventHandler, WorkflowPermissionHandler
-├── domain/bo/           # StartProcessBo, CompleteTaskBo, BackProcessBo, TaskOperationBo
-├── domain/vo/           # FlowTaskVo, FlowHisTaskVo, FlowInstanceVo
-├── common/constant/     # FlowConstant
-└── common/enums/        # TaskStatusEnum, TaskAssigneeEnum, MessageTypeEnum
+```java
+// 1. 流程与业务强耦合
+// 在流程引擎的 ServiceTask 中直接操作数据库
+// 应通过事件监听/消息解耦
+
+// 2. 未处理并发审批
+// 多人同时审批同一任务 -> 数据不一致
+// 应在 completeTask 中加锁或使用乐观锁
+
+// 3. 流程变量存放大对象
+variables.put("orderDetail", hugeObject);  // 序列化到数据库，性能差
+// 应只存关键ID，通过 businessId 关联查询
+
+// 4. 忽略流程版本管理
+// 修改流程定义后，已运行的实例可能出错
+// 应使用版本化部署，运行中实例按启动时版本执行
+
+// 5. 审批意见未持久化
+engine.completeTask(taskId, variables);  // 忘记 addComment
+// 应在 complete 前记录审批意见
+
+// 6. 通知不及时
+// 任务创建后没有通知办理人 -> 任务积压
+// 应通过事件监听器自动发送通知
 ```

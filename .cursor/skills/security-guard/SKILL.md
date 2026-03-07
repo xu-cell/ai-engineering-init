@@ -1,353 +1,245 @@
 ---
 name: security-guard
 description: |
-  后端安全开发规范。包含 Sa-Token 认证授权、数据脱敏、数据加密、接口安全、漏洞防护。
-
+  通用后端安全开发指南。包含认证授权模式对比、输入校验、XSS/SQL注入防护、数据脱敏加密、安全检查清单。
   触发场景：
-  - Sa-Token 权限控制配置
-  - 登录认证、Token 管理
-  - 数据脱敏处理（@Sensitive）
-  - 数据加密处理（@EncryptField、@ApiEncrypt）
-  - 接口限流（@RateLimiter）
-  - 防重复提交（@RepeatSubmit）
-  - XSS/SQL注入防护
-
-  触发词：安全、Sa-Token、@SaCheckPermission、@SaCheckLogin、@SaCheckRole、登录认证、Token、数据脱敏、@Sensitive、加密解密、@EncryptField、@ApiEncrypt、限流、@RateLimiter、防重复、@RepeatSubmit、XSS、SQL注入、漏洞防护、敏感数据、LoginHelper
-
-  注意：
-  - 如需行级数据权限（@DataPermission、部门隔离），请使用 data-permission。
-  - 如果是设计异常处理机制（try-catch、错误码），请使用 error-handler。
+  - 设计认证授权方案
+  - 配置权限校验
+  - 防护 XSS / SQL 注入
+  - 数据脱敏 / 加密处理
+  - 安全合规审查
+  触发词：安全、认证、授权、权限、Token、登录、XSS、SQL注入、脱敏、加密、RBAC、OAuth、CORS、漏洞防护
+  注意：如果项目有专属技能（如 `leniu-security-guard`），优先使用专属版本。
 ---
 
-# 后端安全开发指南
+# 安全开发指南
 
-> 本项目是纯后端项目，本文档专注于 Java 后端安全规范。
+> 通用模板。如果项目有专属技能（如 `leniu-security-guard`），优先使用。
 
-## 1. Sa-Token 认证授权
+## 设计原则
 
-### 1.1 权限注解
-
-```java
-import cn.dev33.satoken.annotation.*;
-
-@SaCheckLogin                          // 登录校验
-@SaCheckPermission("system:user:add")  // 权限校验
-@SaCheckRole("admin")                  // 角色校验
-@SaCheckSafe                           // 二级认证（敏感操作）
-
-// 多权限（满足其一 / 全部满足）
-@SaCheckPermission(value = {"system:user:add", "system:user:update"}, mode = SaMode.OR)
-@SaCheckPermission(value = {"system:user:add", "system:user:update"}, mode = SaMode.AND)
-
-// 多角色（满足其一）
-@SaCheckRole(value = {"admin", "editor"}, mode = SaMode.OR)
-```
-
-### 1.2 LoginHelper 工具类
-
-> 位置：`ruoyi-common-satoken/.../utils/LoginHelper.java`
-
-```java
-import org.dromara.common.satoken.utils.LoginHelper;
-
-// 用户信息
-LoginUser user = LoginHelper.getLoginUser();
-Long userId   = LoginHelper.getUserId();
-String name   = LoginHelper.getUsername();
-String tenant  = LoginHelper.getTenantId();
-Long deptId   = LoginHelper.getDeptId();
-
-// 管理员判断
-LoginHelper.isSuperAdmin();           // userId = 1
-LoginHelper.isTenantAdmin();          // 租户管理员
-LoginHelper.isLogin();                // 是否已登录
-
-// 用户类型 & 登录
-UserType type = LoginHelper.getUserType();
-LoginHelper.login(loginUser, loginParameter);
-```
-
-### 1.3 角色与权限常量
-
-| 常量 | 值 | 说明 |
-|------|-----|------|
-| 超级管理员角色 | `superadmin` | 拥有所有权限 |
-| 租户管理员角色 | `admin` | 租户内所有权限 |
-| 通配符权限 | `*:*:*` | 所有权限标识 |
-| 超级管理员ID | `1L` | 系统超管用户ID |
+1. **纵深防御**：不依赖单一安全机制，从传输层、认证层、授权层、数据层多维度防护。
+2. **最小权限**：默认拒绝，显式授权。每个接口必须声明所需权限。
+3. **输入不可信**：所有外部输入（用户参数、请求头、Cookie）必须校验后使用。
+4. **敏感数据保护**：存储加密、传输加密、展示脱敏，三层保护。
+5. **审计可追溯**：关键操作记录日志，包含操作人、操作时间、操作内容。
 
 ---
 
-## 2. 数据脱敏（@Sensitive）
+## 认证授权方案对比
 
-> 位置：`ruoyi-common-sensitive/.../`
-> 完整 17 种策略详见 `references/sensitive-strategies.md`
+| 维度 | Spring Security | Apache Shiro | Sa-Token |
+|------|----------------|-------------|----------|
+| 学习曲线 | 陡峭 | 中等 | 平缓 |
+| 功能丰富度 | 最全面 | 基础够用 | 功能丰富 |
+| Spring 集成 | 原生集成 | 需适配 | 自动配置 |
+| OAuth2 支持 | 原生支持 | 需扩展 | 内置 SSO |
+| 微服务支持 | 优秀 | 一般 | 良好 |
+| 适用场景 | 企业级、复杂权限 | 轻量项目 | 快速开发 |
 
-### 基本用法
+---
+
+## 实现模式
+
+### 1. 认证（Authentication）
 
 ```java
-import org.dromara.common.sensitive.annotation.Sensitive;
-import org.dromara.common.sensitive.core.SensitiveStrategy;
+// 方式一：注解式认证（框架无关的概念）
+@[你的认证注解]                          // 登录校验
+@[你的权限注解]("system:user:add")       // 权限校验
+@[你的角色注解]("admin")                 // 角色校验
 
-public class UserVo {
-    @Sensitive(strategy = SensitiveStrategy.PHONE)          // 138****8888
-    private String phone;
+// 方式二：编程式认证
+@RestController
+public class UserController {
 
-    @Sensitive(strategy = SensitiveStrategy.ID_CARD)        // 110***********1234
-    private String idCard;
+    @Autowired
+    private [你的安全工具类] securityUtils;
 
-    @Sensitive(strategy = SensitiveStrategy.EMAIL)          // t**@example.com
-    private String email;
+    @GetMapping("/profile")
+    public Result<?> profile() {
+        // 获取当前登录用户
+        Long userId = securityUtils.getCurrentUserId();
+        String username = securityUtils.getCurrentUsername();
+        boolean isAdmin = securityUtils.hasRole("admin");
+        boolean hasPerm = securityUtils.hasPermission("system:user:list");
 
-    @Sensitive(strategy = SensitiveStrategy.BANK_CARD)      // 6222***********1234
-    private String bankCard;
-
-    @Sensitive(strategy = SensitiveStrategy.CHINESE_NAME)   // 张*
-    private String realName;
-
-    @Sensitive(strategy = SensitiveStrategy.PASSWORD)       // ******
-    private String password;
+        if (!securityUtils.isAuthenticated()) {
+            throw new [你的异常类]("未登录");
+        }
+        // ...
+    }
 }
 ```
 
-### 基于角色/权限的脱敏控制
+### 2. 授权模型（RBAC）
 
-```java
-// admin 角色可查看原数据，其他用户看脱敏数据
-@Sensitive(strategy = SensitiveStrategy.ID_CARD, roleKey = {"admin"})
-private String idCard;
+```
+用户 (User)
+  └── 角色 (Role)         -- 多对多
+        └── 权限 (Permission) -- 多对多
+              └── 菜单/按钮/API
 
-// 需要权限才能看原数据
-@Sensitive(strategy = SensitiveStrategy.PHONE, perms = {"system:user:detail"})
-private String phone;
-
-// roleKey 和 perms 是 OR 关系
-@Sensitive(strategy = SensitiveStrategy.BANK_CARD,
-           roleKey = {"admin"}, perms = {"finance:account:query"})
-private String bankCard;
+权限标识格式：模块:资源:操作
+示例：system:user:add, order:info:export
 ```
 
-### 日志脱敏
-
 ```java
-// NG: log.info("手机号: {}", phone);
-// OK:
-log.info("手机号: {}", DesensitizedUtil.mobilePhone(phone));
+// 多权限校验（满足其一 / 全部满足）
+@RequiresPermissions(value = {"system:user:add", "system:user:edit"}, logical = Logical.OR)
+@RequiresPermissions(value = {"system:user:add", "system:user:edit"}, logical = Logical.AND)
+
+// 多角色校验
+@RequiresRoles(value = {"admin", "editor"}, logical = Logical.OR)
 ```
 
----
-
-## 3. 数据加密（@EncryptField / @ApiEncrypt）
-
-> 位置：`ruoyi-common-encrypt/.../`
-> 完整加密配置和工具类详见 `references/encrypt-config.md`
-
-### 支持算法
-
-| 算法 | 类型 | 密钥要求 |
-|------|------|---------|
-| BASE64 | 编码 | 无 |
-| AES | 对称加密 | 16/24/32 位 |
-| RSA | 非对称加密 | 公钥/私钥 |
-| SM2 | 国密非对称 | 公钥/私钥 |
-| SM4 | 国密对称 | 16 位 |
-
-### 字段级加密
+### 3. 输入校验
 
 ```java
-import org.dromara.common.encrypt.annotation.EncryptField;
-import org.dromara.common.encrypt.enumd.AlgorithmType;
-
-public class User {
-    @EncryptField                                           // 默认（全局配置）
-    private String password;
-
-    @EncryptField(algorithm = AlgorithmType.AES)            // AES
-    private String idCard;
-
-    @EncryptField(algorithm = AlgorithmType.SM4)            // SM4 国密
-    private String phone;
-}
-```
-
-### API 级加密
-
-```java
-import org.dromara.common.encrypt.annotation.ApiEncrypt;
-
-@ApiEncrypt                   // 请求体自动解密
-@PostMapping("/addUser")
-public R<Long> addUser(@RequestBody UserBo bo) { }
-
-@ApiEncrypt(response = true)  // 请求解密 + 响应加密
-@PostMapping("/updateUser")
-public R<Void> updateUser(@RequestBody UserBo bo) { }
-```
-
----
-
-## 4. 接口限流（@RateLimiter）
-
-> 位置：`ruoyi-common-ratelimiter/.../`
-
-```java
-import org.dromara.common.ratelimiter.annotation.RateLimiter;
-import org.dromara.common.ratelimiter.enums.LimitType;
-
-// 全局限流：60秒内最多100次
-@RateLimiter(time = 60, count = 100)
-
-// IP 限流：每个 IP 每分钟最多10次
-@RateLimiter(time = 60, count = 10, limitType = LimitType.IP)
-
-// 动态 key（SpEL）
-@RateLimiter(key = "#userId", time = 60, count = 5)
-
-// 自定义错误消息
-@RateLimiter(time = 60, count = 10, message = "访问过于频繁，请稍后再试")
-
-// 集群限流
-@RateLimiter(time = 60, count = 1000, limitType = LimitType.CLUSTER)
-```
-
-### 推荐配置
-
-| 场景 | time | count | limitType |
-|------|------|-------|-----------|
-| 登录接口 | 60 | 5-10 | IP |
-| 验证码 | 60 | 3 | IP |
-| 查询接口 | 60 | 100-1000 | DEFAULT |
-| 写入接口 | 60 | 10-50 | DEFAULT |
-| 敏感操作 | 60 | 1-5 | IP |
-
----
-
-## 5. 防重复提交（@RepeatSubmit）
-
-> 位置：`ruoyi-common-idempotent/.../`
-
-```java
-import org.dromara.common.idempotent.annotation.RepeatSubmit;
-
-@RepeatSubmit()                                              // 默认 5 秒
-@RepeatSubmit(interval = 10, timeUnit = TimeUnit.SECONDS)    // 10 秒
-@RepeatSubmit(interval = 5000, message = "请勿重复提交订单")   // 自定义消息
-```
-
-| 场景 | 推荐间隔 |
-|------|---------|
-| 普通表单 | 3-5 秒 |
-| 订单创建 | 10 秒 |
-| 支付操作 | 30 秒 |
-| 文件上传 | 10 秒 |
-
----
-
-## 6. 数据权限（@DataPermission）
-
-> **完整指南请使用 `data-permission` 技能**
-
-```java
-@DataPermission({
-    @DataColumn(key = "deptName", value = "create_dept"),
-    @DataColumn(key = "userName", value = "create_by")
-})
-public TableDataInfo<OrderVo> pageWithPermission(OrderBo bo, PageQuery pageQuery) { }
-```
-
-权限类型：全部数据 | 本部门 | 本部门及以下 | 仅本人 | 自定义
-
----
-
-## 7. 输入校验
-
-```java
-import org.dromara.common.core.validate.AddGroup;
-import org.dromara.common.core.validate.EditGroup;
-
-public class UserBo {
-    @NotNull(message = "ID不能为空", groups = { EditGroup.class })
+public class UserDTO {
+    @NotNull(message = "ID不能为空", groups = {UpdateGroup.class})
     private Long id;
 
-    @NotBlank(message = "用户名不能为空", groups = { AddGroup.class, EditGroup.class })
-    @Size(min = 2, max = 20)
+    @NotBlank(message = "用户名不能为空")
+    @Size(min = 2, max = 20, message = "用户名长度2-20")
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "只能包含字母数字下划线")
     private String username;
+
+    @Email(message = "邮箱格式不正确")
+    private String email;
+
+    @Min(value = 0, message = "年龄不能为负")
+    @Max(value = 150, message = "年龄超出范围")
+    private Integer age;
 }
 
 // Controller 分组校验
-@PostMapping  public R<Long> add(@Validated(AddGroup.class) @RequestBody UserBo bo) { }
-@PutMapping   public R<Void> update(@Validated(EditGroup.class) @RequestBody UserBo bo) { }
+@PostMapping
+public Result<?> add(@Validated(AddGroup.class) @RequestBody UserDTO dto) { }
+
+@PutMapping
+public Result<?> update(@Validated(UpdateGroup.class) @RequestBody UserDTO dto) { }
+```
+
+### 4. 越权访问防护
+
+```java
+public [你的VO类] selectById(Long id) {
+    var entity = baseMapper.selectById(id);
+    if (entity == null) {
+        throw new [你的异常类]("数据不存在");
+    }
+    // 非管理员只能访问自己的数据
+    Long currentUserId = [你的安全工具类].getCurrentUserId();
+    if (![你的安全工具类].isAdmin() && !entity.getCreatedBy().equals(currentUserId)) {
+        throw new [你的异常类]("无权访问此数据");
+    }
+    return convertToVo(entity);
+}
 ```
 
 ---
 
-## 8. 常见漏洞防护
+## 常见漏洞防护
 
 ### SQL 注入
 
 ```java
-// NG: "SELECT * FROM user WHERE name = '" + name + "'"
-// NG: @Select("SELECT * FROM user WHERE name = '${name}'")
-// OK: MyBatis-Plus LambdaQueryWrapper
-// OK: @Select("SELECT * FROM user WHERE name = #{name}")
+// 禁止：字符串拼接 SQL
+"SELECT * FROM user WHERE name = '" + name + "'"
+@Select("SELECT * FROM user WHERE name = '${name}'")
+
+// 正确：参数化查询
+@Select("SELECT * FROM user WHERE name = #{name}")
+// 或使用 ORM 框架的 QueryWrapper / LambdaQueryWrapper
 ```
 
-### 越权访问
+### XSS 防护
 
 ```java
-@Override
-public OrderVo selectById(Long id) {
-    Order order = baseMapper.selectById(id);
-    if (ObjectUtil.isNull(order)) {
-        throw new ServiceException("订单不存在");
-    }
-    if (!LoginHelper.isSuperAdmin() && !order.getUserId().equals(LoginHelper.getUserId())) {
-        throw new ServiceException("无权访问此订单");
-    }
-    return MapstructUtils.convert(order, OrderVo.class);
+// 方式一：全局 Filter（推荐）
+@Bean
+public FilterRegistrationBean<XssFilter> xssFilter() {
+    FilterRegistrationBean<XssFilter> registration = new FilterRegistrationBean<>();
+    registration.setFilter(new XssFilter());
+    registration.addUrlPatterns("/*");
+    registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+    return registration;
 }
 
-// 批量操作同样校验归属
+// 方式二：手动转义
+String safe = HtmlUtils.htmlEscape(userInput);
+String safe = StringEscapeUtils.escapeHtml4(userInput);
 ```
 
 ### 敏感信息泄露
 
 ```java
-// NG: return userDao.getById(id);              // 包含密码等
-// OK: return MapstructUtils.convert(user, UserVo.class);  // VO 过滤敏感字段
-// OK: 使用 @Sensitive 自动脱敏
+// 禁止：直接返回 Entity（可能包含密码等）
+return userDao.getById(id);
+
+// 正确：使用 VO 过滤 + @Sensitive 脱敏
+UserVo vo = new UserVo();
+BeanUtils.copyProperties(user, vo);
+return vo;
+
+// 日志脱敏
+log.info("手机号: {}", DesensitizedUtil.mobilePhone(phone));
 ```
 
 ---
 
-## 9. 安全检查清单
+## 安全检查清单
 
 ### 代码审查
 
-- [ ] 用户输入经过 `@NotBlank`/`@Size`/`@Pattern` 校验
-- [ ] SQL 使用 MyBatis-Plus 或参数化查询（#{}）
-- [ ] 敏感字段使用 `@Sensitive` 脱敏
-- [ ] 需加密字段使用 `@EncryptField`
-- [ ] Controller 添加 `@SaCheckPermission`
-- [ ] 敏感操作添加 `@RepeatSubmit`
-- [ ] 高频接口添加 `@RateLimiter`
+- [ ] 用户输入经过 `@NotBlank` / `@Size` / `@Pattern` 校验
+- [ ] SQL 使用参数化查询（`#{}` 而非 `${}`）
+- [ ] 敏感字段使用脱敏注解或 VO 过滤
+- [ ] 存储敏感数据使用加密
+- [ ] Controller 添加权限注解
+- [ ] 写入接口添加防重复提交
+- [ ] 高频接口添加限流
 - [ ] 批量操作校验数据归属（防越权）
-- [ ] 文件上传校验类型/大小/扩展名
+- [ ] 文件上传校验类型 / 大小 / 扩展名（白名单）
 - [ ] 日志中无敏感信息（或已脱敏）
 
-### 配置 & 部署
+### 配置与部署
 
-- [ ] 生产关闭调试模式
-- [ ] 敏感配置已加密或使用环境变量
+- [ ] 生产环境关闭调试模式、Swagger
+- [ ] 敏感配置使用环境变量或配置中心加密
 - [ ] Token 有效期合理（2-24h）
-- [ ] CORS 不使用 `*`
-- [ ] 启用 HTTPS、安全响应头
-- [ ] 错误页不泄露堆栈、数据库/Redis 端口不对外
+- [ ] CORS 不使用 `*`，限定域名
+- [ ] 启用 HTTPS
+- [ ] 设置安全响应头（X-Frame-Options、X-Content-Type-Options、CSP）
+- [ ] 错误页不泄露堆栈信息
+- [ ] 数据库 / Redis 端口不对外暴露
 
 ---
 
-## 注意事项
+## 常见错误
 
-- leniu-tengyun-core 项目请使用 `leniu-security-guard` skill
-- leniu 使用自研 secure 模块，注解和工具类与 RuoYi-Vue-Plus 不同
+```java
+// 1. 忘记加认证注解，接口裸奔
+@GetMapping("/users")
+public Result<?> list() { ... }  // 任何人可访问！
+
+// 2. 只校验前端，不校验后端
+// 前端限制了输入范围，但后端不做校验 -> 可被绕过
+
+// 3. 用 Map 传递用户信息（类型不安全）
+Map<String, Object> user = getCurrentUser();  // 缺乏类型约束
+// 应使用强类型 LoginUser 对象
+
+// 4. 密码明文存储
+user.setPassword(rawPassword);
+// 应使用 BCrypt / SCrypt 哈希
+user.setPassword(passwordEncoder.encode(rawPassword));
+
+// 5. Token 存储敏感信息
+// JWT payload 不应包含密码、完整身份证号等
+
+// 6. CORS 配置过于宽松
+.allowedOrigins("*").allowedMethods("*").allowCredentials(true)
+// allowedOrigins("*") 与 allowCredentials(true) 不能同时使用
+```

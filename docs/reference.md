@@ -36,7 +36,7 @@ cd ai-engineering-init
 
 | 目录/文件 | 说明 |
 |-----------|------|
-| `skills/`（68个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
+| `skills/`（88个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
 | `commands/`（10个） | 快捷命令：`/dev`、`/crud`、`/check`、`/start`、`/progress` 等 |
 | `agents/`（2个） | 子代理：`code-reviewer`、`project-manager` |
 | `hooks/` | 自动化钩子：技能强制评估、代码规范检查 |
@@ -46,7 +46,7 @@ cd ai-engineering-init
 
 | 目录/文件 | 说明 |
 |-----------|------|
-| `skills/`（68个） | 与 Claude 同步，支持 `@技能名` 调用 |
+| `skills/`（88个） | 与 Claude 同步，支持 `@技能名` 调用 |
 | `agents/`（2个） | Subagents：`code-reviewer`、`project-manager` |
 | `mcp.json` | MCP 服务器配置 |
 | `hooks.json` + `hooks/` | Hooks 配置与脚本 |
@@ -68,47 +68,48 @@ cd ai-engineering-init
 
 其他命令：`/opsx-continue`、`/opsx-sync`、`/opsx-bulk-archive`、`/opsx-explore`、`/opsx-onboard`
 
-## Skills 列表（69个）
+## Skills 列表（88个）
 
 ### 通用后端技能（34个）
 
 | 技能 | 触发场景 |
 |------|---------|
-| `crud-development` | CRUD 开发、业务模块、Entity/Service/Controller |
+| `crud-development` | CRUD 开发、三层架构、Entity/Service/Controller |
 | `api-development` | RESTful API 设计、接口规范 |
-| `database-ops` | 建表、SQL、字典、菜单配置 |
-| `backend-annotations` | `@RateLimiter`、`@RepeatSubmit`、`@DataPermission` |
-| `utils-toolkit` | StringUtils、MapstructUtils、StreamUtils 等工具类 |
-| `architecture-design` | 系统架构、模块划分、代码重构 |
+| `database-ops` | 建表、SQL、审计字段、逻辑删除 |
+| `backend-annotations` | 限流、防重复提交、脱敏、加密注解 |
+| `utils-toolkit` | 对象转换、字符串、集合、日期等工具类 |
+| `architecture-design` | 系统架构、模块划分、分层设计 |
 | `code-patterns` | 编码规范、命名规范、禁止事项 |
-| `error-handler` | 异常处理、ServiceException、全局错误码 |
-| `security-guard` | Sa-Token 认证授权、数据脱敏、加密 |
-| `data-permission` | 行级数据权限、部门隔离 |
+| `error-handler` | 异常处理、全局异常处理器、参数校验 |
+| `security-guard` | 认证授权、XSS/SQL注入防护、数据加密 |
+| `data-permission` | 行级数据权限、数据隔离 |
 | `performance-doctor` | 慢查询优化、缓存策略、N+1 问题 |
 | `redis-cache` | Redis 缓存、分布式锁、`@Cacheable` |
 | `json-serialization` | JSON 序列化、BigDecimal 精度、日期格式 |
-| `scheduled-jobs` | 定时任务、SnailJob、`@Scheduled` |
+| `scheduled-jobs` | 定时任务、`@Scheduled`、Quartz、XXL-Job |
 | `websocket-sse` | WebSocket、SSE 实时推送、消息通知 |
-| `workflow-engine` | 工作流、审批流、WarmFlow |
-| `file-oss-management` | 文件上传、OSS、MinIO |
-| `sms-mail` | 短信、邮件、SMS4j |
-| `social-login` | 第三方登录、OAuth2、JustAuth |
-| `tenant-management` | 多租户隔离、TenantEntity |
+| `workflow-engine` | 工作流、审批流、流程引擎 |
+| `file-oss-management` | 文件上传、OSS、S3 API |
+| `sms-mail` | 短信、邮件、多渠道通知 |
+| `social-login` | 第三方登录、OAuth2 授权码流程 |
+| `tenant-management` | 多租户隔离架构、SaaS 设计 |
 | `test-development` | 单元测试、JUnit5、Mockito |
 | `git-workflow` | Git 提交规范、分支策略 |
-| `bug-detective` | Bug 排查、异常定位 |
+| `bug-detective` | Bug 排查、异常定位、日志分析 |
 | `brainstorm` | 方案设计、头脑风暴 |
 | `tech-decision` | 技术选型、方案对比 |
 | `task-tracker` | 任务进度跟踪 |
 | `project-navigator` | 项目结构导航、文件定位 |
 | `collaborating-with-codex` | 与 Codex 协同开发 |
 | `collaborating-with-gemini` | 与 Gemini 协同开发 |
+| `codex-code-review` | 代码审查工作流 |
 | `banana-image` | AI 图片生成、海报、缩略图 |
 | `add-skill` | 创建新技能 |
 | `ui-pc` | 前端 PC 端组件库 |
 | `store-pc` | 前端 Vuex 状态管理 |
 
-### leniu 云食堂专项技能（25个）
+### leniu 云食堂专项技能（34个）
 
 | 技能 | 说明 |
 |------|------|
@@ -122,6 +123,8 @@ cd ai-engineering-init
 | `leniu-code-patterns` | net.xnzn 包名规范、禁止事项 |
 | `leniu-brainstorm` | 云食堂方案头脑风暴 |
 | `leniu-data-permission` | 数据权限控制 |
+| `leniu-security-guard` | SQL 注入防护、XSS 防护、限流 |
+| `leniu-redis-cache` | Redis 缓存规范 |
 | `leniu-java-entity` | Entity/VO/DTO/Param 数据类规范 |
 | `leniu-java-mybatis` | MyBatis Plus、LambdaQueryWrapper、XML 映射 |
 | `leniu-java-amount-handling` | 金额分/元转换（Long 类型存储） |
@@ -134,14 +137,24 @@ cd ai-engineering-init
 | `leniu-java-task` | XXL-Job 定时任务 |
 | `leniu-java-total-line` | 报表分页合计行 |
 | `leniu-mealtime` | 餐次（早/午/下午茶/晚/夜宵）处理 |
-| `leniu-redis-cache` | Redis 缓存规范 |
-| `leniu-security-guard` | SQL 注入防护、XSS 防护、限流 |
 | `leniu-marketing-price-rule-customizer` | 营销计费规则定制 |
 | `leniu-marketing-recharge-rule-customizer` | 营销充值规则定制 |
+| `leniu-customization-location` | 定制项目代码位置规范 |
+| `leniu-report-customization` | 定制报表开发指南 |
+| `leniu-report-standard-customization` | 标准版定制报表开发指南 |
+| `mysql-debug` | MySQL 数据库查询调试 |
+| `loki-log-query` | Grafana Loki 线上日志查询 |
+| `sync-back-merge` | sync-back Issue 合并流程 |
+| `skill-creator` | 技能创建与修改工具 |
+| `yunxiao-task-management` | 云效任务管理 |
 
 ### OpenSpec 工作流技能（10个）
 
 `openspec-new-change`、`openspec-ff-change`、`openspec-apply-change`、`openspec-continue-change`、`openspec-archive-change`、`openspec-bulk-archive-change`、`openspec-explore`、`openspec-onboard`、`openspec-sync-specs`、`openspec-verify-change`
+
+### 其他通用技能（10个）
+
+`skill-share`、`frontend-design`、`web-artifacts-builder`、`artifacts-builder`、`canvas-design`、`brand-guidelines`、`theme-factory`、`doc-coauthoring`、`internal-comms`、`webapp-testing`
 
 ## 命令详情
 

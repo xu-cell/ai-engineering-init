@@ -1,256 +1,295 @@
 ---
 name: bug-detective
 description: |
-  leniu 后端 Bug 排查指南。包含错误诊断决策树、日志分析、分层定位、本项目特有错误模式库。
-
-  触发场景：
-  - 接口返回 4xx/5xx 错误需要排查
-  - NullPointerException、SQLException 等异常定位
-  - 数据查不到、对象转换失败、租户隔离问题
-  - 日志文件分析（./logs/sys-console.log）
-  - 前端页面不显示、API 调用异常
-
-  联动技能：数据问题自动联动 mysql-debug 查库验证
-
-  触发词：Bug、报错、异常、不工作、500错误、NullPointerException、SQLException、数据查不到、日志分析、排查、调试、debug、错误排查、精度丢失
+  通用 Bug 排查指南。提供分层定位方法论、日志分析技巧、HTTP 错误码诊断决策树。
+  触发场景：Bug 排查、错误分析、日志诊断、线上问题定位。
+  触发词：Bug、排查、报错、异常、日志分析、线上问题。
+  注意：如果项目有专属技能（如 `leniu-bug-detective`），优先使用专属版本。
 ---
 
-# Bug 排查指南（leniu 四层架构）
+# Bug 排查指南
 
-> 本项目四层架构：Controller -> Business -> Service -> Mapper，包名 `net.xnzn.core.*`
-> 详细错误案例库见 `references/error-patterns.md`
+> 通用模板。如果项目有专属技能（如 `leniu-bug-detective`），优先使用。
 
-## 错误关键词索引
+## 核心规范
 
-| 关键词 | 原因 | 解决 |
-|--------|------|------|
-| `NullPointerException` | 对象为空 | selectById 判空，用 Optional |
-| `SQLException` | SQL 语法/字段名 | 检查表名、字段、类型 |
-| `401/403` | Token/权限 | 检查 `@RequiresAuthentication`、角色配置 |
-| `404` | URL 路径错误 | 检查 `@RequestMapping` |
-| `500` | 后端异常 | 读日志 `./logs/sys-console.log` |
-| `data 为 null, msg 有值` | **LeResponse 返回陷阱** | 见下方特有问题 #1 |
-| `精度丢失/ID 不对` | 雪花 ID 大数 | Long -> String 或 `@JsonSerialize(using = ToStringSerializer.class)` |
-| `like 报错` | 非 String 类型 | Long/Date 用 eq/in/between |
-| `查询无结果` | 租户/del_flag/条件 | 检查双库切换、del_flag=2 |
-| `BeanUtil 转换 null` | 源对象为空 | 转换前判空 |
-
----
-
-## 诊断决策树
+### 排查方法论：分层定位
 
 ```
-接口返回错误
-+-- 4xx
-|   +-- 400 -> 参数格式/类型错误（@RequestBody、LeRequest<T>）
-|   +-- 401 -> Token 过期（检查 Admin-Token）
-|   +-- 403 -> 无权限（检查 @RequiresAuthentication）
-|   +-- 404 -> 路径错误（检查 /api/v2/web|mobile|android/{module}）
-|
-+-- 500
-|   +-- 有堆栈 -> 按异常类型定位
-|   |   +-- NullPointerException -> 查询返回 null 未判空
-|   |   +-- SQLException -> SQL 语法/字段错误
-|   |   +-- LeException -> 业务逻辑主动抛出
-|   +-- 无堆栈 -> 全局异常处理器吞掉了异常
-|
-+-- 200 但数据不对
-    +-- data=null, msg有值 -> LeResponse 返回陷阱（见特有问题 #1）
-    +-- data=null, msg=null -> 查询条件错误/del_flag/双库切换
-    +-- 字段缺失 -> BeanUtil.copyProperties 字段名不匹配
-    +-- ID 精度丢失 -> 雪花 ID 大数问题
+[问题现象]
+    │
+    ▼
+[1. 复现] ── 能否稳定复现？记录复现步骤
+    │
+    ▼
+[2. 定位层] ── 问题出在哪一层？
+    │
+    ├── 前端层 ── 浏览器控制台、网络请求、渲染问题
+    ├── 网关层 ── 路由、限流、认证
+    ├── 接口层 ── 参数校验、序列化
+    ├── 业务层 ── 业务逻辑、数据状态
+    ├── 数据层 ── SQL、数据一致性
+    └── 基础设施 ── 网络、配置、资源
+    │
+    ▼
+[3. 缩小范围] ── 二分法排除
+    │
+    ▼
+[4. 根因分析] ── 找到根本原因，而非表象
+    │
+    ▼
+[5. 修复验证] ── 修复 + 回归测试
 ```
 
----
+### 信息收集清单
 
-## 分层定位
+排查前先收集：
+
+- [ ] 错误信息 / 错误码 / 堆栈
+- [ ] 发生时间、频率
+- [ ] 影响范围（所有用户 / 特定用户 / 特定数据）
+- [ ] 最近的代码变更（最近一次部署了什么）
+- [ ] 环境信息（开发 / 测试 / 生产）
+- [ ] 能否复现，复现步骤
+
+### 前后端分离定位
 
 ```
 步骤 1：Postman/curl 直接调接口
-+-- 返回正确 -> 问题在前端
-+-- 返回错误 -> 问题在后端
+├── 返回正确 → 问题在前端（请求参数、渲染、状态管理）
+└── 返回错误 → 问题在后端（继续向下排查）
 
-步骤 2（后端）：读日志 ./logs/sys-console.log
-+-- 有 ERROR -> 定位异常类和行号
-+-- 无 ERROR -> 打断点逐层排查
+步骤 2（后端）：读应用日志
+├── 有 ERROR 堆栈 → 定位异常类和行号
+└── 无 ERROR → 打断点或加诊断日志逐层排查
 
 步骤 3：按调用链向下
-Controller -> Business -> Service -> Mapper -> 数据库
+Controller → Service → Mapper → 数据库
 ```
 
-| 层级 | 常见问题 | 排查重点 |
-|------|---------|---------|
-| Controller | 参数绑定、路径 404 | `@RequestMapping`、`LeRequest<T>`、`@Validated` |
-| Business | 业务编排错误、跨 Service 协调 | 方法调用顺序、数据组装 |
-| Service | 查询条件、事务回滚 | `buildWrapper`、`@Transactional`、判空 |
-| Mapper | SQL 语法、字段映射 | `@TableName`、`@TableField`、XML SQL |
+## HTTP 错误码诊断决策树
 
----
-
-## 日志分析
-
-### 日志文件位置
-
-| 环境 | 文件 | 说明 |
-|------|------|------|
-| 开发 | `./logs/sys-console.log` | 本次启动完整日志（INFO/WARN/ERROR + SQL） |
-| 生产 | `./logs/sys-info.log` | INFO 日志（60 天） |
-| 生产 | `./logs/sys-error.log` | ERROR 日志（60 天） |
-| 生产 | `./logs/sys-sql.log` | SQL 日志（7 天） |
-
-### AI 自动读取流程
-
-**触发条件**（任一）：用户报告问题无堆栈、需分析 SQL、需查看流程、用户说"看日志"
+### 4xx 客户端错误
 
 ```
-1. Read ./logs/sys-console.log
-2. 搜索 ERROR/WARN -> 定位异常堆栈
-3. 搜索 p6spy -> 分析 SQL 执行和耗时
-4. 结合代码给出诊断和修复方案
+400 Bad Request
+├── 请求参数格式错误？ → 检查 JSON 格式、字段类型
+├── 参数校验失败？ → 检查 @Valid 注解和 DTO 约束
+└── Content-Type 不匹配？ → 检查请求头
+
+401 Unauthorized
+├── Token 缺失？ → 检查请求头是否携带认证信息
+├── Token 过期？ → 检查 Token 有效期
+└── Token 无效？ → 检查签发逻辑和密钥
+
+403 Forbidden
+├── 角色/权限不足？ → 检查权限配置
+├── IP 白名单？ → 检查网关或防火墙配置
+└── CORS 跨域？ → 检查跨域配置
+
+404 Not Found
+├── URL 拼写错误？ → 对照 API 文档
+├── 路由未注册？ → 检查 Controller 注解和包扫描路径
+├── 资源确实不存在？ → 检查数据库数据
+└── 网关路由未配置？ → 检查网关转发规则
+
+405 Method Not Allowed
+└── HTTP 方法不匹配？ → GET vs POST，检查 Controller 映射
+
+409 Conflict
+└── 数据冲突？ → 唯一约束、并发修改、乐观锁失败
 ```
 
-### 日志格式
+### 5xx 服务端错误
 
 ```
-2026-01-08 22:12:10 [xxx] [http-nio-8080-exec-1] INFO  p6spy - Execute SQL: SELECT ... | Cost: 5 ms
-2026-01-08 22:12:10 [xxx] [http-nio-8080-exec-1] ERROR net.xnzn.core.xxx - 错误信息
+500 Internal Server Error
+├── NullPointerException → 检查空值处理
+├── SQL 异常 → 检查 SQL 语法、字段类型
+├── 类型转换异常 → 检查数据格式
+├── 序列化异常 → 检查对象中的循环引用、日期格式
+└── 第三方调用失败 → 检查外部服务状态
+
+502 Bad Gateway
+├── 后端服务未启动？ → 检查进程状态
+├── 端口未监听？ → 检查端口占用
+└── 反向代理配置错误？ → 检查 Nginx/网关配置
+
+503 Service Unavailable
+├── 服务过载？ → 检查 CPU/内存/线程池
+├── 熔断触发？ → 检查熔断器状态
+└── 正在部署？ → 检查发布状态
+
+504 Gateway Timeout
+├── 慢查询？ → 检查 SQL 执行计划
+├── 外部调用超时？ → 检查第三方服务响应时间
+└── 超时配置过短？ → 调整网关/代理超时设置
 ```
 
-**SQL 耗时阈值**：<50ms 正常 | 50-200ms 关注 | >200ms 需优化
+## 日志分析技巧
 
----
+### 关键信息提取
 
-## 本项目特有问题库
+```bash
+# 按关键字搜索错误
+grep -n "ERROR\|Exception\|WARN" app.log | tail -50
 
-### 1. LeResponse 返回 String 的陷阱
+# 按时间范围过滤
+sed -n '/2024-01-01 10:00/,/2024-01-01 10:30/p' app.log
+
+# 按请求 ID 追踪（如果有链路追踪）
+grep "traceId=abc123" app.log
+
+# 统计错误类型分布
+grep "Exception" app.log | awk -F: '{print $NF}' | sort | uniq -c | sort -rn
+
+# 查看某个时间点前后的上下文
+grep -n "OutOfMemoryError" app.log  # 先找到行号
+sed -n '95,115p' app.log             # 查看前后各 10 行
+```
+
+### 日志级别含义
+
+| 级别 | 用途 | 排查价值 |
+|------|------|---------|
+| ERROR | 系统错误，需要立即关注 | 最高，直接定位问题 |
+| WARN | 潜在问题，可能导致错误 | 高，可能是问题前兆 |
+| INFO | 业务关键节点 | 中，了解业务流程 |
+| DEBUG | 详细调试信息 | 开发环境排查用 |
+| TRACE | 最详细的跟踪信息 | 极少使用 |
+
+### 常见日志模式识别
+
+```
+# 连接池耗尽
+"Cannot get a connection, pool error Timeout waiting for idle object"
+→ 检查连接池配置、是否有连接泄漏
+
+# 内存溢出
+"java.lang.OutOfMemoryError: Java heap space"
+→ 检查堆内存配置、是否有内存泄漏
+
+# 死锁
+"Deadlock found when trying to get lock"
+→ 检查事务范围、锁顺序
+
+# 慢 SQL
+"SlowQuery: execution time exceeds"
+→ 分析 SQL 执行计划，添加索引
+```
+
+## 代码示例
+
+### 排查辅助：添加诊断日志
 
 ```java
-// ---- 错误：R.ok(String) 匹配到 ok(String msg) ----
-return R.ok(code);  // { code: 200, msg: "ABC123", data: null }
+@Slf4j
+@Service
+public class OrderServiceImpl {
 
-// ---- 正确 ----
-return R.ok(null, code);  // { code: 200, msg: null, data: "ABC123" }
-return R.ok("成功", code); // { code: 200, msg: "成功", data: "ABC123" }
-```
+    public OrderVO getOrderDetail(Long id) {
+        log.info("查询订单详情, id={}", id);
 
-**原因**：当 T 是 String 时，Java 优先匹配 `ok(String msg)` 而非泛型 `ok(T data)`。
+        Order order = orderMapper.selectById(id);
+        if (order == null) {
+            log.warn("订单不存在, id={}", id);
+            throw new [你的业务异常类]("订单不存在");
+        }
 
-### 2. 双库架构数据查不到
-
-```java
-// leniu 是物理双库（系统库 + 商户库），无 tenant_id 字段
-// 默认操作商户库，切换系统库需要：
-Executors.doInSystem(() -> { /* 系统库操作 */ });
-Executors.doInTenant(tenantId, () -> { /* 指定商户库 */ });
-
-// 排查：数据在哪个库？请求头 MERCHANT-ID 是否正确？
-```
-
-### 3. del_flag 值反直觉
-
-```java
-// leniu: 1=删除, 2=正常（非通用的 0=正常, 1=删除）
-wrapper.eq(XxxEntity::getDelFlag, 2); // 查正常数据
-entity.setDelFlag(1); // 逻辑删除
-```
-
-### 4. 查询条件不生效
-
-```java
-// ---- 错误：无条件判断 ----
-wrapper.eq(Xxx::getStatus, bo.getStatus());  // null 时报错
-wrapper.like(Xxx::getName, bo.getName());    // 空串时 LIKE '%%'
-
-// ---- 正确 ----
-wrapper.eq(ObjectUtil.isNotNull(bo.getStatus()), Xxx::getStatus, bo.getStatus());
-wrapper.like(StrUtil.isNotBlank(bo.getName()), Xxx::getName, bo.getName());
-```
-
-### 5. like 仅限 String 类型
-
-| 字段类型 | 用法 |
-|---------|------|
-| String | `like()` |
-| Long/Integer | `eq()` / `in()` |
-| Date/LocalDateTime | `between()` / `ge()` / `le()` |
-
-### 6. 雪花 ID 精度丢失
-
-```java
-// JS Number 最大安全整数 2^53-1，雪花 ID 超出
-// 方案 1：VO 中 String 类型
-// 方案 2：@JsonSerialize(using = ToStringSerializer.class)
-// 方案 3：全局 JacksonConfig（本项目已配置，检查是否生效）
-```
-
-### 7. Self 自注入事务失效
-
-```java
-// 同类方法互调，被调用方有 @Transactional 时，必须用 self 调用
-@Autowired @Lazy
-private XxxBusiness self;
-
-public void doSave(OrderDTO dto) {
-    self.save(dto); // 通过代理调用，事务生效
-    // this.save(dto); // 直接调用，事务不生效
+        log.debug("订单数据: status={}, amount={}", order.getStatus(), order.getAmount());
+        // ... 业务逻辑
+        return orderVO;
+    }
 }
 ```
 
-### 8. BeanUtil 转换注意
+### 排查辅助：请求链路追踪
 
 ```java
-// leniu 用 Hutool BeanUtil，不是 MapstructUtils
-XxxVO vo = BeanUtil.copyProperties(entity, XxxVO.class); // 源对象为 null 时返回 null
-// 转换前务必判空
+// 使用 MDC 添加请求上下文
+@Component
+public class TraceInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request,
+                             HttpServletResponse response,
+                             Object handler) {
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null) {
+            traceId = UUID.randomUUID().toString().replace("-", "");
+        }
+        MDC.put("traceId", traceId);
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request,
+                                HttpServletResponse response,
+                                Object handler, Exception ex) {
+        MDC.clear();
+    }
+}
 ```
+
+```xml
+<!-- logback 配置中包含 traceId -->
+<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n</pattern>
+```
+
+### 常见 Bug 排查模板
+
+```markdown
+## Bug 报告
+
+**现象**：[描述用户看到的问题]
+
+**复现步骤**：
+1. ...
+2. ...
+3. ...
+
+**预期行为**：[应该发生什么]
+
+**实际行为**：[实际发生了什么]
+
+**环境**：[开发/测试/生产]
+
+**日志/截图**：[关键日志片段]
 
 ---
 
-## 数据库排查（委托 mysql-debug）
+## 排查过程
 
-当诊断结果指向数据问题时，**必须联动 `mysql-debug` 技能**进行数据库查询验证：
+**定位层**：[前端/网关/接口/业务/数据/基础设施]
 
-```
-诊断决策树判定"数据相关问题"
-  ↓
-自动激活 mysql-debug 技能
-  ↓
-mysql-debug 执行：配置检查 → 日志提取数据库名 → 执行只读 SQL → 返回结果
-  ↓
-bug-detective 结合查询结果给出修复方案
+**根因**：[根本原因分析]
+
+**修复方案**：[如何修复]
+
+**回归验证**：[如何确认修复有效]
 ```
 
-**触发 mysql-debug 的信号**：
-- 查询返回空/数据不存在
-- 数据数量、金额、状态不对
-- SQL 异常（DataIntegrityViolation、DuplicateKey）
-- 关联数据不一致
-- 特定租户才出现的问题
+### 常见问题速查
 
-> 如果 mysql-debug 配置未就绪（密码未设置/mysql CLI 未安装），仍可继续纯代码分析路径。
+| 问题 | 可能原因 | 排查方向 |
+|------|---------|---------|
+| 接口 404 | URL 错误/服务未启动 | 检查路由映射、服务状态 |
+| 接口 500 | 后端异常 | 读应用日志 ERROR 堆栈 |
+| 数据查不到 | 条件错误/逻辑删除/权限 | 检查 SQL、deleted 字段、数据权限 |
+| 事务不回滚 | 异常被吞/非 public/this 调用 | 检查 @Transactional、代理调用 |
+| Bean 注入失败 | 包扫描/注解缺失 | 检查包路径、@Service/@Component |
+| 对象转换字段丢失 | 字段名不匹配 | 检查源和目标对象字段名 |
+| 雪花 ID 精度丢失 | JS Number 精度限制 | Long 序列化为 String |
 
----
+## 常见错误
 
-## 常见问题速查
-
-| 问题 | 原因 | 解决 |
-|------|------|------|
-| 接口 404 | URL/未启动 | 检查路由前缀 `/api/v2/web/{module}` |
-| 接口 500 | 后端异常 | 读日志 |
-| data 为 null | LeResponse 陷阱 | `R.ok(null, value)` |
-| 转换失败 | BeanUtil 源为 null | 转换前判空 |
-| 数据查不到 | 双库/del_flag | 检查 Executors 切换、del_flag=2 |
-| 事务不回滚 | 异常被吞/非 public/this 调用 | 检查 @Transactional、用 self |
-| Bean 注入失败 | 包名/注解 | 必须 `net.xnzn.core.*` + `@Service` |
-
----
-
-## Skill 联动
-
-| 排查发现 | 推荐 Skill |
-|---------|-----------|
-| 数据问题（查不到/不一致/状态异常） | `mysql-debug`（自动联动） |
-| SQL 性能慢 | `performance-doctor` |
-| 权限配置问题 | `security-guard` |
-| BO/VO 映射错误 | `leniu-crud-development` |
-| 前端组件用法 | `ui-pc` |
+| 错误 | 正确做法 |
+|------|---------|
+| 看到错误就改代码 | 先理解根因再修复 |
+| 只看最后一行异常信息 | 从 `Caused by` 往上找根因 |
+| 生产环境开 DEBUG 日志 | 临时开启，问题解决后立即关闭 |
+| 修复后不验证 | 修复后必须复现场景验证 |
+| 只修表象不修根因 | 加 null 判断不如搞清楚为什么是 null |
+| 修复时引入新 Bug | 修复范围最小化，充分回归 |
+| 依赖"重启解决" | 重启只是临时手段，必须找到根因 |
+| 忽略 WARN 日志 | WARN 往往是问题的前兆 |

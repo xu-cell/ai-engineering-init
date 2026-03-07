@@ -4,6 +4,30 @@
 
 ---
 
+## [v1.8.0] - 2026-03-07
+
+### 重大改进
+- **22 个通用技能去 RuoYi 耦合**：将 `backend-annotations`、`security-guard`、`data-permission`、`tenant-management`、`scheduled-jobs`、`workflow-engine`、`websocket-sse`、`sms-mail`、`social-login`、`crud-development`、`architecture-design`、`database-ops`、`code-patterns`、`error-handler`、`bug-detective`、`utils-toolkit`、`redis-cache`、`file-oss-management`、`json-serialization`、`api-development`、`git-workflow`、`performance-doctor` 重写为框架无关的通用模板，使用 `[你的xxx]` 占位符
+- **CLAUDE.md 通用化**：从 leniu 项目专属改为通用示例模板，所有配置项使用占位符
+- **collaborating-with-codex 技能升级**：新增 MCP 原生集成方式（codex-mcp-server），默认模型更新为 gpt-5.3-codex，新增 Profile 配置（closes #8）
+
+### 改进
+- **Hook 技能列表对齐**：Claude/Cursor Hook 技能列表与 src/skills/ 完全同步（88 个技能）
+- **docs/reference.md 更新**：技能数量从 69 更正为 88，描述与新内容同步
+- **安装后提示增强**：新增 MCP 管理命令提示（`npx ai-engineering-init mcp`）
+- **README.md 改进**：增加必做提示、核心命令精简、内容计数更新
+- **.claude/settings.json MCP 补全**：自动配置 sequential-thinking 和 context7
+- **CONTRIBUTING.md 新增**：通用 vs 专属技能判断指南、质量检查清单、占位符规范
+
+### 修复
+- 删除 `.claude/skills/skill-creator`（platform-map 排除 Claude 平台，不应存在）
+- 删除 `.claude/skills/loki-log-query/environments.template.json`（已改为运行时复制）
+
+### 关闭 Issue
+- closes #8（collaborating-with-codex MCP 原生集成）
+
+---
+
 ## [v1.7.0] - 2026-03-07
 
 ### 新增

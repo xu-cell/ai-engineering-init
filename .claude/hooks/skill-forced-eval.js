@@ -3,9 +3,8 @@
  * UserPromptSubmit Hook - 强制技能评估 (跨平台版本)
  * 功能: 开发场景下，将 Skills 激活率从约 25% 提升到 90% 以上
  *
- * 适配项目: leniu (纯后端项目)
+ * 适配: 通用后端项目
  * 架构: 三层架构 (Controller → Service → Mapper)
- * 包名: org.dromara.*
  */
 
 const fs = require('fs');
@@ -62,21 +61,18 @@ const instructions = `## 强制技能激活流程（必须执行）
 
 针对用户问题，列出匹配的技能：\`技能名: 理由\`，无匹配则写"无匹配技能"
 
-可用技能（纯后端项目）：
+可用技能（后端项目）：
 - crud-development: CRUD/业务模块/Entity/Service/Controller 开发
 - api-development: API设计/RESTful/接口规范
 - database-ops: 数据库/SQL/建表/字典/菜单
-- backend-annotations: 注解/@RateLimiter/@DataScope
-- utils-toolkit: 工具类/StringUtils/MapstructUtils
-- file-oss-management: 文件上传/OSS/云存储/MinIO
-- ai-langchain4j: AI/大模型/ChatGPT/DeepSeek
-- media-processing: 图片处理/二维码/水印/Excel
+- backend-annotations: 注解/限流/防重复/脱敏/加密
+- utils-toolkit: 工具类/对象转换/字符串/集合/日期
+- file-oss-management: 文件上传/OSS/云存储
 - bug-detective: Bug/报错/异常/不工作
-- mysql-debug: 查数据库/查表/执行SQL/查记录/mysql查询/数据库排查/验证数据/数据库调试/db查询
-- error-handler: 异常处理/ServiceException
+- error-handler: 异常处理/全局异常/业务异常
 - performance-doctor: 性能/慢查询/优化/缓存
-- data-permission: 数据权限/@DataPermission/DataScope/行级权限
-- security-guard: 安全/Sa-Token/认证授权/加密
+- data-permission: 数据权限/行级权限/数据隔离
+- security-guard: 安全/认证授权/加密/XSS/SQL注入防护
 - architecture-design: 架构/模块划分/重构
 - code-patterns: 规范/禁止/命名/Git提交
 - project-navigator: 项目结构/文件在哪/定位
@@ -86,57 +82,45 @@ const instructions = `## 强制技能激活流程（必须执行）
 - brainstorm: 头脑风暴/创意/方案设计
 - collaborating-with-codex: Codex协作/多模型/算法分析
 - collaborating-with-gemini: Gemini协作/前端原型/UI设计
-- codex-code-review: 代码审查/review/代码检查/code review/审查代码/检查代码/代码质量
-- workflow-engine: 工作流/审批流/Flowable/流程
+- codex-code-review: 代码审查/review/代码检查/code review
+- workflow-engine: 工作流/审批流/流程引擎
 - test-development: 测试/单元测试/@Test/JUnit5/Mockito
-- json-serialization: JSON/序列化/反序列化/JsonUtils/日期格式/BigDecimal/精度/类型转换
-- redis-cache: Redis/缓存/@Cacheable/@CacheEvict/RedisUtils/分布式锁/RLock/限流
-- scheduled-jobs: 定时任务/SnailJob/@Scheduled/@JobExecutor/任务调度/重试机制
-- add-skill: 添加技能/创建技能/新技能/技能开发/写技能
-- banana-image: 生成图片/AI图片/产品图/海报/缩略图/4K/高清/制作图片
-- websocket-sse: WebSocket/SSE/实时推送/消息通知/在线状态/双向通信/实时通信
-- sms-mail: 短信/邮件/SMS/验证码/通知/SMS4j/MailUtils/邮件发送/短信发送
-- social-login: 第三方登录/微信登录/QQ登录/OAuth/OAuth2/JustAuth/社交登录/扫码登录/授权登录
-- tenant-management: 多租户/租户隔离/TenantEntity/TenantHelper/租户ID/tenantId/跨租户/动态租户/SaaS
-- leniu-java-amount-handling: 金额处理/分转元/元转分/Long金额/money/fen/BigDecimal金额/金额字段
-- leniu-java-concurrent: 并发/CompletableFuture/线程池/ThreadPool/并发安全/异步处理/synchronized
-- leniu-java-entity: Entity实体类/VO视图对象/DTO数据传输/Param参数类/@TableName/@TableField/审计字段/字段映射
-- leniu-java-export: 导出/Excel导出/异步导出/分页导出/@ExcelProperty/exportApi/数据导出
-- leniu-java-logging: 日志/@Slf4j/log.info/log.error/log.debug/日志级别/logback/日志格式
-- leniu-java-mq: 消息队列/MQ/MqUtil/@MqConsumer/延迟消息/消息重试/事务消息
-- leniu-java-mybatis: MyBatis/MyBatisPlus/Mapper/LambdaQueryWrapper/XML映射/动态SQL/BaseMapper/@Select/resultMap
-- leniu-java-report-query-param: 报表查询入参/Param类/分页参数/时间范围查询/ReportBaseParam/exportCols
-- leniu-java-task: 定时任务/XXL-Job/@XxlJob/TenantLoader/任务调度/分布式定时
-- leniu-java-total-line: 合计行/totalLine/报表合计/SUM合计/ReportBaseTotalVO/合计查询
-- leniu-report-customization: 定制报表/汇总报表/report_order_info/report_order_detail/report_account_flow/退款汇总/消费金额统计/订单报表/流水报表
-- leniu-report-standard-customization: 标准版报表/core-report/report_refund/report_refund_detail/经营分析/营业额分析/用户活跃度/菜品排行/操作员统计/账户日结/钱包消费汇总/商户消费汇总/ReportOrderConsumeService/ReportAccountConsumeService
-- leniu-customization-location: 定制开发/定制代码位置/Dz前缀/leniu-yunshitang/dz_表名/定制仓库/覆盖Service/@Primary/迁移core文件/定制开始/定制结束/net.xnzn.yunshitang/wuhanxiehe定制/bootstrap-ext
-- leniu-crud-development: CRUD/增删改查/新建模块/Business层/Service/Mapper/Controller/分页查询/LeRequest/PageDTO/PageVO/事务管理
-- leniu-database-ops: 数据库/SQL/建表/双库/商户库/系统库/审计字段/crby/crtime/del_flag
-- leniu-utils-toolkit: 工具类/BeanUtil/StrUtil/CollUtil/ObjectUtil/RedisUtil/JacksonUtil/LeBeanUtil
-- leniu-error-handler: 异常处理/LeException/全局异常/参数校验/错误码/I18n/国际化/throw
-- leniu-backend-annotations: @RequiresAuthentication/@RequiresGuest/@Validated/@NotNull/@Api/@ApiOperation/@ApiModelProperty/分组校验/InsertGroup/UpdateGroup
-- leniu-api-development: API接口/Controller/RESTful/LeResult/LeResponse/LeRequest/接口开发/路由前缀
-- leniu-brainstorm: 头脑风暴/方案设计/怎么设计/创意探索/功能规划/可行性分析
-- leniu-architecture-design: 架构设计/双库架构/商户库/系统库/pigx框架/四层架构/模块划分/Business层
-- leniu-code-patterns: 代码禁令/代码规范/命名规范/代码风格/Git提交规范/包结构/禁止写法/审计字段规范/delFlag/crby
-- leniu-data-permission: 多租户/数据权限/@UseSystem/Executors.doInTenant/readInSystem/TenantContextHolder/MERCHANT-ID/双库隔离/数据源切换
-- leniu-redis-cache: Redis/缓存/RedisUtil/分布式锁/RLock/getLock/setNx/ZSet/限流/缓存击穿
-- leniu-security-guard: 安全认证/SQL注入防护/XSS防护/数据脱敏/SM4加密/接口安全/限流
-- loki-log-query: 查日志/traceId/链路追踪/Loki/日志查询/线上日志/生产日志/错误日志/异常堆栈/日志排查
-- leniu-mealtime: 餐次/mealtime/mealtimeType/早餐/午餐/晚餐/下午茶/夜宵/AllocMealtimeTypeEnum
-- leniu-marketing-price-rule-customizer: 营销计费/计价规则/RulePriceHandler/RulePriceEnum/折扣规则/满减规则/限额规则/补贴规则
-- leniu-marketing-recharge-rule-customizer: 营销充值/充值规则/RuleRechargeHandler/RuleRechargeEnum/满赠规则/充值赠送/管理费规则
-- openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new/创建变更
-- openspec-ff-change: 快速推进/快速生成所有制品/opsx:ff/openspec ff/fast-forward
-- openspec-apply-change: 实现任务/开始实现/opsx:apply/openspec apply/执行变更
-- openspec-continue-change: 继续变更/创建下一个制品/opsx:continue/openspec continue
-- openspec-archive-change: 归档变更/完成变更/opsx:archive/openspec archive/归档
-- openspec-bulk-archive-change: 批量归档/批量完成/opsx:bulk-archive/批量变更
-- openspec-explore: 探索模式/思维伙伴/opsx:explore/openspec explore/探索问题
-- openspec-onboard: 新手引导/学习工作流/opsx:onboard/openspec onboard/入门教程
-- openspec-sync-specs: 同步规格/同步spec/opsx:sync/openspec sync/delta同步
-- openspec-verify-change: 验证变更/检查实现/opsx:verify/openspec verify/验证规格
+- json-serialization: JSON/序列化/反序列化/日期格式/BigDecimal/精度
+- redis-cache: Redis/缓存/@Cacheable/分布式锁/限流
+- scheduled-jobs: 定时任务/@Scheduled/Quartz/XXL-Job/任务调度
+- add-skill: 添加技能/创建技能/新技能/技能开发
+- banana-image: 生成图片/AI图片/产品图/海报/缩略图
+- websocket-sse: WebSocket/SSE/实时推送/消息通知/双向通信
+- sms-mail: 短信/邮件/SMS/验证码/通知
+- social-login: 第三方登录/OAuth/OAuth2/社交登录/授权登录
+- tenant-management: 多租户/租户隔离/SaaS/数据隔离
+- openspec-new-change: 新建变更/开始新功能/opsx:new/openspec new
+- openspec-ff-change: 快速推进/opsx:ff/openspec ff/fast-forward
+- openspec-apply-change: 实现任务/opsx:apply/openspec apply
+- openspec-continue-change: 继续变更/opsx:continue/openspec continue
+- openspec-archive-change: 归档变更/opsx:archive/openspec archive
+- openspec-bulk-archive-change: 批量归档/opsx:bulk-archive
+- openspec-explore: 探索模式/opsx:explore/openspec explore
+- openspec-onboard: 新手引导/opsx:onboard/openspec onboard
+- openspec-sync-specs: 同步规格/opsx:sync/openspec sync
+- openspec-verify-change: 验证变更/opsx:verify/openspec verify
+- ui-pc: 前端组件/Element UI/页面开发
+- store-pc: Vuex/状态管理/store模块
+- mysql-debug: MySQL调试/查数据库/执行SQL/数据库排查
+- loki-log-query: Loki日志/日志查询/线上日志排查
+- yunxiao-task-management: 云效任务/任务管理/需求管理
+- crud: 快速CRUD生成/脚手架
+- dev: 开发新功能/功能开发流程
+- check: 代码检查/规范检查
+- start: 项目启动/初始化/开始
+- next: 下一步/继续/接下来做什么
+- progress: 进度查看/当前状态
+- sync: 同步/代码同步
+- sync-back-merge: 回合并/sync back merge/主分支同步
+- init-docs: 初始化文档/项目文档生成
+- add-todo: 添加待办/TODO/任务添加
+- update-status: 更新状态/状态变更
+- skill-creator: 创建技能模板/技能脚手架/skill scaffold
 
 ### 步骤 2 - 激活（逐个调用，等待每个完成）
 

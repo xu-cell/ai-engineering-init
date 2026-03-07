@@ -11,12 +11,12 @@ description: |
   - JSON 格式验证
   - 数据类型映射与转换
 
-  触发词：JSON、序列化、反序列化、JsonUtils、日期格式、精度、BigDecimal、Long、类型转换、JSON验证
+  触发词：JSON、序列化、反序列化、JsonUtils、日期格式、精度、BigDecimal、Long、类型转换、JSON验证、ObjectMapper、Jackson
 ---
 
 # JSON 序列化与数据转换指南
 
-> 模块位置：`ruoyi-common/ruoyi-common-json`
+> 基于 Jackson（Spring Boot 默认 JSON 处理库）
 
 ## 快速索引
 
@@ -25,46 +25,97 @@ description: |
 | 对象转 JSON | `JsonUtils.toJsonString()` | null 返回 null |
 | JSON 转对象 | `JsonUtils.parseObject()` | 空返回 null |
 | JSON 转 List | `JsonUtils.parseArray()` | 空返回空 ArrayList |
-| JSON 转 Dict | `JsonUtils.parseMap()` | 非 JSON 返回 null |
-| JSON 数组转 Dict 列表 | `JsonUtils.parseArrayMap()` | 空返回 null |
+| JSON 转 Map | `JsonUtils.parseMap()` | 非 JSON 返回 null |
 | 复杂类型转换 | `JsonUtils.parseObject(text, TypeReference)` | 支持泛型 |
 | JSON 验证 | `JsonUtils.isJson()` / `isJsonObject()` / `isJsonArray()` | |
-| 字段校验注解 | `@JsonPattern` | 支持 OBJECT/ARRAY/ANY |
 
 ---
 
-## 核心工具类 JsonUtils
+## 核心工具类 JsonUtils（通用实现）
+
+> 推荐封装一个项目级的 `JsonUtils`，内部使用 Jackson `ObjectMapper` 单例。
 
 ```java
-import org.dromara.common.json.utils.JsonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
+public class JsonUtils {
+
+    private static final ObjectMapper MAPPER = SpringUtil.getBean(ObjectMapper.class);
+    // 或者：private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static String toJsonString(Object obj) {
+        if (obj == null) return null;
+        try {
+            return MAPPER.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException("JSON序列化失败", e);
+        }
+    }
+
+    public static <T> T parseObject(String json, Class<T> clazz) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return MAPPER.readValue(json, clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("JSON反序列化失败", e);
+        }
+    }
+
+    public static <T> T parseObject(String json, TypeReference<T> typeRef) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return MAPPER.readValue(json, typeRef);
+        } catch (Exception e) {
+            throw new RuntimeException("JSON反序列化失败", e);
+        }
+    }
+
+    public static <T> List<T> parseArray(String json, Class<T> clazz) {
+        if (json == null || json.isBlank()) return new ArrayList<>();
+        try {
+            return MAPPER.readValue(json,
+                MAPPER.getTypeFactory().constructCollectionType(ArrayList.class, clazz));
+        } catch (Exception e) {
+            throw new RuntimeException("JSON反序列化失败", e);
+        }
+    }
+
+    public static boolean isJson(String str) {
+        return isJsonObject(str) || isJsonArray(str);
+    }
+
+    public static boolean isJsonObject(String str) {
+        if (str == null || str.isBlank()) return false;
+        return str.trim().startsWith("{") && str.trim().endsWith("}");
+    }
+
+    public static boolean isJsonArray(String str) {
+        if (str == null || str.isBlank()) return false;
+        return str.trim().startsWith("[") && str.trim().endsWith("]");
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        return MAPPER;
+    }
+}
 ```
 
-### 序列化
+---
+
+## 序列化与反序列化
+
+### 基本用法
 
 ```java
-// 对象转 JSON 字符串（null 返回 null）
+// 对象转 JSON 字符串
 String json = JsonUtils.toJsonString(user);
-```
 
-### 反序列化
-
-```java
-// JSON 转简单对象（空返回 null）
+// JSON 转简单对象
 User user = JsonUtils.parseObject(json, User.class);
 
-// 字节数组转对象
-User user = JsonUtils.parseObject(bytes, User.class);
-
-// JSON 数组转 List（空返回空 ArrayList）
+// JSON 数组转 List
 List<User> users = JsonUtils.parseArray(json, User.class);
-
-// JSON 转 Dict（非 JSON 返回 null）
-Dict dict = JsonUtils.parseMap(json);
-String name = dict.getStr("name");
-int age = dict.getInt("age");
-
-// JSON 数组转 Dict 列表
-List<Dict> dicts = JsonUtils.parseArrayMap(json);
 ```
 
 ### 复杂泛型类型
@@ -89,66 +140,45 @@ List<User> users = JsonUtils.parseObject(json, USER_LIST_TYPE);
 ### JSON 验证
 
 ```java
-// 判断是否为合法 JSON（对象或数组）
-JsonUtils.isJson("{\"name\":\"张三\"}");   // true
-JsonUtils.isJson("[1,2,3]");              // true
-JsonUtils.isJson("not json");             // false
+JsonUtils.isJson("{\"name\":\"test\"}");   // true
+JsonUtils.isJson("[1,2,3]");               // true
+JsonUtils.isJson("not json");              // false
 
-// 判断是否为 JSON 对象
-JsonUtils.isJsonObject("{\"a\":1}");      // true
-JsonUtils.isJsonObject("[1,2,3]");        // false
-
-// 判断是否为 JSON 数组
-JsonUtils.isJsonArray("[1,2,3]");         // true
-JsonUtils.isJsonArray("{\"a\":1}");       // false
+JsonUtils.isJsonObject("{\"a\":1}");       // true
+JsonUtils.isJsonArray("[1,2,3]");          // true
 ```
-
-### 获取 ObjectMapper
-
-```java
-ObjectMapper mapper = JsonUtils.getObjectMapper();
-JsonNode node = mapper.readTree(json);
-```
-
----
-
-## @JsonPattern 校验注解
-
-用于 BO 类字段的 JSON 格式校验。
-
-```java
-import org.dromara.common.json.validate.JsonPattern;
-import org.dromara.common.json.validate.JsonType;
-
-public class ConfigBo {
-
-    // 任意 JSON 格式（对象或数组）
-    @JsonPattern
-    private String configValue;
-
-    // 必须是 JSON 对象
-    @JsonPattern(type = JsonType.OBJECT, message = "配置必须是 JSON 对象格式")
-    private String objectConfig;
-
-    // 必须是 JSON 数组
-    @JsonPattern(type = JsonType.ARRAY, message = "列表必须是 JSON 数组格式")
-    private String arrayConfig;
-}
-```
-
-**JsonType 枚举**：
-
-| 值 | 说明 | 示例 |
-|----|------|------|
-| `ANY` | 对象或数组都可以（默认） | `{}` 或 `[]` |
-| `OBJECT` | 必须是 JSON 对象 | `{"a":1}` |
-| `ARRAY` | 必须是 JSON 数组 | `[1,2,3]` |
 
 ---
 
 ## Jackson 自动配置
 
-配置类：`org.dromara.common.json.config.JacksonConfig`
+### 推荐配置类
+
+```java
+@Configuration
+public class JacksonConfig {
+
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer customizer() {
+        return builder -> {
+            // LocalDateTime 格式化
+            builder.simpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            builder.serializers(new LocalDateTimeSerializer(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            builder.deserializers(new LocalDateTimeDeserializer(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            // 大数字精度保护
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Long.class, new BigNumberSerializer());
+            module.addSerializer(Long.TYPE, new BigNumberSerializer());
+            module.addSerializer(BigInteger.class, new BigNumberSerializer());
+            module.addSerializer(BigDecimal.class, ToStringSerializer.instance);
+            builder.modules(module);
+        };
+    }
+}
+```
 
 ### 大数字处理（BigNumberSerializer）
 
@@ -157,11 +187,11 @@ public class ConfigBo {
 **解决方案**：自动将超出 JS 安全范围的数字序列化为字符串。
 
 ```java
-// 安全范围内 → 保持数字
+// 安全范围内 -> 保持数字
 Long id = 123456L;
 // 序列化结果：{"id": 123456}
 
-// 超出安全范围 → 转为字符串
+// 超出安全范围 -> 转为字符串
 Long id = 9007199254740992L;
 // 序列化结果：{"id": "9007199254740992"}
 
@@ -189,20 +219,6 @@ BigDecimal amount = new BigDecimal("123.45");
 LocalDateTime now = LocalDateTime.now();
 String json = JsonUtils.toJsonString(now);
 // 输出："2026-02-06 14:30:45"
-
-LocalDateTime parsed = JsonUtils.parseObject("\"2026-02-06 14:30:45\"", LocalDateTime.class);
-```
-
-### Date 自动解析（CustomDateDeserializer）
-
-使用 Hutool 的 `DateUtil.parse()` 自动识别多种日期格式：
-
-```java
-// 支持的格式（自动识别）
-Date d1 = JsonUtils.parseObject("\"2026-02-06 14:30:45\"", Date.class);
-Date d2 = JsonUtils.parseObject("\"2026-02-06\"", Date.class);
-Date d3 = JsonUtils.parseObject("\"2026/02/06 14:30:45\"", Date.class);
-Date d4 = JsonUtils.parseObject("\"20260206143045\"", Date.class);
 ```
 
 ---
@@ -214,17 +230,17 @@ Date d4 = JsonUtils.parseObject("\"20260206143045\"", Date.class);
 ```java
 @Service
 @RequiredArgsConstructor
-public class ConfigServiceImpl implements IConfigService {
+public class ConfigServiceImpl {
 
-    private final ConfigMapper baseMapper;
+    private final ConfigMapper configMapper;
 
     /**
      * 获取配置为对象
      */
     public <T> T getConfig(String configKey, Class<T> clazz) {
-        SysConfig config = baseMapper.selectOne(
-            Wrappers.<SysConfig>lambdaQuery()
-                .eq(SysConfig::getConfigKey, configKey));
+        Config config = configMapper.selectOne(
+            Wrappers.<Config>lambdaQuery()
+                .eq(Config::getConfigKey, configKey));
         if (config == null) {
             return null;
         }
@@ -235,10 +251,10 @@ public class ConfigServiceImpl implements IConfigService {
      * 保存配置
      */
     public void saveConfig(String configKey, Object value) {
-        SysConfig config = new SysConfig();
+        Config config = new Config();
         config.setConfigKey(configKey);
         config.setConfigValue(JsonUtils.toJsonString(value));
-        baseMapper.insert(config);
+        configMapper.insert(config);
     }
 
     /**
@@ -246,30 +262,11 @@ public class ConfigServiceImpl implements IConfigService {
      */
     public void importData(String jsonData) {
         if (!JsonUtils.isJsonArray(jsonData)) {
-            throw new ServiceException("数据格式不正确，应为 JSON 数组");
+            throw new [你的异常类]("数据格式不正确，应为 JSON 数组");
         }
         List<DataBo> list = JsonUtils.parseArray(jsonData, DataBo.class);
         // 处理数据...
     }
-}
-```
-
-### BO 中使用 JSON 校验
-
-```java
-@Data
-@AutoMapper(target = SysConfig.class, reverseConvertGenerate = false)
-public class SysConfigBo extends BaseEntity {
-
-    @NotNull(message = "ID不能为空", groups = EditGroup.class)
-    private Long id;
-
-    @NotBlank(message = "配置键不能为空")
-    private String configKey;
-
-    @NotBlank(message = "配置值不能为空")
-    @JsonPattern(type = JsonType.OBJECT, message = "配置值必须是有效的 JSON 对象")
-    private String configValue;
 }
 ```
 
@@ -280,12 +277,12 @@ public class SysConfigBo extends BaseEntity {
 ### 1. 什么时候用 parseObject vs parseArray？
 
 ```java
-// JSON 对象 → parseObject
-String json = "{\"name\":\"张三\"}";
+// JSON 对象 -> parseObject
+String json = "{\"name\":\"test\"}";
 User user = JsonUtils.parseObject(json, User.class);
 
-// JSON 数组 → parseArray
-String json = "[{\"name\":\"张三\"},{\"name\":\"李四\"}]";
+// JSON 数组 -> parseArray
+String json = "[{\"name\":\"test1\"},{\"name\":\"test2\"}]";
 List<User> users = JsonUtils.parseArray(json, User.class);
 ```
 
@@ -305,7 +302,6 @@ Map<String, User> map = JsonUtils.parseObject(json,
 ```java
 // toJsonString
 JsonUtils.toJsonString(null);     // 返回 null
-JsonUtils.toJsonString(user);     // 返回 JSON 字符串
 
 // parseObject
 JsonUtils.parseObject(null, User.class);   // 返回 null
@@ -314,18 +310,6 @@ JsonUtils.parseObject("", User.class);     // 返回 null
 // parseArray
 JsonUtils.parseArray(null, User.class);    // 返回空 ArrayList
 JsonUtils.parseArray("", User.class);      // 返回空 ArrayList
-```
-
-### 4. 如何在解析前验证 JSON？
-
-```java
-public void processData(String data) {
-    // 先验证再解析
-    if (!JsonUtils.isJsonArray(data)) {
-        throw new ServiceException("数据格式不正确");
-    }
-    List<User> users = JsonUtils.parseArray(data, User.class);
-}
 ```
 
 ---
@@ -337,7 +321,7 @@ public void processData(String data) {
 ObjectMapper mapper = new ObjectMapper();
 String json = mapper.writeValueAsString(user);
 
-// ✅ 正确：使用 JsonUtils
+// ✅ 正确：使用项目统一的 JsonUtils
 String json = JsonUtils.toJsonString(user);
 
 // ❌ 禁止：不验证直接解析（可能报错）

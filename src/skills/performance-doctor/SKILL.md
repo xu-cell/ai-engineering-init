@@ -10,9 +10,8 @@ description: |
   - 分页查询优化
   - N+1 查询问题
   - 批量操作超时
-  - 多租户查询优化
 
-  触发词:性能优化、慢查询、SQL优化、索引优化、缓存、Redis缓存、N+1、分页优化、EXPLAIN、响应慢、批量操作、多租户优化
+  触发词:性能优化、慢查询、SQL优化、索引优化、缓存、Redis缓存、N+1、分页优化、EXPLAIN、响应慢、批量操作
 
   注意:如果是排查功能性 Bug(代码报错、逻辑错误),请使用 bug-detective。
 ---
@@ -23,7 +22,7 @@ description: |
 
 ```
 1. 定位 -> 接口层面(响应时间) / SQL层面(慢查询) / 缓存层面(命中率)
-2. 分析 -> p6spy SQL 日志 / Arthas JVM 诊断 / 日志分析
+2. 分析 -> SQL 日志 / Arthas JVM 诊断 / 日志分析
 3. 优化 -> 索引 / 缓存 / 批量处理
 4. 验证 -> 对比优化前后指标
 ```
@@ -33,14 +32,12 @@ description: |
 | 指标 | 良好 | 需优化 | 工具 |
 |------|------|--------|------|
 | 接口响应 | < 200ms | > 500ms | p6spy/SkyWalking |
-| 数据库查询 | < 50ms | > 200ms | p6spy SQL 日志 |
+| 数据库查询 | < 50ms | > 200ms | SQL 日志 |
 | 内存使用 | < 70% | > 85% | Arthas/JVM 监控 |
 
 ---
 
 ## 1. MyBatis-Plus 查询优化
-
-> 源码：`ruoyi-modules/ruoyi-demo/.../TestDemoServiceImpl.java:62-73`
 
 ### 查询构建规范
 
@@ -48,36 +45,33 @@ description: |
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
-private LambdaQueryWrapper<TestDemo> buildQueryWrapper(TestDemoBo bo) {
-    Map<String, Object> params = bo.getParams();
-    LambdaQueryWrapper<TestDemo> lqw = Wrappers.lambdaQuery();
-    lqw.eq(bo.getDeptId() != null, TestDemo::getDeptId, bo.getDeptId());
-    lqw.like(StringUtils.isNotBlank(bo.getTestKey()), TestDemo::getTestKey, bo.getTestKey());
-    lqw.between(params.get("beginCreateTime") != null && params.get("endCreateTime") != null,
-        TestDemo::getCreateTime, params.get("beginCreateTime"), params.get("endCreateTime"));
+private LambdaQueryWrapper<XxxEntity> buildQueryWrapper(XxxQueryDTO query) {
+    LambdaQueryWrapper<XxxEntity> lqw = Wrappers.lambdaQuery();
+    lqw.eq(query.getDeptId() != null, XxxEntity::getDeptId, query.getDeptId());
+    lqw.like(StrUtil.isNotBlank(query.getKeyword()), XxxEntity::getName, query.getKeyword());
+    lqw.between(query.getStartTime() != null && query.getEndTime() != null,
+        XxxEntity::getCreateTime, query.getStartTime(), query.getEndTime());
     return lqw;
 }
 ```
 
 ### 更新构建规范
 
-> 源码：`ruoyi-modules/ruoyi-system/.../SysUserServiceImpl.java:383-404`
-
 ```java
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 
 // 精确更新
 baseMapper.update(null,
-    new LambdaUpdateWrapper<SysUser>()
-        .set(SysUser::getStatus, status)
-        .eq(SysUser::getUserId, userId));
+    new LambdaUpdateWrapper<XxxEntity>()
+        .set(XxxEntity::getStatus, status)
+        .eq(XxxEntity::getId, id));
 
 // 条件更新（非null才设置）
 baseMapper.update(null,
-    new LambdaUpdateWrapper<SysUser>()
-        .set(ObjectUtil.isNotNull(user.getNickName()), SysUser::getNickName, user.getNickName())
-        .set(SysUser::getPhonenumber, user.getPhonenumber())
-        .eq(SysUser::getUserId, user.getUserId()));
+    new LambdaUpdateWrapper<XxxEntity>()
+        .set(ObjectUtil.isNotNull(entity.getName()), XxxEntity::getName, entity.getName())
+        .set(XxxEntity::getPhone, entity.getPhone())
+        .eq(XxxEntity::getId, entity.getId()));
 ```
 
 ### 批量更新
@@ -94,15 +88,15 @@ Db.updateBatchById(entityList);
 ### N+1 查询修复
 
 ```java
-// 错误：循环查询
+// ❌ 错误：循环查询
 for (Order order : orders) {
     User user = userMapper.selectById(order.getUserId());
 }
 
-// 正确：批量查询 + Map 映射
+// ✅ 正确：批量查询 + Map 映射
 List<Long> userIds = orders.stream().map(Order::getUserId).distinct().toList();
 Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
-    .collect(Collectors.toMap(User::getUserId, Function.identity()));
+    .collect(Collectors.toMap(User::getId, Function.identity()));
 for (Order order : orders) {
     User user = userMap.get(order.getUserId());
 }
@@ -112,17 +106,21 @@ for (Order order : orders) {
 
 ## 2. 缓存优化
 
-> 源码：`ruoyi-common/ruoyi-common-redis/.../RedisUtils.java`
-
-### RedisUtils 操作
+### Redisson 缓存操作
 
 ```java
-import org.dromara.common.redis.utils.RedisUtils;
+import org.redisson.api.RedissonClient;
+import org.redisson.api.RBucket;
 
-RedisUtils.setCacheObject("user:" + id, userVo, Duration.ofMinutes(30));
-UserVo cached = RedisUtils.getCacheObject("user:" + id);
-RedisUtils.deleteObject("user:" + id);
-boolean exists = RedisUtils.isExistsObject("user:" + id);
+// 设置缓存
+RBucket<UserVo> bucket = redissonClient.getBucket("user:" + id);
+bucket.set(userVo, Duration.ofMinutes(30));
+
+// 获取缓存
+UserVo cached = redissonClient.<UserVo>getBucket("user:" + id).get();
+
+// 删除缓存
+redissonClient.getBucket("user:" + id).delete();
 ```
 
 ### Spring Cache 注解
@@ -137,40 +135,42 @@ public int update(UserBo bo) { ... }
 
 > **@Cacheable 禁止返回不可变集合**（`List.of()`、`Set.of()`），Redis 反序列化会失败。必须用 `new ArrayList<>(List.of(...))`。
 
-### 分布式锁（Lock4j）
-
-> 源码：`ruoyi-modules/ruoyi-demo/.../RedisLockController.java:47-67`
+### 分布式锁
 
 ```java
-import com.baomidou.lock.annotation.Lock4j;
-import com.baomidou.lock.LockTemplate;
-import com.baomidou.lock.LockInfo;
-import com.baomidou.lock.executor.RedissonLockExecutor;
+import org.redisson.api.RLock;
 
-// 注解方式（推荐）
-@Lock4j(keys = {"#key"}, expire = 60000, acquireTimeout = 3000)
-public void doSomething(String key) { ... }
-
-// 编程方式
-LockInfo lockInfo = lockTemplate.lock(key, 30000L, 5000L, RedissonLockExecutor.class);
-if (null == lockInfo) {
-    throw new ServiceException("业务处理中，请稍后再试");
-}
+// 注入 RedissonClient
+RLock lock = redissonClient.getLock("lock:order:" + orderId);
 try {
-    // 业务逻辑
-} finally {
-    lockTemplate.releaseLock(lockInfo);
+    if (lock.tryLock(3, 10, TimeUnit.SECONDS)) {
+        try {
+            // 业务逻辑
+        } finally {
+            if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    } else {
+        throw new [你的异常类]("业务处理中，请稍后再试");
+    }
+} catch (InterruptedException e) {
+    Thread.currentThread().interrupt();
+    throw new [你的异常类]("操作被中断");
 }
 ```
 
 ### 限流
 
 ```java
+import org.redisson.api.RRateLimiter;
 import org.redisson.api.RateType;
+import org.redisson.api.RateIntervalUnit;
 
-long remaining = RedisUtils.rateLimiter("api:rate:" + userId, RateType.OVERALL, 100, 60);
-if (remaining < 0) {
-    throw new ServiceException("请求过于频繁");
+RRateLimiter limiter = redissonClient.getRateLimiter("api:rate:" + userId);
+limiter.trySetRate(RateType.OVERALL, 100, 60, RateIntervalUnit.SECONDS);
+if (!limiter.tryAcquire()) {
+    throw new [你的异常类]("请求过于频繁");
 }
 ```
 
@@ -187,23 +187,26 @@ private final Cache<Long, UserVo> localCache = Caffeine.newBuilder()
 
 public UserVo getUser(Long id) {
     return localCache.get(id, key -> {
-        UserVo cached = RedisUtils.getCacheObject("user:" + id);
-        return cached != null ? cached : baseMapper.selectVoById(id);
+        RBucket<UserVo> bucket = redissonClient.getBucket("user:" + id);
+        UserVo cached = bucket.get();
+        return cached != null ? cached : baseMapper.selectById(id);
     });
 }
 ```
 
 ---
 
-## 3. 多租户优化
+## 3. 索引优化
 
 ```sql
--- tenant_id 必须建索引
-CREATE INDEX idx_tenant_id ON xxx_table(tenant_id);
+-- 为高频查询字段添加索引
+CREATE INDEX idx_status ON xxx_table(status);
 
--- 复合索引第一列放 tenant_id（多租户自动添加 tenant_id 条件）
-CREATE INDEX idx_tenant_status ON xxx_table(tenant_id, status);
-CREATE INDEX idx_tenant_create_time ON xxx_table(tenant_id, create_time);
+-- 复合索引：遵循最左前缀原则
+CREATE INDEX idx_status_create_time ON xxx_table(status, create_time);
+
+-- 使用 EXPLAIN 分析查询
+EXPLAIN SELECT * FROM xxx_table WHERE status = 1 AND create_time > '2026-01-01';
 ```
 
 ---
@@ -212,7 +215,7 @@ CREATE INDEX idx_tenant_create_time ON xxx_table(tenant_id, create_time);
 
 ```java
 // 推荐：分批处理（每批500条）
-public void batchInsert(List<Xxx> list) {
+public void batchInsert(List<XxxEntity> list) {
     int batchSize = 500;
     for (int i = 0; i < list.size(); i += batchSize) {
         int end = Math.min(i + batchSize, list.size());
@@ -222,12 +225,13 @@ public void batchInsert(List<Xxx> list) {
 
 // 批量更新同理
 @Transactional(rollbackFor = Exception.class)
-public void batchUpdate(List<XxxBo> list) {
+public void batchUpdate(List<XxxDTO> list) {
     int batchSize = 500;
     for (int i = 0; i < list.size(); i += batchSize) {
         int end = Math.min(i + batchSize, list.size());
-        List<Xxx> batch = list.subList(i, end).stream()
-            .map(bo -> MapstructUtils.convert(bo, Xxx.class)).toList();
+        List<XxxEntity> batch = list.subList(i, end).stream()
+            .map(dto -> BeanUtil.copyProperties(dto, XxxEntity.class))
+            .toList();
         Db.updateBatchById(batch);
     }
 }
@@ -237,15 +241,6 @@ public void batchUpdate(List<XxxBo> list) {
 
 ## 5. 性能日志分析
 
-> 日志配置：`ruoyi-admin/src/main/resources/logback-plus.xml:52-72`
-
-### 日志文件
-
-| 环境 | 文件 | 说明 |
-|------|------|------|
-| **开发** | `./logs/console.log` | 每次启动清空，含 SQL 日志 |
-| 生产 | `./logs/sys-*.log` | 按天滚动，保留60天 |
-
 ### SQL 监控
 
 开发环境 p6spy 默认开启：`spring.datasource.dynamic.p6spy: true`
@@ -253,17 +248,8 @@ public void batchUpdate(List<XxxBo> list) {
 日志格式：
 ```
 2026-01-08 22:12:10 [req-123] [...] INFO p6spy - Consume Time:245 ms
-Execute SQL:SELECT * FROM sys_user WHERE tenant_id = '000000' AND del_flag = '0'
+Execute SQL:SELECT * FROM user WHERE status = 1
 ```
-
-### AI 主动读日志的触发条件
-
-| 场景 | 关键词 | 分析重点 |
-|------|--------|---------|
-| 接口慢 | "接口慢"、"超时" | SQL 执行时间、N+1 查询 |
-| SQL 慢 | "SQL慢"、"查询慢" | p6spy Consume Time |
-| 内存/CPU | "内存高"、"卡顿" | OOM、GC、线程池满 |
-| 频繁报错 | "一直报错" | ERROR 日志、异常频率 |
 
 ### 分析命令
 
@@ -278,6 +264,15 @@ grep "Execute SQL" ./logs/console.log | sed 's/WHERE.*/WHERE .../' | sort | uniq
 grep "ERROR" ./logs/console.log | tail -50
 ```
 
+### AI 主动读日志的触发条件
+
+| 场景 | 关键词 | 分析重点 |
+|------|--------|---------|
+| 接口慢 | "接口慢"、"超时" | SQL 执行时间、N+1 查询 |
+| SQL 慢 | "SQL慢"、"查询慢" | p6spy Consume Time |
+| 内存/CPU | "内存高"、"卡顿" | OOM、GC、线程池满 |
+| 频繁报错 | "一直报错" | ERROR 日志、异常频率 |
+
 ---
 
 ## 常见问题速查
@@ -286,10 +281,9 @@ grep "ERROR" ./logs/console.log | tail -50
 |------|------|------|
 | 接口响应慢 | SQL 无索引 | 添加索引，EXPLAIN 分析 |
 | 接口响应慢 | N+1 查询 | 批量查询 + Map 映射 |
-| 接口响应慢 | 未缓存 | RedisUtils 或 @Cacheable |
+| 接口响应慢 | 未缓存 | Redisson 或 @Cacheable |
 | 分页查询慢 | 深分页 | 游标分页或限制页码 |
 | 批量操作超时 | 数据量太大 | 分批500条处理 |
-| 多租户查询慢 | tenant_id 无索引 | 添加 tenant_id 复合索引 |
 | 内存溢出 | 大数据量一次加载 | 分批/流式处理 |
 
 ---

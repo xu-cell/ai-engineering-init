@@ -1,407 +1,210 @@
 ---
 name: database-ops
 description: |
-  数据库操作规范。包含建表模板、Entity 实体类模板、八大数据库设计模式、多数据库兼容。
-
-  触发场景：
-  - 创建数据库表（MySQL/PostgreSQL/Oracle/SQL Server）
-  - 设计 Entity 实体类（TenantEntity、@TableLogic、@Version）
-  - 配置逻辑删除、乐观锁、审计字段
-  - 树结构表设计（祖先路径法/父子法）
-  - 字典数据和菜单 SQL 配置
-
-  触发词：数据库、SQL、建表、CREATE TABLE、Entity、TenantEntity、@TableLogic、del_flag、逻辑删除、字典、菜单SQL、表设计、字段设计、数据库设计
+  通用数据库操作指南。涵盖建表规范、审计字段、逻辑删除、索引设计等。
+  触发场景：建表、数据库设计、SQL 编写、数据迁移。
+  触发词：建表、数据库、SQL、DDL、数据迁移、索引。
+  注意：如果项目有专属技能（如 `leniu-database`），优先使用专属版本。
 ---
 
-# 数据库操作规范（RuoYi-Vue-Plus 三层架构版）
+# 数据库操作指南
 
-> **⚠️ 重要声明**: 本项目是 **RuoYi-Vue-Plus 纯后端项目**，采用三层架构！
-> 本文档规范基于 **TestDemo 模块**的真实实现。
+> 通用模板。如果项目有专属技能（如 `leniu-database`），优先使用。
 
-## 核心架构特征
+## 核心规范
 
-| 对比项 | 本项目 (RuoYi-Vue-Plus) |
-|--------|----------------------|
-| **包名前缀** | `org.dromara.*` |
-| **架构** | 三层：Controller → Service → Mapper |
-| **Entity基类** | `TenantEntity`（多租户） |
-| **主键策略** | 雪花 ID（不用 AUTO_INCREMENT） |
-| **逻辑删除** | `@TableLogic private Long delFlag;`（Long 类型） |
-| **乐观锁** | `@Version private Long version;` |
-| **对象转换** | `MapstructUtils.convert()` |
-| **表前缀** | 按模块区分：sys_/test_/flow_ 等 |
+### 建表标准模板
 
----
+```sql
+CREATE TABLE t_order (
+    id          BIGINT       NOT NULL                COMMENT '主键',
+    order_no    VARCHAR(64)  NOT NULL                COMMENT '订单编号',
+    status      TINYINT      NOT NULL DEFAULT 0      COMMENT '状态(0-待处理,1-已完成,2-已取消)',
+    amount      BIGINT       NOT NULL DEFAULT 0      COMMENT '金额(单位:分)',
+    remark      VARCHAR(500)          DEFAULT NULL   COMMENT '备注',
+    create_by   VARCHAR(64)           DEFAULT NULL   COMMENT '创建人',
+    create_time DATETIME              DEFAULT NULL   COMMENT '创建时间',
+    update_by   VARCHAR(64)           DEFAULT NULL   COMMENT '更新人',
+    update_time DATETIME              DEFAULT NULL   COMMENT '更新时间',
+    deleted     TINYINT      NOT NULL DEFAULT 0      COMMENT '删除标识(0-正常,1-删除)',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_order_no (order_no),
+    KEY idx_status (status),
+    KEY idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
+```
 
-## 1. Entity 实体类模板（带逻辑删除）
+### 审计字段规范
+
+| 字段 | 类型 | 说明 | 填充时机 |
+|------|------|------|---------|
+| `create_by` | VARCHAR(64) | 创建人 | INSERT |
+| `create_time` | DATETIME | 创建时间 | INSERT |
+| `update_by` | VARCHAR(64) | 更新人 | INSERT / UPDATE |
+| `update_time` | DATETIME | 更新时间 | INSERT / UPDATE |
+| `deleted` | TINYINT | 逻辑删除 | 手动 / 框架自动 |
+
+> 审计字段自动填充可通过 MyBatis-Plus 的 `MetaObjectHandler` 实现。
+
+### 逻辑删除
+
+- `deleted = 0` 表示正常
+- `deleted = 1` 表示已删除
+- MyBatis-Plus 配置：
+
+```yaml
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+```
+
+### 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 表名 | 小写下划线，建议加前缀 | `t_order`, `sys_user` |
+| 字段名 | 小写下划线 | `order_no`, `create_time` |
+| 主键 | `id` | `id BIGINT NOT NULL` |
+| 外键字段 | `关联表_id` | `user_id`, `order_id` |
+| 唯一索引 | `uk_字段名` | `uk_order_no` |
+| 普通索引 | `idx_字段名` | `idx_status` |
+| 联合索引 | `idx_字段1_字段2` | `idx_user_id_status` |
+
+## 代码示例
+
+### 审计字段自动填充
 
 ```java
-package org.dromara.demo.domain;
+@Component
+public class MyMetaObjectHandler implements MetaObjectHandler {
 
-import org.dromara.common.tenant.core.TenantEntity;
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import java.io.Serial;
+    @Override
+    public void insertFill(MetaObject metaObject) {
+        this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, "createBy", String.class, getCurrentUser());
+        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, "updateBy", String.class, getCurrentUser());
+    }
 
-/**
- * XXX 对象
- *
- * @author Lion Li
- */
-@Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("demo_xxx")
-public class Xxx extends TenantEntity {
+    @Override
+    public void updateFill(MetaObject metaObject) {
+        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictUpdateFill(metaObject, "updateBy", String.class, getCurrentUser());
+    }
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 主键 ID
-     */
-    @TableId(value = "id")
-    private Long id;
-
-    /**
-     * 名称
-     */
-    private String xxxName;
-
-    /**
-     * 状态（0正常 1停用）
-     */
-    private String status;
-
-    /**
-     * 版本号（乐观锁）
-     */
-    @Version
-    private Long version;
-
-    /**
-     * 删除标志（0正常 1已删除）
-     * ✅ 使用 @TableLogic 标记，MyBatis-Plus 自动处理逻辑删除
-     * ✅ 类型必须是 Long（自动映射到数据库 del_flag BIGINT）
-     */
-    @TableLogic
-    private Long delFlag;
+    private String getCurrentUser() {
+        // 从安全上下文获取当前用户，按项目实际实现
+        return [你的用户上下文工具].getCurrentUsername();
+    }
 }
 ```
 
----
+### 常见数据库设计模式
 
-## 2. MySQL CREATE TABLE 模板
-
-```sql
-CREATE TABLE `demo_xxx` (
-    -- 主键和租户
-    `id` BIGINT(20) NOT NULL COMMENT '主键 ID',
-    `tenant_id` VARCHAR(20) DEFAULT '000000' COMMENT '租户 ID',
-
-    -- 业务字段
-    `xxx_name` VARCHAR(100) NOT NULL COMMENT '名称',
-    `status` CHAR(1) DEFAULT '0' COMMENT '状态(0正常 1停用)',
-
-    -- 版本和删除
-    `version` INT(0) DEFAULT 0 COMMENT '版本号',
-    `del_flag` BIGINT(20) DEFAULT 0 COMMENT '删除标志(0正常 1已删除)',
-
-    -- 审计字段（必须）
-    `create_dept` BIGINT(20) DEFAULT NULL COMMENT '创建部门',
-    `create_by` BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` BIGINT(20) DEFAULT NULL COMMENT '更新人',
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `remark` VARCHAR(500) DEFAULT NULL COMMENT '备注（可选业务字段，不在 BaseEntity 中）',
-
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='XXX表';
-```
-
----
-
-## 3. PostgreSQL CREATE TABLE 模板
+#### 模式一：树结构 - 祖先路径法
 
 ```sql
-CREATE TABLE demo_xxx (
-    -- 主键和租户
-    id BIGINT NOT NULL,
-    tenant_id VARCHAR(20) DEFAULT '000000',
-
-    -- 业务字段
-    xxx_name VARCHAR(100) NOT NULL,
-    status CHAR(1) DEFAULT '0',
-
-    -- 版本和删除
-    version INT DEFAULT 0,
-    del_flag BIGINT DEFAULT 0,
-
-    -- 审计字段
-    create_dept BIGINT DEFAULT NULL,
-    create_by BIGINT DEFAULT NULL,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_by BIGINT DEFAULT NULL,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    remark VARCHAR(500) DEFAULT NULL,
-
-    PRIMARY KEY (id)
-);
-
-COMMENT ON TABLE demo_xxx IS 'XXX表';
-COMMENT ON COLUMN demo_xxx.id IS '主键 ID';
-COMMENT ON COLUMN demo_xxx.tenant_id IS '租户 ID';
-COMMENT ON COLUMN demo_xxx.xxx_name IS '名称';
-COMMENT ON COLUMN demo_xxx.del_flag IS '删除标志(0正常 1已删除)';
-```
-
----
-
-## 4. 八大数据库设计模式
-
-### 模式一：多租户隔离
-
-```java
-// 自动处理：TenantEntity 已包含
-private String tenantId;  // 自动填充为当前租户 ID
-
-// SQL 查询自动添加租户过滤：
-// WHERE tenant_id = ?
-```
-
-**使用场景**：所有需要租户隔离的业务表
-
----
-
-### 模式二：树结构 - 祖先路径法（推荐）
-
-```sql
-CREATE TABLE demo_tree (
-    id BIGINT NOT NULL,
-    parent_id BIGINT,
-    ancestors VARCHAR(500),  -- 祖先路径：0,1,2,3
-    name VARCHAR(100),
-    del_flag BIGINT DEFAULT 0,
+CREATE TABLE t_org (
+    id          BIGINT       NOT NULL              COMMENT '主键',
+    parent_id   BIGINT                DEFAULT NULL COMMENT '父节点ID',
+    ancestors   VARCHAR(500)          DEFAULT NULL COMMENT '祖先路径(逗号分隔)',
+    name        VARCHAR(100) NOT NULL              COMMENT '节点名称',
+    sort        INT          NOT NULL DEFAULT 0    COMMENT '排序',
+    create_by   VARCHAR(64)           DEFAULT NULL COMMENT '创建人',
+    create_time DATETIME              DEFAULT NULL COMMENT '创建时间',
+    update_by   VARCHAR(64)           DEFAULT NULL COMMENT '更新人',
+    update_time DATETIME              DEFAULT NULL COMMENT '更新时间',
+    deleted     TINYINT      NOT NULL DEFAULT 0    COMMENT '删除标识(0-正常,1-删除)',
     PRIMARY KEY (id),
-    INDEX idx_ancestors (ancestors)
-) COMMENT='树形表';
+    KEY idx_parent_id (parent_id),
+    KEY idx_ancestors (ancestors(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组织树';
 ```
 
-**优势**：快速查询所有祖先和子孙节点（无需递归）
-
----
-
-### 模式三：树结构 - 简单父子法
+#### 模式二：关联表（多对多）
 
 ```sql
-CREATE TABLE demo_tree_simple (
-    id BIGINT NOT NULL,
-    parent_id BIGINT,
-    name VARCHAR(100),
-    del_flag BIGINT DEFAULT 0,
+CREATE TABLE t_user_role (
+    id      BIGINT NOT NULL              COMMENT '主键',
+    user_id BIGINT NOT NULL              COMMENT '用户ID',
+    role_id BIGINT NOT NULL              COMMENT '角色ID',
+    create_time DATETIME DEFAULT NULL    COMMENT '创建时间',
     PRIMARY KEY (id),
-    FOREIGN KEY (parent_id) REFERENCES demo_tree_simple(id)
-) COMMENT='简单树形表';
+    UNIQUE KEY uk_user_role (user_id, role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联';
 ```
 
-**适用**：二级分类、简单层级
-
----
-
-### 模式四：软删除（逻辑删除）
+#### 模式三：状态字段（枚举驱动）
 
 ```java
-// Java Entity 中
-@TableLogic
-private Long delFlag;  // 0=正常，1=已删除
+@Getter
+@AllArgsConstructor
+public enum OrderStatusEnum {
 
-// MyBatis-Plus 自动处理
-// INSERT/UPDATE: 业务代码不变
-// SELECT: 自动添加 WHERE del_flag = 0
-// DELETE: 转换为 UPDATE del_flag = 1
-```
+    PENDING(0, "待处理"),
+    COMPLETED(1, "已完成"),
+    CANCELLED(2, "已取消");
 
-**优势**：数据可恢复，审计日志完整
-
----
-
-### 模式五：审计追踪（自动填充）
-
-```sql
-CREATE TABLE demo_audit (
-    id BIGINT NOT NULL,
-    create_dept BIGINT,      -- 创建部门（自动填充）
-    create_by BIGINT,        -- 创建人（自动填充）
-    create_time DATETIME,    -- 创建时间（自动填充）
-    update_by BIGINT,        -- 更新人（自动填充）
-    update_time DATETIME,    -- 更新时间（自动填充）
-    PRIMARY KEY (id)
-) COMMENT='带审计的表';
-```
-
-**TenantEntity 已包含所有审计字段**
-
----
-
-### 模式六：状态字段（字典驱动）
-
-```java
-@ExcelProperty(value = "状态")
-@ExcelDictFormat(dictType = "sys_normal_disable")
-private String status;  // 0=正常，1=停用
-```
-
-**配合字典表**：不硬编码状态值，支持动态扩展
-
----
-
-### 模式七：数据权限控制
-
-```java
-// ✅ 在 Mapper 接口上标注（类级别或方法级别均可）
-@DataPermission({
-    @DataColumn(key = "deptName", value = "dept_id"),
-    @DataColumn(key = "userName", value = "user_id")
-})
-public interface XxxMapper extends BaseMapperPlus<Xxx, XxxVo> {
+    private final int code;
+    private final String desc;
 }
+
+// SQL 字段
+// status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待处理,1-已完成,2-已取消)'
 ```
 
-**权限类型**（通过 `sys_role.data_scope` 配置）：
-- 1=全部数据权限、2=自定义数据权限、3=本部门数据权限
-- 4=本部门及以下数据权限、5=仅本人数据权限
-
----
-
-### 模式八：跨数据库兼容
-
-| 场景 | MySQL | PostgreSQL | Oracle | SQL Server |
-|------|-------|-----------|--------|------------|
-| 查询 Long 字段 | `LIKE` | `CAST AS VARCHAR)` | `TO_CHAR()` | `CAST` |
-| 自增ID | MyBatis-Plus 雪花ID | 同 | 同 | 同 |
-| 日期函数 | `CURRENT_TIMESTAMP` | `NOW()` | `SYSDATE` | `GETDATE()` |
-
----
-
-## 5. 模块表前缀参考
-
-| 模块 | 前缀 | 包路径 | 示例表 |
-|------|------|--------|---------|
-| system | `sys_` | `org.dromara.system` | sys_user, sys_menu |
-| demo | `test_` | `org.dromara.demo` | test_demo, test_tree |
-| workflow | `flow_` | `org.dromara.workflow` | flow_xxx |
-
----
-
-## 6. 常见错误对比
-
-### ❌ 不要做
+### 常见查询模式
 
 ```sql
--- 错误1: 使用自增 ID
-id INT AUTO_INCREMENT
+-- 分页查询（配合 MyBatis-Plus Page）
+SELECT id, order_no, status, amount, create_time
+FROM t_order
+WHERE deleted = 0
+  AND status = #{status}
+ORDER BY create_time DESC;
 
--- 错误2: 使用 TINYINT 存储删除标志
-del_flag TINYINT(1)  -- ❌ 应该用 BIGINT
+-- 批量插入
+INSERT INTO t_order (id, order_no, status, amount, create_by, create_time, deleted)
+VALUES
+    (#{id1}, #{orderNo1}, 0, #{amount1}, #{createBy}, NOW(), 0),
+    (#{id2}, #{orderNo2}, 0, #{amount2}, #{createBy}, NOW(), 0);
 
--- 错误3: 软删除字段缺少注释
-del_flag BIGINT  -- ❌ 应添加注释说明用途
-
--- 错误4: 缺少审计字段
-CREATE TABLE xxx (id BIGINT)  -- ❌ 缺少 create_by, update_by 等
-
--- 错误5: 字段名不规范
-userName VARCHAR(50)  -- ❌ 应该是 user_name
-
--- 错误6: COMMENT 使用英文（⚠️ 高频错误，尤其 Codex 协作时）
-`user_name` VARCHAR(50) COMMENT 'user name'        -- ❌ 禁止英文！
-`status` CHAR(1) COMMENT 'status(0=normal 1=off)'  -- ❌ 禁止英文！
-COMMENT='user table'                                -- ❌ 表注释也禁止英文！
+-- 逻辑删除
+UPDATE t_order SET deleted = 1, update_by = #{updateBy}, update_time = NOW()
+WHERE id = #{id} AND deleted = 0;
 ```
 
-### ✅ 正确做法
+### 索引设计原则
+
+1. **必须有主键**：推荐 BIGINT 雪花 ID 或自增
+2. **高频查询字段建索引**：WHERE、JOIN、ORDER BY 中的字段
+3. **联合索引遵循最左前缀**：把区分度高的字段放前面
+4. **避免在大文本字段上建索引**：TEXT、BLOB 等
+5. **控制单表索引数量**：建议不超过 5-6 个
+
+### 数据迁移脚本规范
 
 ```sql
--- 正确1: 使用雪花 ID（MyBatis-Plus 自动生成）
-id BIGINT(20) NOT NULL
+-- V1.0.1__add_order_remark.sql
+-- 描述：订单表新增备注字段
+-- 作者：xxx
+-- 日期：2024-01-01
 
--- 正确2: 逻辑删除字段用 BIGINT
-del_flag BIGINT(20) DEFAULT 0 COMMENT '删除标志'
-
--- 正确3: 添加完整注释
-del_flag BIGINT(20) DEFAULT 0 COMMENT '删除标志(0正常 1已删除)'
-
--- 正确4: 包含所有审计字段（TenantEntity 提供）
-CREATE TABLE xxx (
-    create_by BIGINT,
-    create_time DATETIME,
-    update_by BIGINT,
-    update_time DATETIME
-)
-
--- 正确5: 字段名使用蛇形命名法
-user_name VARCHAR(50)
-
--- 正确6: COMMENT 必须使用中文
-`user_name` VARCHAR(50) COMMENT '用户名'                  -- ✅ 中文
-`status` CHAR(1) DEFAULT '0' COMMENT '状态(0正常 1停用)'   -- ✅ 中文
-COMMENT='用户表'                                           -- ✅ 表注释中文
+ALTER TABLE t_order ADD COLUMN remark VARCHAR(500) DEFAULT NULL COMMENT '备注' AFTER amount;
 ```
 
----
+## 常见错误
 
-## 7. 检查清单
-
-生成表前必须检查：
-
-- [ ] **主键是否是 BIGINT(20)？**（使用雪花 ID）
-- [ ] **是否有 tenant_id 字段？**（多租户隔离）
-- [ ] **是否有 del_flag BIGINT 字段？**（逻辑删除）
-- [ ] **是否有 version BIGINT 字段？**（乐观锁）
-- [ ] **是否有完整的审计字段？**（create_by, create_time, update_by, update_time）
-- [ ] **字段名是否全部使用蛇形命名法？**（xxx_name 而非 xxxName）
-- [ ] **所有字段是否有注释？**
-- [ ] **所有 COMMENT 是否使用中文？**（禁止英文 COMMENT，包括字段注释和表注释）
-- [ ] **Entity 是否继承 TenantEntity？**
-- [ ] **@TableLogic 注解是否应用到 delFlag？**
-- [ ] **SQL 脚本是否保存到正确目录？**（script/sql/ry_vue_5.X.sql）
-
----
-
-## 8. SQL 文件位置
-
-| 数据库 | 脚本位置 |
-|--------|---------|
-| MySQL | `script/sql/ry_vue_5.X.sql` |
-| PostgreSQL | `script/sql/postgres/postgres_ry_vue_5.X.sql` |
-| Oracle | `script/sql/oracle/oracle_ry_vue_5.X.sql` |
-| SQL Server | `script/sql/sqlserver/sqlserver_ry_vue_5.X.sql` |
-
----
-
-## 参考实现
-
-查看已有的完整实现：
-
-- **Entity 参考**: `org.dromara.demo.domain.TestDemo`
-- **表结构参考**: `script/sql/ry_vue_5.X.sql` 中的 test_demo 表
-
-**特别注意**：
-- ✅ 软删除字段类型是 `Long delFlag`（不是 CHAR(1)）
-- ✅ MyBatis-Plus 自动将 Java `delFlag` 映射到数据库 `del_flag`
-- ✅ `@TableLogic` 注解自动处理查询和删除操作
-
----
-
-## 参考实现
-
-查看已有的完整实现：
-
-- **Entity 参考**: `org.dromara.demo.domain.TestDemo`
-- **表结构参考**: `script/sql/ry_vue_5.X.sql` 中的 test_demo 表
-
-**特别注意**：
-- ✅ 软删除字段类型是 `Long delFlag`（不是 CHAR(1)）
-- ✅ MyBatis-Plus 自动将 Java `delFlag` 映射到数据库 `del_flag`
-- ✅ `@TableLogic` 注解自动处理查询和删除操作
-
+| 错误 | 正确做法 |
+|------|---------|
+| 用 VARCHAR 存金额 | 用 BIGINT 存分，或 DECIMAL(10,2) |
+| 字段不加 COMMENT | 所有字段必须有注释 |
+| 表没有主键 | 每张表必须有主键 |
+| 用 UUID 做主键 | 推荐 BIGINT（索引友好） |
+| 逻辑删除值搞反 | 确认项目约定（通用：0=正常, 1=删除） |
+| 大表无索引 | 根据查询模式建立合适索引 |
+| 字段允许 NULL 但业务不允许 | 加 NOT NULL 约束 + DEFAULT 值 |
+| 直接物理删除数据 | 使用逻辑删除，保留数据可追溯 |

@@ -222,11 +222,11 @@ const skillMap = [
   },
   {
     name: 'backend-annotations',
-    keywords: ['@RateLimiter', '@DataScope', '@RepeatSubmit', '@Sensitive', '@EncryptField']
+    keywords: ['注解', '限流', '防重复', '脱敏', '加密注解', 'AOP注解']
   },
   {
     name: 'utils-toolkit',
-    keywords: ['MapstructUtils', 'StreamUtils', 'TreeBuildUtils', 'DateUtils']
+    keywords: ['工具类', '对象转换', '字符串工具', '集合工具', '日期工具', 'BeanUtils']
   },
   {
     name: 'file-oss-management',
@@ -238,7 +238,7 @@ const skillMap = [
   },
   {
     name: 'error-handler',
-    keywords: ['异常处理', 'ServiceException', '全局异常', '参数校验异常']
+    keywords: ['异常处理', '全局异常', '业务异常', '参数校验异常', '@RestControllerAdvice']
   },
   {
     name: 'performance-doctor',
@@ -250,7 +250,7 @@ const skillMap = [
   },
   {
     name: 'security-guard',
-    keywords: ['Sa-Token', '认证授权', '加密', 'XSS', 'SQL注入', '数据脱敏']
+    keywords: ['安全', '认证授权', '加密', 'XSS', 'SQL注入', '数据脱敏', 'Spring Security']
   },
   {
     name: 'architecture-design',
@@ -298,7 +298,7 @@ const skillMap = [
   },
   {
     name: 'scheduled-jobs',
-    keywords: ['定时任务', 'SnailJob', '@Scheduled', '@JobExecutor', '任务调度', '重试机制']
+    keywords: ['定时任务', '@Scheduled', 'Quartz', 'XXL-Job', '任务调度', '重试机制']
   },
   {
     name: 'websocket-sse',
@@ -314,7 +314,7 @@ const skillMap = [
   },
   {
     name: 'tenant-management',
-    keywords: ['多租户', '租户隔离', 'TenantEntity', 'TenantHelper', 'tenantId', '跨租户', 'SaaS']
+    keywords: ['多租户', '租户隔离', 'tenantId', '跨租户', 'SaaS', '数据隔离']
   },
   {
     name: 'ui-pc',
@@ -331,6 +331,10 @@ const skillMap = [
   {
     name: 'banana-image',
     keywords: ['生成图片', 'AI图片', '产品图', '海报', '缩略图', '4K图片', '高清图', '制作图片', '/image']
+  },
+  {
+    name: 'codex-code-review',
+    keywords: ['代码审查', 'code review', 'review代码', '代码检查', 'codex审查']
   },
   {
     name: 'collaborating-with-codex',
@@ -365,6 +369,62 @@ const skillMap = [
     name: 'openspec-onboard',
     keywords: ['openspec入门', 'opsx:onboard', 'openspec onboard', 'openspec教程',
       'openspec新手', '学习openspec工作流']
+  },
+  {
+    name: 'loki-log-query',
+    keywords: ['Loki', '日志查询', '线上日志', 'Loki日志', '日志排查', 'LogQL']
+  },
+  {
+    name: 'yunxiao-task-management',
+    keywords: ['云效', '任务管理', '需求管理', '云效任务', 'yunxiao', '迭代管理']
+  },
+  {
+    name: 'crud',
+    keywords: ['快速CRUD', 'CRUD生成', '脚手架生成', '/crud']
+  },
+  {
+    name: 'dev',
+    keywords: ['开发新功能', '功能开发', '/dev', '新建功能']
+  },
+  {
+    name: 'check',
+    keywords: ['代码检查', '规范检查', '/check', '代码审查规范']
+  },
+  {
+    name: 'start',
+    keywords: ['项目启动', '初始化项目', '/start', '开始项目']
+  },
+  {
+    name: 'next',
+    keywords: ['下一步', '接下来', '/next', '继续做什么']
+  },
+  {
+    name: 'progress',
+    keywords: ['进度查看', '当前进度', '/progress', '任务进度']
+  },
+  {
+    name: 'sync',
+    keywords: ['同步代码', '代码同步', '/sync', '同步分支']
+  },
+  {
+    name: 'sync-back-merge',
+    keywords: ['回合并', 'sync back merge', '主分支同步', '回合主分支']
+  },
+  {
+    name: 'init-docs',
+    keywords: ['初始化文档', '项目文档', '生成文档', '/init-docs']
+  },
+  {
+    name: 'add-todo',
+    keywords: ['添加待办', '新增TODO', '任务添加', '/add-todo']
+  },
+  {
+    name: 'update-status',
+    keywords: ['更新状态', '状态变更', '修改状态', '/update-status']
+  },
+  {
+    name: 'skill-creator',
+    keywords: ['创建技能', '技能模板', '技能脚手架', 'skill scaffold', '新建skill']
   }
 ];
 

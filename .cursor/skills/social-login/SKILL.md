@@ -1,266 +1,328 @@
 ---
 name: social-login
 description: |
-  当需要实现第三方登录、OAuth2 认证、社交账号绑定时自动使用此 Skill。
-
+  通用 OAuth2 第三方登录开发指南。涵盖授权码流程、接口设计、账号绑定机制、多平台接入。
   触发场景：
-  - 需要接入微信/QQ/支付宝等第三方登录
-  - 需要实现 OAuth2 授权流程
-  - 需要配置 JustAuth 第三方登录
-  - 需要实现社交账号与系统账号绑定
-  - 需要获取第三方用户信息
-
-  触发词：第三方登录、微信登录、QQ登录、OAuth、OAuth2、JustAuth、社交登录、扫码登录、AuthRequest、SocialUtils、授权登录、GitHub登录、钉钉登录
+  - 接入微信/QQ/GitHub 等第三方登录
+  - 实现 OAuth2 授权码流程
+  - 实现社交账号与系统账号绑定/解绑
+  - 获取第三方用户信息
+  触发词：第三方登录、OAuth、OAuth2、社交登录、微信登录、QQ登录、GitHub登录、扫码登录、授权码、授权登录
+  注意：如果项目有专属技能，优先使用专属版本。
 ---
 
-# 第三方登录开发指南（JustAuth）
+# OAuth2 第三方登录开发指南
 
-> **适用模块**：`ruoyi-common-social`（基于 JustAuth）
-> **特性**：Sa-Token 认证集成、Redis 状态缓存（防 CSRF）、多租户支持、账号绑定机制
+> 通用模板。如果项目有专属技能，优先使用。
 
-## 一、支持平台
+## 设计原则
 
-| 平台 | source 标识 | 平台 | source 标识 |
-|------|------------|------|------------|
-| 钉钉 | `dingtalk` | GitHub | `github` |
-| Gitee | `gitee` | 微博 | `weibo` |
-| 支付宝 | `alipay_wallet` | QQ | `qq` |
-| 微信开放平台 | `wechat_open` | 微信公众号 | `wechat_mp` |
-| 企业微信 | `wechat_enterprise` | 抖音 | `douyin` |
-| 华为 | `huawei` | 微软 | `microsoft` |
-| MaxKey | `maxkey` | TopIAM | `topiam` |
-| GitLab | `gitlab` | Gitea | `gitea` |
-
-完整平台列表及特殊配置详见 `references/provider-configs.md`。
+1. **标准协议**：遵循 OAuth 2.0 授权码模式（Authorization Code Flow），这是最安全的 OAuth 流程。
+2. **状态防护**：使用 `state` 参数防止 CSRF 攻击，每次授权请求生成唯一 state 并校验。
+3. **绑定机制**：第三方账号与系统账号通过绑定表关联，支持一个系统账号绑定多个第三方平台。
+4. **信息最小化**：只获取必要的第三方用户信息（OpenID、昵称、头像），不过度获取。
 
 ---
 
-## 二、基础配置
+## OAuth 2.0 授权码流程
 
-```yaml
-justauth:
-  address: https://your-domain.com    # 回调地址前缀
-  type:
-    github:
-      client-id: ${GITHUB_CLIENT_ID:}
-      client-secret: ${GITHUB_CLIENT_SECRET:}
-      redirect-uri: ${justauth.address}/social-callback?source=github
-    gitee:
-      client-id: ${GITEE_CLIENT_ID:}
-      client-secret: ${GITEE_CLIENT_SECRET:}
-      redirect-uri: ${justauth.address}/social-callback?source=gitee
-    dingtalk:
-      client-id: ${DINGTALK_APP_KEY:}
-      client-secret: ${DINGTALK_APP_SECRET:}
-      redirect-uri: ${justauth.address}/social-callback?source=dingtalk
+```
+用户 -> 前端 -> 后端（生成授权URL） -> 第三方平台（授权页）
+                                              |
+用户授权                                       |
+                                              v
+第三方平台 -> 前端回调页（携带 code + state）-> 后端
+                                              |
+后端用 code 换 access_token                    |
+后端用 access_token 获取用户信息                |
+                                              v
+                                     查绑定关系 -> 登录/绑定
 ```
 
-> 各平台特殊配置（微软 tenantId、企业微信 agentId、支付宝公钥等）详见 `references/provider-configs.md`。
+### 步骤详解
+
+| 步骤 | 描述 | 关键参数 |
+|------|------|---------|
+| 1. 构建授权 URL | 拼接第三方授权地址 | client_id, redirect_uri, state, scope |
+| 2. 用户授权 | 用户在第三方平台确认授权 | - |
+| 3. 回调获取 code | 第三方重定向回应用 | code, state |
+| 4. code 换 token | 后端调用第三方 Token 接口 | code, client_id, client_secret |
+| 5. 获取用户信息 | 后端调用第三方用户信息接口 | access_token |
+| 6. 登录/绑定 | 根据 OpenID 查找绑定关系 | openId, source |
 
 ---
 
-## 三、核心 API
+## 实现模式
 
-### 3.1 SocialUtils
-
-**位置**：`org.dromara.common.social.utils.SocialUtils`
+### 一、抽象接口设计
 
 ```java
-import org.dromara.common.social.utils.SocialUtils;
-import me.zhyd.oauth.model.AuthResponse;
-import me.zhyd.oauth.model.AuthUser;
-import me.zhyd.oauth.request.AuthRequest;
+// 第三方认证请求接口
+public interface SocialAuthProvider {
+    String getSource();                              // 平台标识
+    String buildAuthorizeUrl(String state);           // 构建授权URL
+    SocialUser authenticate(String code, String state); // 回调认证
+}
 
-// 获取授权请求对象
-AuthRequest authRequest = SocialUtils.getAuthRequest("github", socialProperties);
-
-// 生成授权 URL
-String authorizeUrl = authRequest.authorize(state);
-
-// 处理回调登录
-AuthResponse<AuthUser> response = SocialUtils.loginAuth(
-    "github", code, state, socialProperties
-);
-if (response.ok()) {
-    AuthUser user = response.getData();
-    String openId = user.getUuid();       // 唯一标识
-    String nickname = user.getNickname(); // 昵称
-    String source = user.getSource();     // 来源平台
+// 第三方用户信息
+@Data
+public class SocialUser {
+    private String openId;      // 平台唯一标识
+    private String source;      // 来源平台（github, wechat_open 等）
+    private String nickname;    // 昵称
+    private String avatar;      // 头像
+    private String email;       // 邮箱（可能为空）
+    private String accessToken; // 第三方 Token
+    private Map<String, Object> rawInfo; // 原始数据
 }
 ```
 
-### 3.2 AuthUser 关键字段
-
-| 属性 | 说明 | 属性 | 说明 |
-|------|------|------|------|
-| `uuid` | 平台用户唯一ID | `username` | 用户名 |
-| `nickname` | 昵称 | `avatar` | 头像 |
-| `email` | 邮箱 | `source` | 来源平台 |
-| `token` | Token 信息 | `rawUserInfo` | 原始数据(Map) |
-
-### 3.3 状态缓存
-
-`AuthRedisStateCache` 自动管理 OAuth2 state 参数（Redis 缓存，3分钟过期），无需手动操作。
-
----
-
-## 四、后端实现
-
-### 4.1 生成授权 URL
+### 二、GitHub 实现示例
 
 ```java
-@GetMapping("/binding/{source}")
-public R<String> authBinding(@PathVariable String source) {
-    AuthRequest authRequest = SocialUtils.getAuthRequest(source, socialProperties);
-    String state = AuthStateUtils.createState();
-    return R.ok("操作成功", authRequest.authorize(state));
-}
-```
+@Component
+public class GitHubAuthProvider implements SocialAuthProvider {
 
-### 4.2 回调登录（SocialAuthStrategy）
+    @Value("${social.github.client-id}")
+    private String clientId;
 
-```java
-@Slf4j
-@Service("social" + IAuthStrategy.BASE_NAME)
-@RequiredArgsConstructor
-public class SocialAuthStrategy implements IAuthStrategy {
+    @Value("${social.github.client-secret}")
+    private String clientSecret;
+
+    @Value("${social.github.redirect-uri}")
+    private String redirectUri;
 
     @Override
-    public LoginVo login(String body, SysClientVo client) {
-        SocialLoginBody loginBody = JsonUtils.parseObject(body, SocialLoginBody.class);
-        ValidatorUtils.validate(loginBody);
+    public String getSource() { return "github"; }
 
-        // 1. 获取第三方用户信息
-        AuthResponse<AuthUser> response = SocialUtils.loginAuth(
-            loginBody.getSource(), loginBody.getSocialCode(),
-            loginBody.getSocialState(), socialProperties);
-        if (!response.ok()) {
-            throw new ServiceException(response.getMsg());
-        }
+    @Override
+    public String buildAuthorizeUrl(String state) {
+        return "https://github.com/login/oauth/authorize"
+            + "?client_id=" + clientId
+            + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+            + "&state=" + state
+            + "&scope=user:email";
+    }
 
-        // 2. 查找绑定关系
-        String authId = response.getData().getSource() + response.getData().getUuid();
-        List<SysSocialVo> list = sysSocialService.selectByAuthId(authId);
-        if (CollUtil.isEmpty(list)) {
-            throw new ServiceException("你还没有绑定第三方账号，绑定后才可以登录！");
-        }
+    @Override
+    public SocialUser authenticate(String code, String state) {
+        // 1. code 换 access_token
+        String tokenUrl = "https://github.com/login/oauth/access_token";
+        Map<String, String> body = Map.of(
+            "client_id", clientId,
+            "client_secret", clientSecret,
+            "code", code
+        );
+        String accessToken = httpPost(tokenUrl, body); // 解析响应获取 token
 
-        // 3. 生成系统 Token
-        LoginUser loginUser = loginService.buildLoginUser(loadUser(list.get(0).getUserId()));
-        LoginHelper.login(loginUser, new SaLoginParameter()
-            .setDeviceType(client.getDeviceType())
-            .setTimeout(client.getTimeout())
-            .setActiveTimeout(client.getActiveTimeout()));
+        // 2. 获取用户信息
+        String userInfo = httpGet("https://api.github.com/user",
+            Map.of("Authorization", "Bearer " + accessToken));
 
-        LoginVo loginVo = new LoginVo();
-        loginVo.setAccessToken(StpUtil.getTokenValue());
-        loginVo.setExpireIn(StpUtil.getTokenTimeout());
-        return loginVo;
+        // 3. 构建 SocialUser
+        SocialUser user = new SocialUser();
+        user.setOpenId(parseField(userInfo, "id"));
+        user.setSource("github");
+        user.setNickname(parseField(userInfo, "login"));
+        user.setAvatar(parseField(userInfo, "avatar_url"));
+        user.setEmail(parseField(userInfo, "email"));
+        return user;
     }
 }
 ```
 
-### 4.3 账号绑定
+### 三、Controller 层
 
 ```java
-// 绑定：AuthController.socialCallback() → SysLoginService.socialRegister()
-@PostMapping("/social/callback")
-public R<Void> socialCallback(@RequestBody SocialLoginBody loginBody) {
-    StpUtil.checkLogin();
-    AuthResponse<AuthUser> response = SocialUtils.loginAuth(...);
-    if (!response.ok()) return R.fail(response.getMsg());
-    loginService.socialRegister(response.getData());
-    return R.ok();
-}
+@RestController
+@RequestMapping("/auth/social")
+public class SocialLoginController {
 
-// socialRegister 核心逻辑：
-// 1. 生成 authId = source + uuid
-// 2. 检查 authId 是否已被其他用户绑定
-// 3. 查询当前用户是否已绑定该平台 -> 新增或更新
+    @Autowired
+    private Map<String, SocialAuthProvider> providers; // Spring 自动注入所有实现
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private SocialBindService bindService;
+
+    // 1. 获取授权 URL
+    @GetMapping("/authorize/{source}")
+    public Result<String> authorize(@PathVariable String source) {
+        SocialAuthProvider provider = getProvider(source);
+        String state = UUID.randomUUID().toString().replace("-", "");
+        // state 存入 Redis，3分钟有效
+        redisTemplate.opsForValue().set("social:state:" + state, source, 3, TimeUnit.MINUTES);
+        return Result.ok(provider.buildAuthorizeUrl(state));
+    }
+
+    // 2. 回调登录
+    @PostMapping("/callback")
+    public Result<?> callback(@RequestBody SocialCallbackDTO dto) {
+        // 校验 state
+        String cachedSource = redisTemplate.opsForValue().get("social:state:" + dto.getState());
+        if (cachedSource == null) {
+            throw new [你的异常类]("授权已过期，请重新操作");
+        }
+        redisTemplate.delete("social:state:" + dto.getState());
+
+        // 获取第三方用户信息
+        SocialAuthProvider provider = getProvider(dto.getSource());
+        SocialUser socialUser = provider.authenticate(dto.getCode(), dto.getState());
+
+        // 查找绑定关系
+        String authId = socialUser.getSource() + ":" + socialUser.getOpenId();
+        SocialBind bind = bindService.findByAuthId(authId);
+
+        if (bind == null) {
+            // 未绑定 -> 返回第三方信息，引导绑定或注册
+            return Result.fail("NEED_BINDIND", "请绑定系统账号", socialUser);
+        }
+
+        // 已绑定 -> 执行登录
+        LoginUser loginUser = loadUserById(bind.getUserId());
+        String token = [你的认证工具类].login(loginUser);
+        return Result.ok(Map.of("token", token));
+    }
+
+    // 3. 绑定（已登录用户绑定第三方账号）
+    @PostMapping("/bind")
+    public Result<?> bind(@RequestBody SocialCallbackDTO dto) {
+        [你的认证工具类].checkLogin();
+        Long currentUserId = [你的认证工具类].getCurrentUserId();
+
+        SocialAuthProvider provider = getProvider(dto.getSource());
+        SocialUser socialUser = provider.authenticate(dto.getCode(), dto.getState());
+
+        String authId = socialUser.getSource() + ":" + socialUser.getOpenId();
+        bindService.bindOrUpdate(currentUserId, authId, socialUser);
+        return Result.ok("绑定成功");
+    }
+
+    // 4. 解绑
+    @DeleteMapping("/unbind/{bindId}")
+    public Result<?> unbind(@PathVariable Long bindId) {
+        [你的认证工具类].checkLogin();
+        bindService.unbind(bindId, [你的认证工具类].getCurrentUserId());
+        return Result.ok("已解除绑定");
+    }
+
+    private SocialAuthProvider getProvider(String source) {
+        // providers Map 的 key 是 Bean 名称，需要匹配 source
+        return providers.values().stream()
+            .filter(p -> p.getSource().equals(source))
+            .findFirst()
+            .orElseThrow(() -> new [你的异常类]("不支持的登录平台: " + source));
+    }
+}
 ```
 
-### 4.4 解绑
+### 四、绑定表设计
 
-```java
-@DeleteMapping("/unlock/{socialId}")
-public R<Void> unlockSocial(@PathVariable Long socialId) {
-    StpUtil.checkLogin();
-    return socialUserService.deleteWithValidById(socialId) ? R.ok() : R.fail("取消授权失败");
-}
+```sql
+CREATE TABLE sys_social_bind (
+    id          BIGINT       NOT NULL COMMENT '主键',
+    user_id     BIGINT       NOT NULL COMMENT '系统用户ID',
+    auth_id     VARCHAR(128) NOT NULL COMMENT '唯一标识 (source:openId)',
+    source      VARCHAR(32)  NOT NULL COMMENT '来源平台',
+    open_id     VARCHAR(128) NOT NULL COMMENT '平台用户ID',
+    nickname    VARCHAR(64)           COMMENT '昵称',
+    avatar      VARCHAR(512)          COMMENT '头像',
+    email       VARCHAR(128)          COMMENT '邮箱',
+    created_time DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_auth_id (auth_id),
+    KEY idx_user_id (user_id)
+);
+```
+
+### 五、配置
+
+```yaml
+social:
+  github:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
+    redirect-uri: https://your-domain.com/social-callback?source=github
+  wechat:
+    app-id: ${WECHAT_APP_ID:}
+    app-secret: ${WECHAT_APP_SECRET:}
+    redirect-uri: https://your-domain.com/social-callback?source=wechat_open
 ```
 
 ---
 
-## 五、前端集成
+## 选型建议
+
+| 方案 | 优点 | 缺点 | 适用场景 |
+|------|------|------|---------|
+| 自研（如上） | 完全可控、无依赖 | 每个平台需手动对接 | 接入 1-3 个平台 |
+| JustAuth | 开箱即用、20+ 平台 | 引入第三方依赖 | 多平台快速接入 |
+| Spring Security OAuth2 Client | Spring 生态原生 | 配置复杂 | 企业级、标准 OAuth2 |
+
+### 常见平台接入
+
+| 平台 | 标识 | 特殊要求 |
+|------|------|---------|
+| GitHub | `github` | 无 |
+| 微信开放平台 | `wechat_open` | 需企业开发者认证 |
+| 微信公众号 | `wechat_mp` | 需服务号 |
+| QQ | `qq` | 需备案域名 |
+| 钉钉 | `dingtalk` | 需创建 H5 微应用 |
+| 企业微信 | `wechat_enterprise` | 需 agentId |
+| 支付宝 | `alipay` | 需应用公钥/私钥 |
+
+---
+
+## 常见错误
+
+```java
+// 1. 不校验 state 参数（CSRF 攻击风险）
+SocialUser user = provider.authenticate(code, state);
+// 应先从 Redis 校验 state 是否有效
+
+// 2. 回调地址与第三方平台配置不一致
+// 应确保 redirect_uri 与第三方平台配置完全一致（包括协议、域名、路径、参数）
+
+// 3. 不检查认证响应
+SocialUser user = provider.authenticate(code, state);
+user.getOpenId();  // 认证可能失败，user 为 null 或字段缺失
+// 应先检查认证结果
+
+// 4. source 标识拼写错误
+getProvider("wechat");       // 不存在
+getProvider("wechat_open");  // 正确
+
+// 5. 绑定关系不检查冲突
+// 同一个第三方账号被多个系统账号绑定
+// authId 应设为唯一索引
+
+// 6. 未处理 Token 过期
+// 第三方 access_token 有有效期，需要用 refresh_token 刷新
+// 或每次登录重新获取
+
+// 7. 前端直接传 client_secret
+// client_secret 只能在后端使用，绝不能暴露给前端
+```
+
+### 前端集成参考
 
 ```javascript
 // 跳转授权
-const { data } = await request.get(`/auth/binding/${source}`);
-window.location.href = data;
+const { data: authorizeUrl } = await request.get(`/auth/social/authorize/${source}`);
+window.location.href = authorizeUrl;
 
 // 回调页面处理
-const { source, code, state } = this.$route.query;
-const { data } = await request.post('/auth/login', {
-    grantType: 'social',
-    source, socialCode: code, socialState: state,
-    clientId: 'your-client-id'
+const { source, code, state } = getQueryParams();
+const { data } = await request.post('/auth/social/callback', {
+    source, code, state
 });
-setToken(data.accessToken);
-```
-
----
-
-## 六、常见错误
-
-```yaml
-# ❌ 回调地址与第三方平台配置不一致
-redirect-uri: http://localhost:8080/callback
-
-# ✅ 使用与第三方平台一致的地址
-redirect-uri: https://your-domain.com/social-callback?source=github
-```
-
-```java
-// ❌ 不检查响应结果
-AuthUser user = response.getData();  // 可能 null
-
-// ✅ 先检查状态
-if (!response.ok()) throw new ServiceException(response.getMsg());
-
-// ❌ source 标识拼写错误
-SocialUtils.getAuthRequest("wechat", props);       // 不存在
-
-// ✅ 正确标识
-SocialUtils.getAuthRequest("wechat_open", props);   // 微信开放平台
-SocialUtils.getAuthRequest("wechat_mp", props);     // 微信公众号
-```
-
----
-
-## 七、扩展自定义平台
-
-```java
-public class AuthCustomRequest extends AuthDefaultRequest {
-    public AuthCustomRequest(AuthConfig config, AuthStateCache stateCache) {
-        super(config, AuthCustomSource.CUSTOM, stateCache);
-    }
-    @Override
-    protected AuthToken getAccessToken(AuthCallback authCallback) { ... }
-    @Override
-    protected AuthUser getUserInfo(AuthToken authToken) { ... }
+if (data.token) {
+    setToken(data.token);
+    router.push('/');
+} else {
+    // 引导绑定或注册
+    router.push({ path: '/bindAccount', query: { source, code, state } });
 }
-// 然后在 SocialUtils.getAuthRequest() 中添加对应 case
 ```
-
----
-
-## 八、参考代码位置
-
-| 类型 | 位置 |
-|------|------|
-| SocialUtils | `ruoyi-common/ruoyi-common-social/.../utils/SocialUtils.java` |
-| AuthRedisStateCache | `ruoyi-common/ruoyi-common-social/.../utils/AuthRedisStateCache.java` |
-| SocialProperties | `ruoyi-common/ruoyi-common-social/.../config/properties/SocialProperties.java` |
-| SocialAuthStrategy | `ruoyi-admin/.../web/service/impl/SocialAuthStrategy.java` |
-| AuthController | `ruoyi-admin/.../web/controller/AuthController.java` |
-| ISysSocialService | `ruoyi-modules/ruoyi-system/.../service/ISysSocialService.java` |

@@ -1,20 +1,19 @@
 ---
 name: api-development
 description: |
-  后端 API 接口设计规范。基于三层架构的 RESTful API 开发指南。
+  后端 API 接口设计规范。基于 Spring Boot 的 RESTful API 开发指南。
 
   触发场景：
   - 设计 RESTful API 接口
   - 编写 Controller 层代码
-  - 配置接口权限、日志、防重复提交注解
+  - 配置接口权限、日志注解
   - 接口返回值类型选择
   - 数据验证和参数校验
 
   触发词：API、接口、RESTful、Controller、GetMapping、PostMapping、权限注解、日志注解、分页查询、接口规范
 
   注意：
-  - 本项目是三层架构：Controller -> Service -> Mapper
-  - 参考 java-controller 技能获取更详细的 Controller 层规范
+  - 参考项目实际架构层次选择合适的分层模式
 ---
 
 # API 接口设计规范
@@ -23,22 +22,22 @@ description: |
 
 | 原则 | 说明 |
 |------|------|
-| 统一入口 | 所有接口使用 POST 或 RESTful 风格 |
+| RESTful 风格 | 使用标准 HTTP 方法表达语义 |
 | 认证保护 | 所有业务接口必须添加认证注解 |
 | 参数校验 | 使用分组校验区分新增/修改场景 |
 | 统一响应 | 使用统一的响应格式包装返回数据 |
 
 ### HTTP 方法规范
 
-| 操作 | 方法 | 路径 |
-|------|------|------|
-| 列表查询 | POST/GET | `/query` 或 `/list` |
-| 获取详情 | POST/GET | `/{id}` 或 `/detail` |
-| 新增 | POST | `/add` |
-| 修改 | POST/PUT | `/update` |
-| 删除 | POST/DELETE | `/delete` 或 `/batch/delete` |
+| 操作 | 方法 | 路径示例 |
+|------|------|---------|
+| 列表查询 | GET | `/list` 或 `/page` |
+| 获取详情 | GET | `/{id}` |
+| 新增 | POST | `/` 或 `/add` |
+| 修改 | PUT | `/` 或 `/update` |
+| 删除 | DELETE | `/{ids}` |
 | 导出 | POST | `/export` |
-| 导入 | POST | `/import-excel` |
+| 导入 | POST | `/import` |
 
 ---
 
@@ -47,64 +46,105 @@ description: |
 ```java
 @Slf4j
 @RestController
-@RequiresAuthentication
-@RequestMapping("/module/feature")
-@Api(value = "模块/功能", tags = "模块/功能")
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/[模块]/[功能]")
 public class XxxController {
 
-    @Resource @Lazy
-    private XxxService xxxService;
+    private final XxxService xxxService;
 
-    @PostMapping("/add")
-    @ApiOperation(value = "功能描述-新增")
-    public Long add(@Validated(InsertGroup.class) @RequestBody LeRequest<XxxDTO> request) {
-        return xxxService.add(request.getContent());
+    /**
+     * 分页查询
+     */
+    @GetMapping("/page")
+    public Result<PageResult<XxxVO>> page(XxxQueryDTO query) {
+        return Result.ok(xxxService.pageList(query));
     }
 
-    @PostMapping("/update")
-    @ApiOperation(value = "功能描述-修改")
-    public void update(@Validated(UpdateGroup.class) @RequestBody LeRequest<XxxDTO> request) {
-        xxxService.update(request.getContent());
+    /**
+     * 获取详情
+     */
+    @GetMapping("/{id}")
+    public Result<XxxVO> getById(@PathVariable Long id) {
+        return Result.ok(xxxService.getById(id));
     }
 
-    @PostMapping("/query")
-    @ApiOperation(value = "功能描述-分页查询")
-    public Page<XxxVO> query(@Validated @RequestBody LeRequest<XxxQueryParam> request) {
-        return xxxService.pageList(request.getContent());
+    /**
+     * 新增
+     */
+    @PostMapping
+    public Result<Long> add(@Validated(InsertGroup.class) @RequestBody XxxDTO dto) {
+        return Result.ok(xxxService.add(dto));
     }
 
-    @PostMapping("/delete")
-    @ApiOperation(value = "功能描述-删除")
-    public void delete(@RequestBody LeRequest<Long> request) {
-        xxxService.delete(request.getContent());
+    /**
+     * 修改
+     */
+    @PutMapping
+    public Result<Void> update(@Validated(UpdateGroup.class) @RequestBody XxxDTO dto) {
+        xxxService.update(dto);
+        return Result.ok();
+    }
+
+    /**
+     * 删除
+     */
+    @DeleteMapping("/{ids}")
+    public Result<Void> delete(@PathVariable List<Long> ids) {
+        xxxService.deleteByIds(ids);
+        return Result.ok();
     }
 }
 ```
 
 ---
 
-## 参数封装规范
+## 统一响应封装
 
-### 请求参数用 LeRequest 包装
-
-```java
-@PostMapping("/query")
-public Page<XxxVO> query(@RequestBody LeRequest<XxxQueryParam> request) {
-    return xxxService.pageList(request.getContent());
-}
-```
-
-### 分页参数
+### Result 包装类（通用模式）
 
 ```java
 @Data
-public class XxxPageParam implements Serializable {
-    @NotNull(message = "分页参数不能为空")
-    private PageDTO page;
-    private String keyword;
-    private Integer status;
+public class Result<T> {
+    private int code;
+    private String message;
+    private T data;
+
+    public static <T> Result<T> ok() {
+        return ok(null);
+    }
+
+    public static <T> Result<T> ok(T data) {
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(data);
+        return result;
+    }
+
+    public static <T> Result<T> fail(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(500);
+        result.setMessage(message);
+        return result;
+    }
 }
 ```
+
+### 分页响应
+
+```java
+@Data
+public class PageResult<T> {
+    private List<T> records;
+    private long total;
+    private long current;
+    private long size;
+}
+```
+
+---
+
+## 参数校验
 
 ### 分组校验
 
@@ -116,142 +156,152 @@ public class XxxDTO {
     private Long id;
 
     @NotBlank(message = "名称不能为空", groups = {InsertGroup.class, UpdateGroup.class})
+    @Size(max = 100, message = "名称长度不能超过100个字符")
     private String name;
+
+    @Min(value = 0, message = "排序不能为负数")
+    private Integer sort;
 }
 
 // Controller 中应用
-@PostMapping("/add")
-public Long add(@Validated(InsertGroup.class) @RequestBody LeRequest<XxxDTO> request)
+@PostMapping
+public Result<Long> add(@Validated(InsertGroup.class) @RequestBody XxxDTO dto) { ... }
+
+@PutMapping
+public Result<Void> update(@Validated(UpdateGroup.class) @RequestBody XxxDTO dto) { ... }
 ```
 
-> Jakarta Validation: 项目用 JDK 21，必须 `import jakarta.validation.constraints.*`
+> Jakarta Validation: JDK 17+ 必须 `import jakarta.validation.constraints.*`
 
----
-
-## 响应格式
+### 查询参数
 
 ```java
-// 分页响应
-@PostMapping("/query")
-public Page<XxxVO> query(@RequestBody LeRequest<XxxQueryParam> request) { ... }
+@Data
+public class XxxQueryDTO {
+    private String keyword;
+    private Integer status;
 
-// 单条数据
-@GetMapping("/{id}")
-public XxxVO getById(@PathVariable Long id) { ... }
+    @Min(value = 1)
+    private Integer pageNum = 1;
 
-// 新增返回 ID / 修改删除返回 void
-@PostMapping("/add")
-public Long add(@RequestBody LeRequest<XxxDTO> request) { ... }
+    @Min(value = 1) @Max(value = 100)
+    private Integer pageSize = 10;
+}
 ```
 
 ---
 
 ## 常见场景
 
-### 带 Redisson 分布式锁的导入
+### 带分布式锁的导入
 
 ```java
-@PostMapping("/import-excel")
-@ApiOperation(value = "Excel导入")
-public void importExcel(@RequestParam(value = "file") MultipartFile file) {
-    if (Objects.isNull(file) || file.isEmpty()) {
-        throw new LeException("文件不能为空");
+@PostMapping("/import")
+public Result<Void> importExcel(@RequestPart("file") MultipartFile file) {
+    if (file == null || file.isEmpty()) {
+        throw new [你的异常类]("文件不能为空");
     }
-    RLock lock = redissonClient.getLock("import:lock:" + TenantContextHolder.getTenantId());
-    if (!lock.tryLock(5, 60, TimeUnit.SECONDS)) {
-        throw new LeException("正在处理中，请稍后再试");
-    }
+    RLock lock = redissonClient.getLock("import:lock:" + getCurrentTenantId());
     try {
-        xxxService.importExcel(file);
-    } finally {
-        if (lock.isLocked() && lock.isHeldByCurrentThread()) {
-            lock.unlock();
+        if (!lock.tryLock(5, 60, TimeUnit.SECONDS)) {
+            throw new [你的异常类]("正在处理中，请稍后再试");
         }
+        try {
+            xxxService.importExcel(file);
+        } finally {
+            if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new [你的异常类]("导入被中断");
     }
+    return Result.ok();
 }
 ```
 
 ### 批量删除
 
 ```java
-@RequestMapping(value = "/batch/delete", method = {RequestMethod.POST, RequestMethod.PUT})
-@ApiOperation(value = "批量删除")
-public void batchDelete(@RequestBody LeRequest<List<Long>> request) {
-    if (CollUtil.isEmpty(request.getContent())) {
-        throw new LeException("ID列表不能为空");
+@DeleteMapping("/{ids}")
+public Result<Void> delete(@PathVariable List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+        throw new [你的异常类]("ID列表不能为空");
     }
-    xxxService.batchDelete(request.getContent());
+    xxxService.deleteByIds(ids);
+    return Result.ok();
 }
 ```
 
-### 带合计行的分页查询
+### 文件上传
 
 ```java
-@PostMapping("/query")
-@ApiOperation(value = "分页查询（带合计）")
-public ReportBaseTotalVO<XxxVO> query(@RequestBody LeRequest<XxxQueryParam> request) {
-    ReportBaseTotalVO<XxxVO> result = new ReportBaseTotalVO<>();
-    result.setTotalLine(xxxService.getSummaryTotal(request.getContent()));
-    result.setResultPage(PageVO.of(xxxService.pageList(request.getContent())));
-    return result;
+@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public Result<UploadResult> upload(@RequestPart("file") MultipartFile file) {
+    return Result.ok(ossService.upload(file));
 }
 ```
 
 ---
 
-## Swagger 注解
+## API 文档注解
+
+### Swagger / SpringDoc 注解
 
 ```java
-@Api(value = "模块/功能", tags = "模块/功能")  // Controller 类
-@ApiOperation(value = "功能描述-新增")           // 方法
-@ApiModel("功能描述DTO")                         // DTO/VO 类
-@ApiModelProperty(value = "主键ID", required = true) // 字段
+// SpringDoc (OpenAPI 3.0, 推荐)
+@Tag(name = "用户管理")                              // Controller 类
+@Operation(summary = "新增用户")                      // 方法
+@Schema(description = "用户DTO")                      // DTO/VO 类
+@Schema(description = "主键ID", requiredMode = REQUIRED) // 字段
+
+// Swagger 2 (旧项目)
+@Api(value = "用户管理", tags = "用户管理")
+@ApiOperation(value = "新增用户")
+@ApiModel("用户DTO")
+@ApiModelProperty(value = "主键ID", required = true)
+```
+
+---
+
+## 全局异常处理
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler([你的异常类].class)
+    public Result<Void> handleBusinessException([你的异常类] e) {
+        return Result.fail(e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<Void> handleValidException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+            .map(FieldError::getDefaultMessage)
+            .collect(Collectors.joining(", "));
+        return Result.fail(message);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Result<Void> handleException(Exception e) {
+        log.error("系统异常", e);
+        return Result.fail("系统繁忙，请稍后再试");
+    }
+}
 ```
 
 ---
 
 ## 检查清单
 
-- [ ] 认证注解 `@RequiresAuthentication`
-- [ ] API 文档注解 `@ApiOperation`
+- [ ] 认证注解（`@PreAuthorize` / `[你的认证注解]`）
+- [ ] API 文档注解（`@Operation` / `@ApiOperation`）
 - [ ] 参数校验 `@Validated` + 分组
-- [ ] 返回值类型正确（分页用 `Page<VO>`）
-- [ ] 使用 `LeRequest<T>` 封装请求
+- [ ] 统一响应包装 `Result<T>`
 - [ ] 敏感操作加分布式锁
-
----
-
-## 多项目对比
-
-| 特征 | RuoYi-Vue-Plus | leniu-tengyun-core |
-|-----|----------------|-------------------|
-| JDK | 17 | 21 |
-| 包名 | `org.dromara.*` | `net.xnzn.core.*` |
-| 请求封装 | 直接 BO | `LeRequest<T>` |
-| 响应封装 | `R<T>`, `TableDataInfo<T>` | `Page<T>`, `void` |
-| 分组校验 | `AddGroup`, `EditGroup` | `InsertGroup`, `UpdateGroup` |
-| 认证 | `@SaCheckPermission` | `@RequiresAuthentication` |
-| 异常 | `ServiceException` | `LeException` |
-| 国际化 | `MessageUtils.message()` | `I18n.getMessage()` |
-
----
-
-## 错误对比
-
-```java
-// ---- 错误 ----
-@RestController                                    // 缺认证注解
-public Long add(@RequestBody XxxDTO dto) { }       // 不用 LeRequest
-public Long add(@Valid @RequestBody LeRequest<XxxDTO> request) { }  // @Valid 应为 @Validated(InsertGroup.class)
-import javax.validation.constraints.NotNull;        // JDK 21 用 jakarta
-
-// ---- 正确 ----
-@RestController @RequiresAuthentication
-public Long add(@Validated(InsertGroup.class) @RequestBody LeRequest<XxxDTO> request) {
-    return xxxService.add(request.getContent());
-}
-import jakarta.validation.constraints.NotNull;
-```
+- [ ] 全局异常处理器已配置
 
 ---
 
@@ -259,8 +309,7 @@ import jakarta.validation.constraints.NotNull;
 
 | 需要了解 | Skill |
 |---------|-------|
-| Service 层 | `java-service` |
-| Controller 详细 | `java-controller` |
 | 异常处理 | `error-handler` |
-| 参数校验 | `java-entity` |
 | 数据库设计 | `database-ops` |
+| 缓存 | `redis-cache` |
+| 文件上传 | `file-oss-management` |
