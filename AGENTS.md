@@ -104,6 +104,74 @@
 
 ---
 
+## 多模型分层 Agent 系统
+
+> 按思维深度分层，不同 Agent 使用不同模型，各司其职。
+
+### Haiku 层 — 数据获取（快、省）
+
+| Agent | 模型 | 职责 | 触发场景 |
+|-------|------|------|---------|
+| `loki-runner` | haiku | Loki 日志查询 + 格式化 | Bug 排查、线上问题、traceId 追踪 |
+| `mysql-runner` | haiku | MySQL 只读查询 + 格式化 | 数据排查、验证数据状态 |
+| `task-fetcher` | haiku | 云效任务获取 + 整理 | 需求同步、任务查询 |
+| `image-reader` | haiku | 截图/图片/Axure原型图内容提取 | 错误截图、表格截图、架构图、Axure原型分析 |
+
+### Sonnet + Codex 层 — 代码分析（理解、推理）
+
+| Agent | 模型 | 职责 | 触发场景 |
+|-------|------|------|---------|
+| `bug-analyzer` | sonnet | Bug 根因分析 + Codex 逻辑分析 | 接收 Haiku 层数据后分析根因 |
+| `code-reviewer` | sonnet | 规范检查 + Codex 逻辑审查 | /dev、/crud 完成后、代码审查 |
+
+### Opus 层 — 需求分析 + 架构决策 + 编码
+
+| Agent | 模型 | 职责 | 触发场景 |
+|-------|------|------|---------|
+| `requirements-analyzer` | opus | 需求分析，协调 Haiku 层提取数据并输出开发任务清单 | Axure 原型分析、需求转开发任务 |
+
+主会话也使用 Opus 模型，负责：
+- 接收各层 Agent 的结构化结果
+- 做出架构决策
+- 编写核心业务代码
+- 协调各层 Agent 工作
+
+### 协作流程示例
+
+```
+需求分析流程：
+  Opus 主会话 → 启动 requirements-analyzer(Opus)
+    └─ 内部并行调用 Haiku 层
+       ├─ image-reader(Haiku) → 原型图结构数据
+       └─ task-fetcher(Haiku) → 云效任务信息
+    └─ 汇总分析 → 输出需求分析报告 + 开发任务清单
+                   │
+                   ▼ 按任务清单开发
+  Opus 主会话 → /dev 或 /crud 编写代码
+                   │
+                   ▼ 代码完成
+  Opus 主会话 → 启动审查
+    └─ code-reviewer(Sonnet+Codex) → 审查报告
+
+Bug 修复流程：
+  Opus 主会话 → 并行启动 Haiku 层
+    ├─ loki-runner(Haiku)   → 日志数据
+    └─ mysql-runner(Haiku)  → 数据库数据
+                   │
+                   ▼ 汇总数据
+  Opus 主会话 → 启动 Sonnet 层
+    └─ bug-analyzer(Sonnet+Codex) → 根因分析
+                   │
+                   ▼ 分析报告
+  Opus 主会话 → 编写修复代码
+                   │
+                   ▼ 代码完成
+  Opus 主会话 → 启动审查
+    └─ code-reviewer(Sonnet+Codex) → 审查报告
+```
+
+---
+
 ## 🚨 强制执行规则
 
 ### 规则 1：任务匹配时必须读取技能

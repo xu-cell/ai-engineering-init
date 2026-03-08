@@ -4,6 +4,34 @@
 
 ---
 
+## [v1.10.0] - 2026-03-08
+
+### 新增
+- **多模型分层 Agent 架构**：按思维深度分层，不同 Agent 使用不同模型，各司其职
+  - **Haiku 层（4 个 Agent）**：loki-runner（日志查询）、mysql-runner（数据库查询）、task-fetcher（云效任务）、image-reader（图片/Axure 原型分析）— 快速、低成本、只搬数据不分析
+  - **Sonnet 层（2 个 Agent）**：bug-analyzer（Bug 根因分析 + Codex 逻辑分析）、code-reviewer（规范检查 + Codex 逻辑审查）— 理解代码逻辑、分析根因
+  - **Opus 层（1 个 Agent）**：requirements-analyzer（需求分析，协调 Haiku 层提取原型图/任务数据，输出开发任务清单）
+- **image-reader 合并 Axure 原型分析**：自动识别原型图并提取页面结构、搜索条件、表格列、表单字段、操作按钮、交互流程
+- **requirements-analyzer 需求分析 Agent**：从 Axure 原型图 → 数据库设计 → 接口清单 → 开发任务拆解的完整流程
+- **Cursor agents 同步**：8 个 Agent 全量同步到 `.cursor/agents/`，model 字段适配 Cursor 规范（`fast`/`inherit`）
+- **架构指南文档**：`docs/多模型分层Agent架构指南.md`，含完整运行架构图、4 个场景工作流、成本效益分析
+
+### 改进
+- **code-reviewer agent 增强**：从单一规范检查升级为双重审查（Sonnet 规范 + Codex 逻辑），新增 4 阶段审查流程
+- **AGENTS.md 更新**：新增多模型分层 Agent 系统章节，含 Haiku/Sonnet/Opus 三层说明和协作流程图
+
+---
+
+## [v1.9.0] - 2026-03-08
+
+### 新增
+- **OpenSpec 与 Commands 融合工作流**：OpenSpec 负责需求拆解和设计决策，Commands 负责代码生成和质量管控
+- **CLAUDE.md 开发模式选择指南**：根据功能复杂度自动路由到合适的工作流（轻量→/dev、中等→/dev+OpenSpec、复杂→OpenSpec全流程）
+- **/next 命令增强**：自动扫描 OpenSpec 活跃变更并推荐下一步
+- **/progress 命令增强**：集成 OpenSpec 变更状态展示
+
+---
+
 ## [v1.8.0] - 2026-03-07
 
 ### 重大改进

@@ -1,7 +1,7 @@
 ---
 name: project-manager
 description: 专业的项目管理助手，负责创建和维护项目需求文档、进度跟踪、待办事项。当用户需要"更新项目进度"、"记录完成的任务"、"创建需求文档"、"查看项目状态"时自动调用。
-model: sonnet
+model: inherit
 readonly: false
 ---
 
