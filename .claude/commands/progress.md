@@ -48,7 +48,19 @@ Glob pattern: "sys-common/src/main/java/**/controller/*Controller.java"
 Grep pattern: "TODO:|FIXME:" path: sys-canteen/,sys-kitchen/,sys-drp/,sys-common/ glob: "*.java" output_mode: content -B 1
 ```
 
-### 第四步：代码质量分析
+### 第四步：扫描 OpenSpec 变更状态（如有）
+
+```bash
+# 检查是否有活跃的 OpenSpec 变更
+Glob pattern: "openspec/changes/*/tasks.md"
+
+# 对每个找到的变更：
+# 1. 读取 proposal.md 获取变更概述
+# 2. 读取 tasks.md 统计任务完成情况（[ ] 未完成 / [x] 已完成）
+# 3. 检查是否有 design.md、specs/ 等制品
+```
+
+### 第五步：代码质量分析
 
 ```bash
 # 检查代码规范性
@@ -104,6 +116,16 @@ Grep pattern: "delFlag.*=.*0\b" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "
 - ✅ 已完成
 - ⚠️ 部分完成/需改进
 - ❌ 待完成
+
+---
+
+## OpenSpec 变更状态（如有活跃变更）
+
+| 变更名称 | 状态 | 任务完成 | 概述 |
+|---------|------|---------|------|
+| `[change-name]` | 进行中 | X/Y | [proposal 概述] |
+
+> 使用 `/opsx:apply [变更名]` 继续实现未完成的任务，或 `/opsx:verify [变更名]` 验证已完成的变更。
 
 ---
 

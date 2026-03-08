@@ -208,6 +208,38 @@ CREATE TABLE [表名] (
 );
 ```
 
+## 开发模式选择指南
+
+根据功能复杂度和开发类型，选择合适的工作流：
+
+### 复杂度路由表
+
+| 复杂度 | 判断标准 | 推荐工作流 | 说明 |
+|--------|---------|-----------|------|
+| **轻量** | 单表 CRUD、字段增删、简单查询 | `/dev` 或 `/crud` 直接开发 | 无需需求拆解 |
+| **中等** | 2-3 张表联动、跨 Service 调用、状态流转 | `/dev` 开发（可选 OpenSpec） | 建议先理清逻辑再编码 |
+| **复杂** | 多模块协作、复杂业务流程、需要设计评审 | OpenSpec → `/dev` | 先用 `/opsx:ff` 生成制品，再按 tasks 逐步实现 |
+
+### 开发类型路由
+
+| 类型 | 特征 | 工作流 |
+|------|------|--------|
+| **产品开发（core 迭代）** | 改 core 代码、会有后续迭代 | 复杂功能用 OpenSpec 拆解，简单功能直接 `/dev` |
+| **项目定制（一次性）** | Dz 前缀类、dz_ 表、@Primary 覆盖 | 直接 `/dev`，参考 `leniu-customization-location` 技能 |
+
+### OpenSpec 与 Commands 的关系
+
+```
+OpenSpec（思考）          Commands（执行）
+───────────────          ──────────────
+proposal.md    ────→    /dev（按 task 逐个开发）
+specs/*.md     ────→    /crud（快速生成 CRUD）
+design.md      ────→    /check（验证规范）
+tasks.md       ────→    /progress（跟踪进度）
+```
+
+> **原则**：OpenSpec 负责需求拆解和设计决策，Commands 负责代码生成和质量管控。简单任务跳过 OpenSpec，直接用 Commands。
+
 ## 快速命令
 
 | 命令 | 用途 |
@@ -215,3 +247,5 @@ CREATE TABLE [表名] (
 | `/dev` | 开发新功能 |
 | `/crud` | 快速生成 CRUD |
 | `/check` | 代码规范检查 |
+| `/next` | 下一步建议（含 OpenSpec 变更扫描） |
+| `/progress` | 项目进度（含 OpenSpec 状态） |

@@ -16,6 +16,10 @@ Grep pattern: "TODO:|FIXME:" path: sys-canteen/,sys-kitchen/,sys-drp/,sys-common
 # 检查代码规范问题
 Grep pattern: "package org\.dromara\.|package com\.ruoyi\." path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*.java" output_mode: files_with_matches
 Grep pattern: "MapstructUtils|ServiceException" path: sys-canteen/,sys-kitchen/,sys-drp/ glob: "*.java" output_mode: files_with_matches
+
+# 扫描 OpenSpec 活跃变更（如果存在 openspec 目录）
+Glob pattern: "openspec/changes/*/tasks.md"
+# 对每个找到的 tasks.md，读取内容检查任务完成状态（[ ] 未完成 / [x] 已完成）
 ```
 
 ### 第二步：分析开发阶段
@@ -28,9 +32,18 @@ Grep pattern: "MapstructUtils|ServiceException" path: sys-canteen/,sys-kitchen/,
 | 🟡 中期 | 核心功能开发中，模块逐步完善 | 30-70% |
 | 🔴 后期 | 功能基本完成，处于优化阶段 | > 70% |
 
-### 第三步：分类问题和建议
+### 第三步：分析 OpenSpec 变更状态（如有）
+
+如果发现 `openspec/changes/` 下有活跃变更：
+
+1. 读取每个变更的 `tasks.md`，统计未完成任务
+2. 读取 `proposal.md` 获取变更概述
+3. 将未完成的 OpenSpec 任务纳入建议优先级
+
+### 第四步：分类问题和建议
 
 - **紧急问题**：安全漏洞、严重 Bug、编译错误
+- **OpenSpec 待实现**：已拆解但未完成的变更任务
 - **重要问题**：功能缺陷、设计问题、规范问题
 - **优化建议**：性能优化、代码重构、文档完善
 
@@ -62,6 +75,12 @@ Grep pattern: "MapstructUtils|ServiceException" path: sys-canteen/,sys-kitchen/,
 - **TODO 项**：X 个
 - **FIXME 项**：X 个
 - **编译/运行错误**：无
+
+### OpenSpec 变更状态（如有活跃变更）
+- **活跃变更**：X 个
+- **待实现任务**：X 个
+- **变更列表**：
+  - `[变更名]`：X/Y 任务完成（[proposal 概述]）
 
 ---
 
@@ -123,6 +142,17 @@ Grep pattern: "MapstructUtils|ServiceException" path: sys-canteen/,sys-kitchen/,
 ---
 
 ## 具体行动建议
+
+### 如果有未完成的 OpenSpec 变更：
+
+**推荐：继续实现已拆解的任务**
+- 变更名称：`[change-name]`
+- 未完成任务：[列出 tasks.md 中 [ ] 的任务]
+- **快速开始**：
+  ```bash
+  /opsx:apply [change-name]   # 自动实现下一个任务
+  /dev [任务描述]              # 手动实现特定任务
+  ```
 
 ### 如果您想继续开发新功能：
 
