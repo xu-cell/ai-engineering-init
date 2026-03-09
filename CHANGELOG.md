@@ -4,6 +4,13 @@
 
 ---
 
+## [v1.12.1] - 2026-03-09
+
+### 改进
+- **analyze-requirements Axure 链接处理**：当用户提供 Axure 链接时，强制使用 Playwright 截图而非 WebFetch（Axure 是 SPA，WebFetch 必定失败）。SKILL.md 新增 Axure 链接判断规则和 Playwright 截图流程，requirements-analyzer Agent 同步更新
+
+---
+
 ## [v1.12.0] - 2026-03-09
 
 ### 改进

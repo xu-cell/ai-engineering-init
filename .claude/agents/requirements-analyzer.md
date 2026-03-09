@@ -23,7 +23,20 @@ tools: Read, Bash, Grep, Glob, Agent
 
 根据用户提供的输入类型，调用对应的 Haiku 层 Agent：
 
-**有 Axure 原型图时** → 调用 `image-reader` Agent：
+**有 Axure 链接时（重要）** → 先用 Playwright 截图，再调 `image-reader`：
+
+> Axure 是 SPA 应用，WebFetch 必定失败（TLS/JS 渲染问题）。**禁止用 WebFetch 访问 Axure 链接。**
+
+```bash
+# 1. 用 Playwright 截图（每个页面单独截）
+Bash: npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page1" /tmp/axure-1.png
+Bash: npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page2" /tmp/axure-2.png
+
+# 2. 截图完成后，传给 image-reader 分析
+Agent(subagent_type="image-reader", prompt="分析 Axure 原型截图：/tmp/axure-1.png")
+```
+
+**有 Axure 原型截图文件时** → 直接调用 `image-reader` Agent：
 ```
 Agent(subagent_type="image-reader", prompt="分析以下 Axure 原型截图，提取页面结构、搜索条件、表格列、表单字段、操作按钮、交互流程：[图片路径]")
 ```
