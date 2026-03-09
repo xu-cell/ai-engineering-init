@@ -89,6 +89,7 @@ alwaysApply: true
 | WebSocket/SSE/实时推送/消息通知/双向通信 | `.cursor/skills/websocket-sse/SKILL.md` |
 | 短信/邮件/SMS/验证码/MailUtils | `.cursor/skills/sms-mail/SKILL.md` |
 | 第三方登录/微信登录/OAuth/JustAuth/扫码登录 | `.cursor/skills/social-login/SKILL.md` |
+| 蓝湖/lanhu/设计稿/蓝湖链接/设计图/切图 | `.cursor/skills/lanhu-design/SKILL.md` |
 | 多租户/租户隔离/TenantEntity/tenantId/SaaS | `.cursor/skills/tenant-management/SKILL.md` |
 | Element UI/前端组件/el-table/el-form/管理页面 | `.cursor/skills/ui-pc/SKILL.md` |
 | Vuex/store/mapState/mapActions/状态管理 | `.cursor/skills/store-pc/SKILL.md` |

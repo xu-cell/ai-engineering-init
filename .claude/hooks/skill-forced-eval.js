@@ -92,6 +92,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - scheduled-jobs: 定时任务/@Scheduled/Quartz/XXL-Job/任务调度
 - add-skill: 添加技能/创建技能/新技能/技能开发
 - banana-image: 生成图片/AI图片/产品图/海报/缩略图
+- lanhu-design: 蓝湖/lanhu/设计稿/原型图/蓝湖链接/设计图/切图
 - websocket-sse: WebSocket/SSE/实时推送/消息通知/双向通信
 - sms-mail: 短信/邮件/SMS/验证码/通知
 - social-login: 第三方登录/OAuth/OAuth2/社交登录/授权登录

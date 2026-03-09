@@ -45,6 +45,13 @@
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "lanhu": {
+      "command": "/tmp/lanhu-mcp/.venv/bin/python",
+      "args": ["/tmp/lanhu-mcp/lanhu_mcp_server.py"],
+      "env": {
+        "LANHU_COOKIE": ""
+      }
     }
   }
 }

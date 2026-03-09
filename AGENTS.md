@@ -81,6 +81,7 @@
 | `git-workflow` | Git、提交、commit、分支 |
 | `tech-decision` | 技术选型、方案对比 |
 | `brainstorm` | 头脑风暴、创意、方案设计 |
+| `lanhu-design` | 蓝湖设计稿、原型图、蓝湖链接、设计图、切图 |
 | `task-tracker` | 任务跟踪、进度管理 |
 | `test-development` | 测试、单元测试 |
 | `analyze-requirements` | 需求分析全流程编排（原型图/云效任务 → 开发任务清单） |

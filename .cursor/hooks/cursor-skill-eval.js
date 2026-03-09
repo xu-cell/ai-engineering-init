@@ -343,6 +343,10 @@ const skillMap = [
     keywords: ['生成图片', 'AI图片', '产品图', '海报', '缩略图', '4K图片', '高清图', '制作图片', '/image']
   },
   {
+    name: 'lanhu-design',
+    keywords: ['蓝湖', 'lanhu', '设计稿', '蓝湖链接', '设计图', '切图', 'lanhuapp']
+  },
+  {
     name: 'codex-code-review',
     keywords: ['代码审查', 'code review', 'review代码', '代码检查', 'codex审查']
   },

@@ -4,6 +4,13 @@
 
 ---
 
+## [v1.12.2] - 2026-03-09
+
+### 新增
+- **lanhu-design 技能**：集成蓝湖 MCP Server，支持通过 MCP 工具直接读取蓝湖项目的 Axure 原型页面、UI 设计图、切图资源和团队留言。包含 12 个 MCP 工具，支持 development/testing/exploration 三种分析模式
+
+---
+
 ## [v1.12.1] - 2026-03-09
 
 ### 改进
