@@ -11,6 +11,7 @@
 │            Haiku 层 — "数据搬运工"                       │
 │            快、省、并行跑、只搬不想                       │
 │                                                         │
+│  code-scanner     代码库扫描 + 文件定位 + 代码片段收集   │
 │  loki-runner      Loki 日志查询 + 格式化                 │
 │  mysql-runner     MySQL 只读查询 + 格式化                │
 │  task-fetcher     云效任务获取 + 整理                    │
@@ -232,17 +233,34 @@
 
 ## 典型工作流
 
-### 场景 1：Axure 原型 → 需求分析 → 开发
+### 场景 1：需求分析 → 开发（analyze-requirements 技能编排）
+
+> 由 `analyze-requirements` 技能编排全流程。核心原则：简单需求直接分析，复杂需求走 Agent。
 
 ```
 用户: "分析这几张原型截图，开发这个功能 [图片1] [图片2] [图片3]"
 
+Step 0: Opus 主会话 → 复杂度判断
+  │
+  ├─ 简单需求？ → 直接分析，输出任务清单 → 推荐 /crud 或 /dev
+  │   例：纯文字描述、单表 CRUD、字段列表已明确
+  │
+  └─ 复杂需求？ → 进入 Agent 路径 ↓
+
 Step 1: Opus 主会话 → 启动 requirements-analyzer(Opus)
+  │
+  ├─ 按信息量决定内部调用组合：
+  │   | 用户提供的信息          | 内部启动的 Haiku Agent             |
+  │   |------------------------|------------------------------------|
+  │   | 只有文字描述            | 不启动（快速路径）                  |
+  │   | 文字 + 原型截图         | image-reader × N张                 |
+  │   | 文字 + 云效任务号       | task-fetcher                       |
+  │   | 原型截图 + 云效任务号   | image-reader + task-fetcher（并行） |
   │
   ├─ 内部并行调用 Haiku 层
   │   ├─ image-reader(Haiku) → 分析图片1            [3秒]
   │   ├─ image-reader(Haiku) → 分析图片2            [3秒]
-  │   └─ image-reader(Haiku) → 分析图片3            [3秒]
+  │   └─ task-fetcher(Haiku) → 获取任务详情          [2秒]（如有）
   │
   ├─ 汇总结构化数据
   │   ├─ 识别业务实体 → 推导数据库表设计
@@ -271,13 +289,14 @@ Step 4: 完成
 ```
 用户: "看看云效 SARW-456 的需求，原型截图在这 [图片]"
 
-Step 1: Opus 主会话 → 启动 requirements-analyzer(Opus)
-  │
-  ├─ 内部并行调用 Haiku 层
-  │   ├─ task-fetcher(Haiku) → 获取 SARW-456 详情    [2秒]
-  │   └─ image-reader(Haiku) → 解析原型截图          [3秒]
-  │
-  ├─ 整合任务描述 + 原型结构
+与场景 1 相同流程，analyze-requirements 技能自动判断：
+- 有原型截图 → image-reader(Haiku)
+- 有云效任务号 → task-fetcher(Haiku)
+- 两者并行启动，汇总后输出需求报告
+
+Step 1: requirements-analyzer(Opus)
+  ├─ task-fetcher(Haiku) → 获取 SARW-456 详情        [2秒]
+  └─ image-reader(Haiku) → 解析原型截图              [3秒]
   └─ 输出: 需求分析报告 + 开发任务清单               [10秒]
 
 Step 2: Opus 主会话 → 按任务清单开发                 [Opus 编码]
@@ -285,18 +304,34 @@ Step 2: Opus 主会话 → 按任务清单开发                 [Opus 编码]
 Step 3: code-reviewer(Sonnet+Codex) → 审查           [8秒]
 ```
 
-### 场景 3：Bug 修复
+### 场景 3：Bug 修复（fix-bug 技能编排）
+
+> 由 `fix-bug` 技能编排全流程。核心原则：简单 Bug 直接修，复杂 Bug 走并行 Agent。
 
 ```
 用户: "线上订单创建报 500，traceId=abc123"
 
-Step 1: Opus 主会话 → 并行启动 Haiku 层（后台）
-  ├─ loki-runner(Haiku)   → "查 traceId=abc123 日志"     [3秒]
-  └─ mysql-runner(Haiku)  → "查最近失败订单"              [2秒]
+Step 0: Opus 主会话 → 复杂度判断
+  │
+  ├─ 简单 Bug？ → 直接读代码修复 → git-workflow 提交（跳过 Agent）
+  │   例：明显 NPE、拼写错误、用户已指出修改方案
+  │
+  └─ 复杂 Bug？ → 进入 Agent 路径 ↓
 
-Step 2: Opus 主会话 → 汇总数据，启动 Sonnet 层
-  └─ bug-analyzer(Sonnet+Codex) → 分析根因                [10秒]
-     返回: 根因 + 修复建议 + 问题代码位置
+Step 1: Opus 主会话 → 按信息量并行启动 Agent（必须同时启动）
+  ├─ bug-analyzer(Sonnet+Codex)  → 读代码分析根因        [10秒]（必启动）
+  ├─ loki-runner(Haiku)          → 查 traceId 日志        [3秒]（有 traceId 时）
+  └─ mysql-runner(Haiku)         → 查数据库验证数据       [2秒]（有 DB 信息时）
+
+  按信息量决定启动组合：
+  | 用户提供的信息          | 启动的 Agent                              |
+  |------------------------|-----------------------------------------|
+  | 只有 Bug 描述           | bug-analyzer                             |
+  | Bug 描述 + traceId      | bug-analyzer + loki-runner               |
+  | Bug 描述 + DB 信息      | bug-analyzer + mysql-runner              |
+  | Bug 描述 + traceId + DB | bug-analyzer + loki-runner + mysql-runner |
+
+Step 2: Opus 主会话 → 汇总 Agent 结果 → 确认修复方案
 
 Step 3: Opus 主会话 → 编写修复代码                        [Opus 编码]
 
@@ -304,8 +339,17 @@ Step 4: Opus 主会话 → 启动审查
   └─ code-reviewer(Sonnet+Codex) → 审查修复代码           [8秒]
      返回: 审查报告（通过/需修改）
 
-Step 5: 完成
+Step 5: git-workflow 提交（必须通过 git-workflow 技能，禁止直接 git commit）
 ```
+
+#### fix-bug 与 bug-detective 的区别
+
+| 维度 | fix-bug | bug-detective |
+|------|---------|---------------|
+| 定位 | **全流程编排**（排查+修复+提交） | 排查指南（方法论+决策树） |
+| Agent 使用 | 自动编排并行 Agent | 不涉及 Agent |
+| 输出 | 修复代码 + git 提交 | 排查方向建议 |
+| 触发 | "修复 bug"、"fix bug" | "排查"、"报错"、"异常" |
 
 ### 场景 4：纯代码审查
 

@@ -55,7 +55,7 @@ npx ai-engineering-init --tool claude
 
 **更多命令**：`/crud`（生成增删改查）、`/progress`（项目进度）、`/sync`（代码状态同步）
 
-> **包含内容**：88 个 Skills 技能 + 10 个快捷命令 + 自动化 Hooks。详见 [参考文档](./docs/reference.md)。
+> **包含内容**：90 个 Skills 技能 + 10 个快捷命令 + 9 个多模型分层 Agent + 自动化 Hooks。详见 [参考文档](./docs/reference.md)。
 
 ## 初始化后使用
 

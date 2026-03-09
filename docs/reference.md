@@ -36,9 +36,9 @@ cd ai-engineering-init
 
 | 目录/文件 | 说明 |
 |-----------|------|
-| `skills/`（88个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
+| `skills/`（90个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
 | `commands/`（10个） | 快捷命令：`/dev`、`/crud`、`/check`、`/start`、`/progress` 等 |
-| `agents/`（2个） | 子代理：`code-reviewer`、`project-manager` |
+| `agents/`（9个） | 子代理：多模型分层 Agent（code-scanner、loki-runner、mysql-runner 等） |
 | `hooks/` | 自动化钩子：技能强制评估、代码规范检查 |
 | `CLAUDE.md` | 项目规范说明 |
 
@@ -46,8 +46,8 @@ cd ai-engineering-init
 
 | 目录/文件 | 说明 |
 |-----------|------|
-| `skills/`（88个） | 与 Claude 同步，支持 `@技能名` 调用 |
-| `agents/`（2个） | Subagents：`code-reviewer`、`project-manager` |
+| `skills/`（90个） | 与 Claude 同步，支持 `@技能名` 调用 |
+| `agents/`（9个） | Subagents：多模型分层 Agent（code-scanner、loki-runner、mysql-runner 等） |
 | `mcp.json` | MCP 服务器配置 |
 | `hooks.json` + `hooks/` | Hooks 配置与脚本 |
 
@@ -68,9 +68,9 @@ cd ai-engineering-init
 
 其他命令：`/opsx-continue`、`/opsx-sync`、`/opsx-bulk-archive`、`/opsx-explore`、`/opsx-onboard`
 
-## Skills 列表（88个）
+## Skills 列表（90个）
 
-### 通用后端技能（34个）
+### 通用后端技能（36个）
 
 | 技能 | 触发场景 |
 |------|---------|
@@ -105,6 +105,8 @@ cd ai-engineering-init
 | `collaborating-with-gemini` | 与 Gemini 协同开发 |
 | `codex-code-review` | 代码审查工作流 |
 | `banana-image` | AI 图片生成、海报、缩略图 |
+| `analyze-requirements` | 需求分析全流程编排（原型图/云效任务 → 开发任务清单） |
+| `fix-bug` | Bug 修复全流程编排（排查+修复+提交） |
 | `add-skill` | 创建新技能 |
 | `ui-pc` | 前端 PC 端组件库 |
 | `store-pc` | 前端 Vuex 状态管理 |

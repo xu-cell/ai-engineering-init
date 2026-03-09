@@ -83,6 +83,8 @@
 | `brainstorm` | 头脑风暴、创意、方案设计 |
 | `task-tracker` | 任务跟踪、进度管理 |
 | `test-development` | 测试、单元测试 |
+| `analyze-requirements` | 需求分析全流程编排（原型图/云效任务 → 开发任务清单） |
+| `fix-bug` | 修复 Bug 全流程编排（排查+修复+提交） |
 | `bug-detective` | Bug 排查、报错、异常 |
 | `performance-doctor` | 性能优化、慢查询、缓存 |
 | `add-skill` | 添加技能、创建技能文档 |
@@ -112,6 +114,7 @@
 
 | Agent | 模型 | 职责 | 触发场景 |
 |-------|------|------|---------|
+| `code-scanner` | haiku | 代码库扫描 + 文件定位 + 代码片段收集 | 任务开始前的代码探索、模块结构了解、相似实现查找 |
 | `loki-runner` | haiku | Loki 日志查询 + 格式化 | Bug 排查、线上问题、traceId 追踪 |
 | `mysql-runner` | haiku | MySQL 只读查询 + 格式化 | 数据排查、验证数据状态 |
 | `task-fetcher` | haiku | 云效任务获取 + 整理 | 需求同步、任务查询 |
@@ -139,35 +142,55 @@
 ### 协作流程示例
 
 ```
-需求分析流程：
-  Opus 主会话 → 启动 requirements-analyzer(Opus)
-    └─ 内部并行调用 Haiku 层
-       ├─ image-reader(Haiku) → 原型图结构数据
-       └─ task-fetcher(Haiku) → 云效任务信息
-    └─ 汇总分析 → 输出需求分析报告 + 开发任务清单
+功能开发流程：
+  Opus 主会话 → 启动 Haiku 层扫描
+    └─ code-scanner(Haiku) → 代码扫描报告（文件清单、关键片段、依赖关系）
                    │
-                   ▼ 按任务清单开发
-  Opus 主会话 → /dev 或 /crud 编写代码
+                   ▼ 基于扫描结果决策
+  Opus 主会话 → /dev 或 /crud 编写代码（不再自己做初始扫描）
                    │
                    ▼ 代码完成
   Opus 主会话 → 启动审查
     └─ code-reviewer(Sonnet+Codex) → 审查报告
 
-Bug 修复流程：
-  Opus 主会话 → 并行启动 Haiku 层
-    ├─ loki-runner(Haiku)   → 日志数据
-    └─ mysql-runner(Haiku)  → 数据库数据
-                   │
-                   ▼ 汇总数据
-  Opus 主会话 → 启动 Sonnet 层
-    └─ bug-analyzer(Sonnet+Codex) → 根因分析
-                   │
-                   ▼ 分析报告
-  Opus 主会话 → 编写修复代码
-                   │
-                   ▼ 代码完成
+需求分析流程（analyze-requirements 技能编排）：
+  Opus 主会话 → 复杂度判断
+    │
+    ├─ 简单需求 → 直接分析输出任务清单 → 推荐 /crud 或 /dev
+    │
+    └─ 复杂需求 → 启动 requirements-analyzer(Opus)
+       └─ 按信息量并行调用 Haiku 层
+          ├─ image-reader(Haiku) × N张 → 原型图结构（有截图时）
+          ├─ task-fetcher(Haiku) → 云效任务信息（有任务号时）
+          └─ 汇总分析 → 输出需求分析报告 + 开发任务清单
+                      │
+                      ▼ 按任务清单开发
+  Opus 主会话 → code-scanner(Haiku) 扫描 → /dev 编写代码
+                      │
+                      ▼ 代码完成
   Opus 主会话 → 启动审查
     └─ code-reviewer(Sonnet+Codex) → 审查报告
+
+Bug 修复流程（fix-bug 技能编排）：
+  Opus 主会话 → 复杂度判断
+    │
+    ├─ 简单 Bug → 直接读代码修复 → git-workflow 提交
+    │
+    └─ 复杂 Bug → 按信息量并行启动 Agent
+       ├─ bug-analyzer(Sonnet+Codex) → 根因分析（必启动）
+       ├─ loki-runner(Haiku)  → 日志数据（有 traceId 时）
+       ├─ mysql-runner(Haiku) → 数据库数据（有 DB 信息时）
+       └─ code-scanner(Haiku) → 相关代码结构（需要时）
+                      │
+                      ▼ 汇总 Agent 结果
+    Opus 主会话 → 确认修复方案 → 编写修复代码
+                      │
+                      ▼ 代码完成
+    Opus 主会话 → 启动审查
+      └─ code-reviewer(Sonnet+Codex) → 审查报告
+                      │
+                      ▼ 审查通过
+    git-workflow 提交（必须通过技能，禁止直接 git commit）
 ```
 
 ---

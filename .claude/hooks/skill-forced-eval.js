@@ -68,6 +68,8 @@ const instructions = `## 强制技能激活流程（必须执行）
 - backend-annotations: 注解/限流/防重复/脱敏/加密
 - utils-toolkit: 工具类/对象转换/字符串/集合/日期
 - file-oss-management: 文件上传/OSS/云存储
+- analyze-requirements: 分析需求/需求分析/原型分析/需求拆解/分析原型图
+- fix-bug: 修复bug/fix bug/排查修复/线上修复/bug修复
 - bug-detective: Bug/报错/异常/不工作
 - error-handler: 异常处理/全局异常/业务异常
 - performance-doctor: 性能/慢查询/优化/缓存

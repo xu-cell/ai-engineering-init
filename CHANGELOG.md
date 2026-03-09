@@ -4,6 +4,27 @@
 
 ---
 
+## [v1.11.0] - 2026-03-09
+
+### 新增
+- **流程编排技能**：新增 2 个工作流编排技能，通过复杂度判断自动路由到最优路径
+  - **`analyze-requirements`**：需求分析全流程编排。简单需求直接分析，复杂需求自动调度 image-reader + task-fetcher Agent 并行获取数据，输出结构化需求报告和开发任务清单
+  - **`fix-bug`**：Bug 修复全流程编排。简单 Bug 直接修复，复杂 Bug 并行启动 bug-analyzer + loki-runner + mysql-runner + code-scanner Agent，汇总后修复并走 git-workflow 提交
+- **code-scanner Agent**：新增 Haiku 层代码扫描 Agent（`.claude/agents/code-scanner.md`），负责代码库扫描、文件定位、代码片段收集
+
+### 改进
+- **yunxiao-task-management 技能重构**：新增项目缓存表、关键词搜索限制说明、"提测单完善流程"章节及 HTML 模板（`templates/提测单模板.html`），精简 API 文档（closes #10）
+- **AGENTS.md 更新**：新增 `analyze-requirements`、`fix-bug` 技能条目，更新 Bug 修复和需求分析工作流图
+- **多模型分层 Agent 架构指南更新**：3 个场景工作流融入编排技能的复杂度判断模式和动态 Agent 选择逻辑
+- **Hook 注册同步**：Claude/Cursor Hook 新增流程编排技能触发词（`skill-forced-eval.js`、`cursor-skill-eval.js`、`skill-activation.mdc`）
+- **技能数量**：90 个（新增 analyze-requirements、fix-bug）
+
+### 关闭 Issue
+- closes #9（fix-bug 技能改进）
+- closes #10（yunxiao-task-management 技能改进）
+
+---
+
 ## [v1.10.0] - 2026-03-08
 
 ### 新增

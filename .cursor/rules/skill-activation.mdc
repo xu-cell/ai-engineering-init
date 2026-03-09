@@ -52,6 +52,13 @@ alwaysApply: true
 | 同步规格/opsx:sync/openspec sync | `.cursor/skills/openspec-sync-specs/SKILL.md` |
 | 验证变更/opsx:verify/openspec verify | `.cursor/skills/openspec-verify-change/SKILL.md` |
 
+### 流程编排技能
+
+| 触发词 | SKILL.md 路径 |
+|--------|--------------|
+| 分析需求/需求分析/原型分析/需求拆解/分析原型图 | `.cursor/skills/analyze-requirements/SKILL.md` |
+| 修复bug/fix bug/排查修复/线上修复/bug修复 | `.cursor/skills/fix-bug/SKILL.md` |
+
 ### 通用技能
 
 | 触发词 | SKILL.md 路径 |

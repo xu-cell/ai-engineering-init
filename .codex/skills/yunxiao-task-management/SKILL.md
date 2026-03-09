@@ -3,8 +3,16 @@ name: yunxiao-task-management
 description: |
   阿里云云效（Yunxiao）项目协作任务管理技能。通过云效 Open API 直接操作工作项：查询任务、修改状态、编辑描述、添加评论、记录工时、创建子任务、搜索项目等。
   支持完整开发工作流：读取任务 → 查找父需求 → 读取需求详情 → 创建提测单 → 编辑提测单 → 转给测试。
-  当用户提到"云效"、"任务管理"、"工作项"、"修改状态"、"添加评论"、"记录工时"、"创建子任务"、"查询任务"、"项目任务"、"提测"、"提测单"、"父需求"、"需求详情"、"SARW"、"EZML"、"IXXP"或其他云效项目编号时使用此技能。
-  即使用户只是简单说"把XXX改为开发完成"、"帮我查一下我的待处理任务"、"读取EZML-1878"、"创建提测单"，也应该触发此技能。
+  支持智能提测单完善：自动从 git 获取分支/提交信息，从 pom.xml 读取版本号，查找用户任务并填充提测单模板。
+
+  触发场景：
+  - 查询/修改云效任务状态
+  - 完善提测单内容（自动收集 git 信息）
+  - 创建提测单子任务
+  - 查看个人待处理任务
+  - 读取需求详情
+
+  触发词：云效、任务管理、工作项、修改状态、提测、提测单、完善提测单、SARW、EZML、IXXP、云效任务
 ---
 
 # 云效任务管理 Skill
@@ -21,7 +29,16 @@ YUNXIAO_ACCESS_TOKEN: 个人访问令牌
 **已知用户信息**：
 - 组织 ID: `61dbcd725356b19beeb1dc03`
 - 用户: 徐嘉骏（ID: `66286d4b06679a65daed4d28`）
-- 常用项目: SARW（`4574cb1c653fe873335b6c4716`）、EZML（`6f99a4e627fa88d6f8cb541e6c`）
+
+**已知项目缓存**（避免全量扫描）：
+
+| customCode | 项目名称 | 项目 ID |
+|------------|---------|---------|
+| SARW | - | `4574cb1c653fe873335b6c4716` |
+| EZML | - | `6f99a4e627fa88d6f8cb541e6c` |
+| IXXP | 广州小鹏汽车 | `d93e6ddf18c83254d0b8f27e7d` |
+
+> 新发现的项目应追加到此表。搜索项目时**优先查缓存**，命中则跳过 API 搜索。
 
 ## API 基础信息
 
@@ -64,12 +81,14 @@ Body: {} 或 { keyword: "关键词" }
 
 返回数组，每个项目包含 `id`、`name`、`customCode`（如 SARW、IXXP）。
 
-**按成员过滤项目**（仅获取用户参与的项目，大幅减少搜索范围）：
-```json
-{
-  "conditions": "{\"conditionGroups\":[[{\"className\":\"user\",\"fieldIdentifier\":\"members\",\"format\":\"list\",\"operator\":\"CONTAINS\",\"toValue\":null,\"value\":[\"用户ID\"]}]]}"
-}
-```
+**重要**：`keyword` 搜索按项目名称模糊匹配，**不支持按 customCode 搜索**。要找 customCode，需全量分页扫描匹配。
+
+**优先使用缓存**：先查"已知项目缓存"表，命中则直接用 ID，无需调 API。
+
+**按项目名称查找**（用户说"小鹏汽车"时）：
+1. 先查缓存表的项目名称列
+2. 未命中则用 `keyword` 搜索：`{ keyword: "小鹏汽车" }`
+3. 仍未找到则全量分页扫描（perPage=100，逐页匹配 name）
 
 ### 2. 搜索工作项
 
@@ -92,10 +111,11 @@ Body: {
 - `subject`: 标题
 - `status`: `{ name, id }` — 状态名和状态 ID
 - `assignedTo`: `{ name, id }` — 负责人
+- `parentId`: 父工作项 ID
 
-#### conditions 高级过滤（重要！）
+#### conditions 高级过滤
 
-搜索工作项支持 `conditions` 参数进行服务端过滤，避免全量拉取再本地筛选。`conditions` 是 **JSON 字符串**，格式：
+`conditions` 是 **JSON 字符串**，格式：
 
 ```json
 {
@@ -110,34 +130,12 @@ Body: {
 { "className": "user", "fieldIdentifier": "assignedTo", "format": "list", "operator": "CONTAINS", "toValue": null, "value": ["用户ID"] }
 ```
 
-**排除已完成/已取消状态**（只查未完成的任务，最实用）：
+**排除已完成/已取消状态**：
 ```json
 { "className": "status", "fieldIdentifier": "status", "format": "list", "operator": "NOT_CONTAINS", "toValue": null, "value": ["100014", "141230"] }
 ```
 
-> `statusStage` 字段在 API 返回中为 undefined，不可用于过滤。用 `status` + `NOT_CONTAINS` 排除特定状态 ID 代替。
-
-**按创建人过滤**：
-```json
-{ "className": "user", "fieldIdentifier": "creator", "format": "list", "operator": "CONTAINS", "toValue": null, "value": ["用户ID"] }
-```
-
-**按优先级过滤**：
-```json
-{ "className": "option", "fieldIdentifier": "priority", "format": "list", "operator": "CONTAINS", "toValue": null, "value": ["优先级值"] }
-```
-
-**组合多个条件**（放在同一个数组内为 AND 关系）：
-```json
-{
-  "conditionGroups": [[
-    { "className": "user", "fieldIdentifier": "assignedTo", "format": "list", "operator": "CONTAINS", "toValue": null, "value": ["用户ID"] },
-    { "className": "statusStage", "fieldIdentifier": "statusStage", "format": "list", "operator": "CONTAINS", "toValue": null, "value": ["TODO", "DOING"] }
-  ]]
-}
-```
-
-> **注意**：`conditions` 传给 API 时必须是 **JSON 字符串**（`JSON.stringify(obj)`），不是对象。
+> `conditions` 传给 API 时必须是 **JSON 字符串**（`JSON.stringify(obj)`），不是对象。
 
 ### 3. 获取工作项详情
 
@@ -151,12 +149,9 @@ GET /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}
 PUT /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}
 ```
 
-**修改状态**：
-```json
-{ "status": "100011" }
-```
+可组合多个字段一次更新：`{ "description": "...", "status": "100011", "subject": "..." }`。成功返回 **HTTP 204**。
 
-常见状态 ID（从项目中的工作项动态获取，以下为参考值）：
+常见状态 ID（参考值，不同项目可能不同）：
 
 | 状态名 | 状态 ID |
 |--------|---------|
@@ -166,37 +161,11 @@ PUT /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}
 | 已完成 | 100014 |
 | 已取消 | 141230 |
 
-> 不同项目的状态 ID 可能不同！先从该项目的工作项中收集已有状态，再使用对应 ID。
-
-**修改描述**：
-```json
-{ "description": "新的描述内容" }
-```
-
-**修改标题**：
-```json
-{ "subject": "新标题" }
-```
-
-**修改负责人**：
-```json
-{ "assignedTo": "用户ID" }
-```
-
-可组合多个字段一次更新。成功返回 **HTTP 204**（无 body）。
-
 ### 5. 添加评论
 
 ```
 POST /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/comments
 Body: { "content": "评论内容" }
-```
-
-返回 `{ id: "评论ID" }`。
-
-**获取评论列表**：
-```
-GET /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/comments?page=1&perPage=20
 ```
 
 ### 6. 创建子任务
@@ -208,12 +177,10 @@ Body: {
   "subject": "子任务标题",
   "workitemTypeId": "任务类型ID",
   "assignedTo": "用户ID",          // 必需！
-  "parentId": "父工作项ID",         // 关键：建立父子关系
+  "parentId": "父工作项ID",
   "description": "描述（可选）"
 }
 ```
-
-> `assignedTo` 虽然看似可选，但 API 强制要求，缺少会报错。
 
 **获取任务类型 ID**：
 ```
@@ -222,264 +189,209 @@ GET /oapi/v1/projex/organizations/{orgId}/projects/{projectId}/workitemTypes?cat
 
 ### 7. 工时管理
 
-#### 预估工时
-
-**查看**：
-```
-GET /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/estimatedEfforts
-```
-
-**创建**（单位：分钟）：
-```
-POST /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/estimatedEfforts
-Body: {
-  "spentTime": 480,                  // 480分钟 = 8小时
-  "description": "预估工时描述",
-  "owner": "用户ID"
-}
-```
-
-#### 实际工时
-
-**查看**：
-```
-GET /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/effortRecords
-```
-
-**创建**：
-```
-POST /oapi/v1/projex/organizations/{orgId}/workitems/{workitemId}/effortRecords
-Body: {
-  "actualTime": 240,                 // 240分钟 = 4小时
-  "description": "实际工时描述",
-  "gmtStart": 1772800000000,         // 开始时间（毫秒时间戳）
-  "gmtEnd": 1772803000000            // 结束时间（毫秒时间戳）
-}
-```
-
-### 8. 跨项目搜索用户任务（优化策略）
-
-云效 API 的 `workitems:search` 必须指定 `spaceId`，不支持全局搜索。推荐优化流程：
-
-**第一步：缩小项目范围** — 用 `members` conditions 只获取用户参与的项目：
-```javascript
-const memberConditions = JSON.stringify({
-  conditionGroups: [[{
-    className: "user", fieldIdentifier: "members",
-    format: "list", operator: "CONTAINS", toValue: null, value: [USER_ID]
-  }]]
-});
-// POST projects:search with body: { conditions: memberConditions }
-```
-
-**第二步：服务端过滤任务** — 用 `assignedTo` + `status NOT_CONTAINS` 只返回自己未完成的任务：
-```javascript
-const taskConditions = JSON.stringify({
-  conditionGroups: [[
-    { className: "user", fieldIdentifier: "assignedTo", format: "list", operator: "CONTAINS", toValue: null, value: [USER_ID] },
-    { className: "status", fieldIdentifier: "status", format: "list", operator: "NOT_CONTAINS", toValue: null, value: ["100014", "141230"] }
-  ]]
-});
-// POST workitems:search with body: { spaceId, category: "Task", conditions: taskConditions, ... }
-```
-
-**第三步：并发批处理**（15 个项目一批）：
-```javascript
-const batchSize = 15;
-for (let i = 0; i < projects.length; i += batchSize) {
-  const batch = projects.slice(i, i + batchSize);
-  const results = await Promise.all(batch.map(p => searchWorkitems(p.id, taskConditions)));
-  myTasks.push(...results.flat());
-}
-```
-
-> 通过 assignedTo + status NOT_CONTAINS 服务端过滤，每个项目只返回该用户的未完成任务，大幅减少数据量。
-> 注意：`members` 项目过滤在实测中未生效（仍返回全量项目），建议直接扫描所有项目但用 batchSize=20 并发处理。
+**预估工时**：`POST .../workitems/{id}/estimatedEfforts` Body: `{ "spentTime": 480, "owner": "用户ID" }`
+**实际工时**：`POST .../workitems/{id}/effortRecords` Body: `{ "actualTime": 240, "gmtStart": ts, "gmtEnd": ts }`
 
 ## 不支持的操作
 
 | 操作 | 原因 |
 |------|------|
-| 添加附件 | API 不支持（504 超时/415 不支持的类型），MCP 源码中无附件相关实现 |
-| 获取用户信息 | `/oapi/v1/platform/user` 需要「用户信息（读取）」权限，项目 Token 不支持 |
+| 添加附件 | API 不支持（504 超时/415 错误） |
+| 获取用户信息 | 需要「用户信息（读取）」权限，Token 不支持 |
 
-## 开发工作流（核心流程）
+---
 
-用户日常开发工作流，会频繁使用。当用户说"读取任务"、"查看需求"、"创建提测单"、"提测"时触发。
+## 提测单完善流程（核心场景）
+
+当用户说"完善提测单"、"填写提测单"、"帮我提测"时触发。用户可能**不提供任务 ID**，只说项目名或需求描述。
 
 ### 流程概览
 
 ```
-读取任务（Task） → 查找父需求（Req） → 读取需求详情 → 开发 → 创建提测单 → 编辑提测单 → 转给测试
+1. 定位任务 → 2. 收集 git 信息 → 3. 读取版本号 → 4. 加载模板 → 5. 填充并更新描述
+```
+
+### Step 1: 定位任务
+
+**场景 A：用户提供了任务编号**（如 IXXP-122）
+- 从编号前缀提取 customCode（IXXP）
+- 查缓存表 → 命中则直接用项目 ID
+- 未命中则全量分页扫描匹配 customCode
+- 搜索项目 Task，找到 serialNumber 匹配的工作项
+
+**场景 B：用户只说项目名称**（如"小鹏汽车"）
+- 用项目名称匹配缓存或 keyword 搜索
+- 找到项目后，用 `assignedTo` conditions 过滤当前用户的任务
+- 展示任务列表，让用户选择或自动匹配标题含"提测"的任务
+
+**场景 C：用户只说"我的提测单"**
+- 用已知项目缓存逐个搜索当前用户的任务
+- 筛选标题含"提测"的任务
+
+```javascript
+// 查找用户在指定项目中的任务
+const conditions = JSON.stringify({
+  conditionGroups: [[
+    { className: "user", fieldIdentifier: "assignedTo", format: "list", operator: "CONTAINS", toValue: null, value: [USER_ID] },
+    { className: "status", fieldIdentifier: "status", format: "list", operator: "NOT_CONTAINS", toValue: null, value: ["100014", "141230"] }
+  ]]
+});
+// POST workitems:search with { spaceId, category: "Task", conditions, page: 1, perPage: 200 }
+```
+
+### Step 2: 收集 git 信息
+
+从当前工作目录的 git 仓库自动收集：
+
+```bash
+# 当前分支名（后端分支）
+git branch --show-current
+
+# 最近的相关提交（用户可能指定 commit hash）
+git log {commitHash} -1 --stat
+
+# 提交所在分支
+git branch --contains {commitHash}
+```
+
+**信息映射**：
+- 后端分支 = `git branch --show-current` 或 `git branch --contains {hash}`
+- 需求描述 = 用户提供 或 commit message
+- 前端分支 / h5分支 = 用户提供，默认留空或 "无"
+
+### Step 3: 读取版本号
+
+从定制仓库的 pom.xml 读取 `parent.version`：
+
+```bash
+# 读取 pom.xml 的 parent version
+grep -A1 '<artifactId>core-dependencies</artifactId>' pom.xml | grep '<version>'
+```
+
+### Step 4: 加载提测单模板
+
+模板文件位置：`{skill目录}/templates/提测单模板.html`
+
+读取模板文件，替换占位符：
+- `{项目名称}` → 项目中文名（如"小鹏汽车总部"）
+- `{版本号}` → pom.xml parent version
+- `{后端分支}` → git 分支名
+- `{前端分支}` → 用户提供或 "无"
+- `{h5分支}` → 用户提供或 "无"
+- `{需求描述}` → 需求内容
+- `{开发者ID}` → 当前用户 ID
+- `{开发者名}` → 当前用户名
+- `{自测说明}` → "已自测通过" 或用户提供
+- `{测试用例}` → 根据需求自动生成或用户提供
+- `{提测人ID}` → 当前用户 ID
+- `{提测人}` → 当前用户名
+- `{验收人}` → 用户指定（先在项目成员中搜索 ID，未找到则纯文本）
+
+**@提及语法**：`<span data-type="mention" data-id="{用户ID}">@{用户名}</span>`
+
+**搜索用户 ID**：从项目工作项的 `assignedTo` 和 `creator` 字段收集所有成员，匹配姓名。
+
+### Step 5: 更新工作项描述
+
+```javascript
+await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/workitems/${workitemId}`, {
+  method: "PUT",
+  body: { description: filledTemplate }
+});
+// 成功返回 204
+```
+
+### 完整示例
+
+```
+用户：完善 IXXP-122 提测单，提交是 45bdb2a 装修优化，前端分支 master，验收人卢佳南
+```
+
+执行步骤：
+1. IXXP → 查缓存命中 → 项目 ID `d93e6ddf18c83254d0b8f27e7d`
+2. 搜索 Task 找到 IXXP-122
+3. `git log 45bdb2a -1 --stat` → 获取提交详情
+4. `git branch --contains 45bdb2a` → 后端分支
+5. 读取 pom.xml → 版本号
+6. 加载模板，替换占位符
+7. 在项目成员中搜索"卢佳南"（未找到则纯文本写入）
+8. PUT 更新描述 → 204 成功
+
+```
+用户：帮我完善小鹏汽车项目的提测单
+```
+
+执行步骤：
+1. "小鹏汽车" → 查缓存匹配 IXXP
+2. 用 assignedTo 过滤当前用户的未完成任务
+3. 筛选标题含"提测"的任务 → 展示列表让用户确认
+4. 从 git 自动收集分支、提交信息
+5. 读取版本号，加载模板，填充更新
+
+---
+
+## 开发工作流（创建提测单）
+
+当需要**新建**提测单（而非完善已有的），用户说"创建提测单"时触发。
+
+### 流程
+
+```
+读取任务（Task） → 查找父需求（Req） → 创建提测单子任务 → 填充描述
 ```
 
 ### Step 1: 读取任务并找到父需求
 
-通过 `serialNumber`（如 EZML-1878）找到任务，任务的 `parentId` 字段指向父需求。
-
 ```javascript
-// 1. 搜索项目中的任务，找到目标任务
-// 项目编号 = serialNumber 的前缀（如 EZML-1878 → EZML）
-// 先搜索项目列表找到 customCode 匹配的项目
-
-// 2. 从任务的 parentId 获取父需求
 const task = items.find(i => i.serialNumber === "EZML-1878");
 const parentDetail = await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/workitems/${task.parentId}`);
-// parentDetail.categoryId === "Req"
-// parentDetail.serialNumber === "EZML-1877"
 ```
 
-**关键字段**：
-- `parentId`: 父工作项 ID（Task → Req 的关联）
-- `categoryId`: 工作项类别（`Task` / `Req` / `Bug` / `Risk`）
-- `workitemType`: `{ name, id }` — 如 `{ name: "产品类需求", id: "9uy29901re573f561d69jn40" }`
-- `space`: `{ name, id }` — 所属项目
-
-### Step 2: 读取父需求详情
+### Step 2: 创建提测单子任务
 
 ```javascript
-const parentDetail = await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/workitems/${parentId}`);
-// description 是 JSON 字符串: { "htmlValue": "<article>...</article>" }
-let desc = parentDetail.description;
-try { desc = JSON.parse(desc).htmlValue; } catch {}
-// 去除 HTML 标签提取纯文本
-const text = desc.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-```
-
-需求描述是 HTML 格式，包含：需求背景、原型链接、具体需求列表等。
-
-### Step 3: 查看同级子任务
-
-查看父需求下的所有子任务（了解分工）：
-
-```javascript
-// 搜索该项目所有 Task，筛选 parentId 匹配的
-const allTasks = await searchWorkitems(projectId, "Task");
-const siblings = allTasks.filter(t => t.parentId === parentReqId);
-// 展示: serialNumber, subject, status.name, assignedTo.name
-```
-
-### Step 4: 创建提测单
-
-提测单是父需求（Req）下的一个 **Task 子任务**，指定给测试人员。
-
-```javascript
-// 获取 Task 类型 ID
 const types = await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/projects/${projectId}/workitemTypes?category=Task`);
-const taskTypeId = types[0].id; // 通常只有一个 Task 类型
-
-// 创建提测单（本质是创建 Task，parentId 指向父需求）
 await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/workitems`, {
   method: "POST",
   body: {
     spaceId: projectId,
     subject: "提测-需求标题摘要",
-    workitemTypeId: taskTypeId,
-    assignedTo: "测试人员ID",       // 必需！
-    parentId: parentReqId,          // 关键：挂在父需求下
-    description: "提测单 HTML 内容"  // 见下方模板
+    workitemTypeId: types[0].id,
+    assignedTo: "测试人员ID",
+    parentId: parentReqId,
+    description: filledTemplate  // 同提测单完善流程 Step 4-5
   }
 });
 ```
 
-### Step 5: 提测单描述模板
-
-根据团队实际使用的提测单格式（参考 SARW-117、SARW-28 等），提测单描述包含以下结构：
-
-```html
-<article class="4ever-article">
-<p>项目名称：{项目名称}</p>
-<p>项目版本：{版本号}</p>
-<p>项目分支：后端分支：{后端分支}&nbsp;&nbsp;前端分支：{前端分支}&nbsp;h5分支：{h5分支}</p>
-<p>项目需求：</p>
-<ol>
-<li><div>{需求1描述} <span data-type="mention" data-id="{开发者ID}">@{开发者名}</span></div></li>
-<li><div>{需求2描述} <span data-type="mention" data-id="{开发者ID}">@{开发者名}</span></div></li>
-</ol>
-<p>开发人员：</p>
-<ul style="list-style-type:none">
-<li><div><input type="checkbox" readonly="">&nbsp;<span data-type="mention" data-id="{ID}">@{名字}</span></div></li>
-</ul>
-<p>自测：</p>
-<p>{自测截图或说明}</p>
-<p>AI扫描：</p>
-<p>{AI扫描结果}</p>
-<p>提测人&amp;验收人</p>
-<p><span data-type="mention" data-id="{提测人ID}">@{提测人}</span>&nbsp;<span data-type="mention" data-id="{验收人ID}">@{验收人}</span></p>
-</article>
-```
-
-**@提及语法**：`<span data-type="mention" data-id="{用户ID}" data-login="{用户ID}">@{用户名}</span>`
-
-### Step 6: 转给测试
-
-创建提测单后，将对应的开发任务状态改为"已提测"（如果项目有此状态）或"开发完成"：
+### Step 3: 修改开发任务状态
 
 ```javascript
-// 修改任务状态为开发完成
 await yunxiaoReq(`/oapi/v1/projex/organizations/${ORG}/workitems/${taskId}`, {
   method: "PUT",
   body: { status: "100011" }  // 开发完成
 });
 ```
 
-### 常用工作项类型 ID（按项目动态获取）
-
-| 类别 | 类型名 | 用途 |
-|------|--------|------|
-| Task | 任务 | 开发任务、提测单 |
-| Req | 产品类需求 | 产品需求（父级） |
-| Req | 业务类需求 | 业务需求 |
-| Req | 技术类需求 | 技术需求 |
-| Bug | 缺陷 | Bug 单 |
-
-> 每个项目的类型 ID 不同，通过 `GET /workitemTypes?category={类别}` 获取。
-
 ---
 
-## 操作流程示例
+## 跨项目搜索用户任务
 
-### 批量修改状态
+云效 API 不支持全局搜索，需逐项目扫描。
 
-```
-用户：把 SARW-87、SARW-74 改为开发完成
-```
-
-1. 搜索 SARW 项目中的工作项，找到 serialNumber 匹配的 ID
-2. 从项目已有工作项中收集状态 → 找到"开发完成"的 ID
-3. 对每个工作项调用 PUT 更新状态
-4. 逐个 GET 验证更新结果
-
-### 查询个人任务
-
-```
-用户：查看我所有待处理的任务
+```javascript
+// 全量扫描所有项目（perPage=100，逐页）
+// 对每个项目用 assignedTo + status NOT_CONTAINS 过滤
+// 并发批处理（batchSize=20）
+const batchSize = 20;
+for (let i = 0; i < projects.length; i += batchSize) {
+  const batch = projects.slice(i, i + batchSize);
+  const results = await Promise.all(batch.map(p => searchWorkitems(p.id)));
+  myTasks.push(...results.flat());
+}
 ```
 
-1. 用 `assignedTo` + `status NOT_CONTAINS` conditions 并发搜索每个项目（服务端过滤）
-2. 并发批处理（batchSize=20）扫描所有项目
-3. 汇总展示
-
-### 读取任务需求并提测
-
-```
-用户：读取 EZML-1878，看看要做什么
-```
-
-1. 从 serialNumber 前缀找到项目（EZML → 搜索 customCode 匹配）
-2. 搜索项目 Task，找到 EZML-1878
-3. 通过 `parentId` 获取父需求（EZML-1877）详情
-4. 解析父需求 HTML 描述，提取需求内容
-5. 展示给用户
-
-```
-用户：创建提测单
-```
-
-1. 获取项目 Task 类型 ID
-2. 生成提测单描述（使用模板）
-3. 创建子任务（parentId 指向父需求，assignedTo 指向测试人员）
-4. 修改开发任务状态为"开发完成"
+> `members` 项目过滤在实测中未生效，建议直接扫描所有项目。
 
 ## Token 权限要求
 

@@ -207,6 +207,16 @@ const skillMap = [
     keywords: ['验证变更', '检查实现', 'opsx:verify', 'openspec verify', '验证规格']
   },
 
+  // ========== 流程编排技能 ==========
+  {
+    name: 'analyze-requirements',
+    keywords: ['分析需求', '需求分析', '原型分析', '需求拆解', '分析原型图', 'Axure原型', '原型截图']
+  },
+  {
+    name: 'fix-bug',
+    keywords: ['修复bug', 'fix bug', '排查修复', '线上修复', 'bug修复', '修复Bug', '修bug']
+  },
+
   // ========== 通用技能 ==========
   {
     name: 'crud-development',
