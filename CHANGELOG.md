@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.12.0] - 2026-03-09
+
+### 改进
+- **OpenSpec 命令化**：Claude Code 平台的 10 个 OpenSpec 技能转为 `/opsx-*` 斜杠命令（`.claude/commands/`），不再通过关键词自动触发，改为显式 `/opsx-new`、`/opsx-ff` 等命令调用。Codex/Cursor 平台保持技能形式不变
+- **Loki 查询时间优化**：所有查询场景默认时间范围统一为 6 小时（原 24h/1h 混用），减少无效日志扫描
+- **platform-map.json**：新增 10 个 OpenSpec 平台排除规则，Claude 平台不再分发 OpenSpec 技能文件
+- **文档更新**：README 和 reference.md 更新技能/命令计数（80 技能 + 20 命令）
+
+---
+
 ## [v1.11.0] - 2026-03-09
 
 ### 新增

@@ -1,22 +1,4 @@
----
-name: openspec-explore
-description: |
-  Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. Use when the user wants to think through something before or during a change.
-
-  触发场景：
-  - 需要在实现前先探索和思考问题
-  - 比较多种技术方案的优劣
-  - 调查代码库中的现有架构和模式
-  - 在变更实现过程中遇到困惑需要深入分析
-
-  触发词：探索、opsx:explore、openspec explore、想一想、分析问题、调研方案、头脑风暴
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-explore - OpenSpec 探索模式
 
 Enter explore mode. Think deeply. Visualize freely. Follow the conversation wherever it goes.
 

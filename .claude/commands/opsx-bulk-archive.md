@@ -1,21 +1,4 @@
----
-name: openspec-bulk-archive-change
-description: |
-  Archive multiple completed changes at once. Use when archiving several parallel changes.
-
-  触发场景：
-  - 多个变更同时完成，需要批量归档
-  - 清理多个已完成的并行变更
-  - 需要处理多个变更之间的规格冲突后统一归档
-
-  触发词：批量归档、全部归档、opsx:bulk-archive、一起归档、归档所有变更、批量存档
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-bulk-archive - 批量归档 OpenSpec 变更
 
 Archive multiple completed changes in a single operation.
 

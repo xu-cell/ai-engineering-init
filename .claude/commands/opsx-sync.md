@@ -1,21 +1,4 @@
----
-name: openspec-sync-specs
-description: |
-  Sync delta specs from a change to main specs. Use when the user wants to update main specs with changes from a delta spec, without archiving the change.
-
-  触发场景：
-  - 需要将变更中的增量规格同步到主规格
-  - 变更的 delta spec 需要合并到 openspec/specs 目录
-  - 在归档前手动同步规格变更
-
-  触发词：同步规格、同步specs、opsx:sync、openspec sync、合并规格、同步变更规格
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-sync - 同步 OpenSpec 规格
 
 Sync delta specs from a change to main specs.
 

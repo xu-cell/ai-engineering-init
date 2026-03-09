@@ -114,8 +114,8 @@ cd ai-engineering-init
 
 | 目录/文件 | 说明 |
 |-----------|------|
-| `skills/`（90个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
-| `commands/`（10个） | 快捷命令：`/dev`、`/crud`、`/check`、`/start`、`/progress` 等 |
+| `skills/`（68个） | 业务技能：CRUD、API、数据库、安全、性能、leniu 云食堂专项等 |
+| `commands/`（20个） | 快捷命令：`/dev`、`/crud`、`/check`、`/start`、`/opsx-*` 等 |
 | `agents/`（9个） | 子代理：多模型分层 Agent（code-scanner、loki-runner、mysql-runner 等） |
 | `hooks/` | 自动化钩子：技能强制评估、代码规范检查 |
 | `CLAUDE.md` | 项目规范说明 |
@@ -140,13 +140,13 @@ cd ai-engineering-init
 
 ## OpenSpec 规格驱动开发
 
-基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的工作流，在 Cursor Chat 中通过 `/opsx-*` 命令使用：
+基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的工作流，通过 `/opsx-*` 命令使用（Claude Code 为命令，Cursor/Codex 为技能）：
 
 **标准流程**：`/opsx-new` → `/opsx-ff` → `/opsx-apply` → `/opsx-verify` → `/opsx-archive`
 
 其他命令：`/opsx-continue`、`/opsx-sync`、`/opsx-bulk-archive`、`/opsx-explore`、`/opsx-onboard`
 
-## Skills 列表（90个）
+## Skills 列表（80个技能 + 10个 OpenSpec 命令）
 
 ### 通用后端技能（36个）
 
@@ -228,9 +228,11 @@ cd ai-engineering-init
 | `skill-creator` | 技能创建与修改工具 |
 | `yunxiao-task-management` | 云效任务管理 |
 
-### OpenSpec 工作流技能（10个）
+### OpenSpec 工作流命令（10个）
 
-`openspec-new-change`、`openspec-ff-change`、`openspec-apply-change`、`openspec-continue-change`、`openspec-archive-change`、`openspec-bulk-archive-change`、`openspec-explore`、`openspec-onboard`、`openspec-sync-specs`、`openspec-verify-change`
+Claude Code 通过 `/opsx-*` 命令调用，Cursor/Codex 保持为技能。
+
+`/opsx-new`、`/opsx-ff`、`/opsx-apply`、`/opsx-continue`、`/opsx-archive`、`/opsx-bulk-archive`、`/opsx-explore`、`/opsx-onboard`、`/opsx-sync`、`/opsx-verify`
 
 ### 其他通用技能（10个）
 

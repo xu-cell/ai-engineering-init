@@ -1,21 +1,4 @@
----
-name: openspec-onboard
-description: |
-  Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work.
-
-  触发场景：
-  - 首次使用 OpenSpec，需要引导式教学
-  - 想通过实际操作学习 OpenSpec 完整工作流
-  - 需要了解 OpenSpec 的所有命令和流程
-
-  触发词：入门、onboard、opsx:onboard、openspec 教程、学习 openspec、新手引导、openspec 入门
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-onboard - OpenSpec 新手引导
 
 Guide the user through their first complete OpenSpec workflow cycle. This is a teaching experience—you'll do real work in their codebase while explaining each step.
 

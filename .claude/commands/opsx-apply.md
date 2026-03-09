@@ -1,22 +1,4 @@
----
-name: openspec-apply-change
-description: |
-  Implement tasks from an OpenSpec change. Use when the user wants to start implementing, continue implementation, or work through tasks.
-
-  触发场景：
-  - 需要实现 OpenSpec 变更中的任务
-  - 执行变更制品中定义的实现步骤
-  - 将规格和设计转化为实际代码
-  - 逐个完成 tasks.md 中的待办事项
-
-  触发词：实现任务、开始实现、opsx:apply、openspec apply、执行变更、开始编码、实现变更
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-apply - 实现 OpenSpec 变更任务
 
 Implement tasks from an OpenSpec change.
 

@@ -1,21 +1,4 @@
----
-name: openspec-archive-change
-description: |
-  Archive a completed change in the experimental workflow. Use when the user wants to finalize and archive a change after implementation is complete.
-
-  触发场景：
-  - 变更实现完毕，需要归档保存
-  - 完成的变更需要移入 archive 目录
-  - 项目决策记录需要持久化保存
-
-  触发词：归档变更、归档、opsx:archive、openspec archive、完成变更、存档、归档完成
-license: MIT
-compatibility: Requires openspec CLI.
-metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.1.1"
----
+# /opsx-archive - 归档 OpenSpec 变更
 
 Archive a completed change in the experimental workflow.
 

@@ -140,7 +140,7 @@ print('Token updated for monitor-dev')
 ```bash
 TRACE_ID="a53dd0b0cc62bf4a79a63e77444f6f3f"
 END=$(date +%s)000000000
-START=$(( $(date +%s) - 86400 ))000000000
+START=$(( $(date +%s) - 21600 ))000000000  # 最近6小时
 
 curl -s "${API}/query_range" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -172,7 +172,7 @@ else:
 ```bash
 API_PATH="/security/summary/order/mealtime/classify/page"
 END=$(date +%s)000000000
-START=$(( $(date +%s) - 3600 ))000000000  # 最近1小时
+START=$(( $(date +%s) - 21600 ))000000000  # 最近6小时
 
 curl -s "${API}/query_range" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -221,7 +221,7 @@ if len(all_lines) > 30:
 ```bash
 KEYWORD="LeException"
 END=$(date +%s)000000000
-START=$(( $(date +%s) - 3600 ))000000000
+START=$(( $(date +%s) - 21600 ))000000000  # 最近6小时
 
 curl -s "${API}/query_range" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -269,7 +269,7 @@ curl -s "${API}/query_range" \
 # Step 1: 找 traceId
 API_PATH="/api/v2/web/order/list"
 END=$(date +%s)000000000
-START=$(( $(date +%s) - 3600 ))000000000
+START=$(( $(date +%s) - 21600 ))000000000  # 最近6小时
 
 TRACE_IDS=$(curl -s "${API}/query_range" \
   -H "Authorization: Bearer ${TOKEN}" \

@@ -55,6 +55,46 @@
     "skill-creator": {
       "platforms": ["codex", "cursor"],
       "note": "技能创建元技能，Claude 平台有内置 add-skill，仅分发到 Codex 和 Cursor"
+    },
+    "openspec-new-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 变更，Claude 平台转为 /opsx-new 命令"
+    },
+    "openspec-ff-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 快进，Claude 平台转为 /opsx-ff 命令"
+    },
+    "openspec-apply-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 实现，Claude 平台转为 /opsx-apply 命令"
+    },
+    "openspec-continue-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 继续，Claude 平台转为 /opsx-continue 命令"
+    },
+    "openspec-archive-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 归档，Claude 平台转为 /opsx-archive 命令"
+    },
+    "openspec-bulk-archive-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 批量归档，Claude 平台转为 /opsx-bulk-archive 命令"
+    },
+    "openspec-explore": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 探索，Claude 平台转为 /opsx-explore 命令"
+    },
+    "openspec-onboard": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 新手引导，Claude 平台转为 /opsx-onboard 命令"
+    },
+    "openspec-sync-specs": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 同步，Claude 平台转为 /opsx-sync 命令"
+    },
+    "openspec-verify-change": {
+      "platforms": ["codex", "cursor"],
+      "note": "OpenSpec 验证，Claude 平台转为 /opsx-verify 命令"
     }
   }
 }
