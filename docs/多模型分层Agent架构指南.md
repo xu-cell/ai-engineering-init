@@ -306,40 +306,47 @@ Step 3: code-reviewer(Sonnet+Codex) → 审查           [8秒]
 
 ### 场景 3：Bug 修复（fix-bug 技能编排）
 
-> 由 `fix-bug` 技能编排全流程。核心原则：简单 Bug 直接修，复杂 Bug 走并行 Agent。
+> 由 `fix-bug` 技能编排全流程。两阶段 Agent 排查 + 报告确认 + 修复提交。
 
 ```
 用户: "线上订单创建报 500，traceId=abc123"
 
 Step 0: Opus 主会话 → 复杂度判断
   │
-  ├─ 简单 Bug？ → 直接读代码修复 → git-workflow 提交（跳过 Agent）
+  ├─ 简单 Bug？ → 读代码定位 → 输出排查报告 → 用户确认 → 修复 → git-workflow
   │   例：明显 NPE、拼写错误、用户已指出修改方案
   │
-  └─ 复杂 Bug？ → 进入 Agent 路径 ↓
+  └─ 复杂 Bug？ → 进入两阶段 Agent 路径 ↓
 
-Step 1: Opus 主会话 → 按信息量并行启动 Agent（必须同时启动）
+Step 1（阶段一）: Opus 主会话 → 按信息量并行启动 Agent（必须同时启动）
   ├─ bug-analyzer(Sonnet+Codex)  → 读代码分析根因        [10秒]（必启动）
   ├─ loki-runner(Haiku)          → 查 traceId 日志        [3秒]（有 traceId 时）
   └─ mysql-runner(Haiku)         → 查数据库验证数据       [2秒]（有 DB 信息时）
 
   按信息量决定启动组合：
-  | 用户提供的信息          | 启动的 Agent                              |
+  | 用户提供的信息          | 阶段一启动                                |
   |------------------------|-----------------------------------------|
   | 只有 Bug 描述           | bug-analyzer                             |
   | Bug 描述 + traceId      | bug-analyzer + loki-runner               |
   | Bug 描述 + DB 信息      | bug-analyzer + mysql-runner              |
   | Bug 描述 + traceId + DB | bug-analyzer + loki-runner + mysql-runner |
 
-Step 2: Opus 主会话 → 汇总 Agent 结果 → 确认修复方案
+Step 2（阶段二）: 日志驱动二次查询（阶段一返回后）
+  从 loki-runner 结果中提取表名/数据ID/租户ID
+  ├─ 有可查询信息？ → 启动 mysql-runner 二次查询验证数据
+  └─ 无数据库线索？ → 跳过，直接汇总
 
-Step 3: Opus 主会话 → 编写修复代码                        [Opus 编码]
+Step 3: Opus 主会话 → 汇总所有结果 → ⚠️ 输出排查报告（不修改代码）
 
-Step 4: Opus 主会话 → 启动审查
+Step 4: ⏸️ 等待用户确认修复方案（用户说"修"或确认后继续）
+
+Step 5: Opus 主会话 → 编写修复代码                        [Opus 编码]
+
+Step 6: Opus 主会话 → 启动审查
   └─ code-reviewer(Sonnet+Codex) → 审查修复代码           [8秒]
      返回: 审查报告（通过/需修改）
 
-Step 5: git-workflow 提交（必须通过 git-workflow 技能，禁止直接 git commit）
+Step 7: git-workflow 提交（必须通过 git-workflow 技能，禁止直接 git commit）
 ```
 
 #### fix-bug 与 bug-detective 的区别

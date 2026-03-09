@@ -29,13 +29,15 @@ AI 判断复杂度
 用户说："修复这个 bug" / 粘贴报错日志 / 提供 traceId
   ↓ 自动激活 fix-bug 技能
 AI 判断复杂度
-  ├─ 简单 Bug → 直接读代码修复 → git commit
-  └─ 复杂 Bug → 并行启动 Agent
+  ├─ 简单 Bug → 读代码定位 → 输出排查报告 → 用户确认 → 修复 → git commit
+  └─ 复杂 Bug → 两阶段 Agent 排查
+       阶段一（并行）：
        ├─ bug-analyzer    → 根因分析（必启动）
        ├─ loki-runner     → 查日志（有 traceId 时）
-       ├─ mysql-runner    → 查数据（有 DB 信息时）
-       └─ code-scanner    → 扫代码（需要时）
-       → 汇总结果 → 修复 → git commit
+       └─ mysql-runner    → 查数据（有 DB 信息时）
+       阶段二（日志驱动）：
+       └─ 日志中发现表名/数据ID → 自动启动 mysql-runner 二次查询
+       → 汇总结果 → 输出排查报告 → ⏸️ 用户确认 → 修复 → git commit
 ```
 
 **触发词**：`修复 bug`、`fix bug`、`排查修复`、`线上修复`
