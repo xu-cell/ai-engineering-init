@@ -29,7 +29,7 @@ description: |
   │   - 用户已给出完整字段列表
   │
   └─ 复杂需求？ ──→ Agent 路径（启动 requirements-analyzer）
-      - 提供了 Axure 原型链接或截图
+      - 提供了 Axure 原型截图
       - 提供了云效任务编号
       - 多页面/多模块联动
       - 业务流程复杂，需要状态流转设计
@@ -45,34 +45,12 @@ description: |
 
 ## Agent 路径（复杂需求）
 
-### Axure 链接处理（重要）
-
-> **Axure 是 SPA 应用，WebFetch 必定失败（TLS/JS 渲染问题）。禁止用 WebFetch 访问 Axure 链接。**
-
-当用户提供 Axure 链接时，必须用 Playwright 截图：
-
-```bash
-# 1. 先用 Playwright 截图（每个页面单独截）
-npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page1" /tmp/axure-1.png
-npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page2" /tmp/axure-2.png
-
-# 2. 截图完成后，将文件路径传给 image-reader Agent 分析
-# 3. 如果原型有多个页面，URL 通常带 #page 参数，逐页截图
-```
-
-**判断规则**：
-- URL 包含 `axure.cloud` 或 `.axshare.com` → Playwright 截图
-- 用户说"Axure 链接" → Playwright 截图
-- 本地截图文件（.png/.jpg） → 直接 image-reader 分析
-
-### 完整流程
-
 ```
 步骤 1：收集信息（从用户消息中提取）
-  - Axure 原型链接 → Playwright 截图 → image-reader 分析
-  - Axure 原型截图文件 → 直接 image-reader 分析
-  - 云效任务编号 → task-fetcher 获取详情
+  - Axure 原型截图路径
+  - 云效任务编号
   - 需求描述文字
+  - 关联模块信息
 
 步骤 2：启动 requirements-analyzer Agent
   └── requirements-analyzer(Opus) 内部自动编排：
@@ -91,23 +69,13 @@ npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page2
 |---------------|---------|
 | 只有文字描述 | 快速路径（不启动 Agent） |
 | 文字 + 原型截图 | requirements-analyzer → 内部调 image-reader |
-| 文字 + Axure 链接 | Playwright 截图 → requirements-analyzer → image-reader |
 | 文字 + 云效任务号 | requirements-analyzer → 内部调 task-fetcher |
 | 原型截图 + 云效任务号 | requirements-analyzer → 内部并行调 image-reader + task-fetcher |
 
 ### 启动示例
 
 ```
-# 有 Axure 链接（先截图再分析）
-Bash: npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page1" /tmp/axure-1.png
-Bash: npx playwright screenshot --wait-for-timeout 3000 "https://xxx.axure.cloud/page2" /tmp/axure-2.png
-
-Agent(subagent_type="requirements-analyzer",
-  prompt="分析以下 Axure 原型截图，输出需求分析报告和开发任务清单：
-  截图路径：/tmp/axure-1.png, /tmp/axure-2.png
-  需求描述：xxx")
-
-# 有原型截图文件
+# 有原型截图
 Agent(subagent_type="requirements-analyzer",
   prompt="分析以下 Axure 原型截图，输出需求分析报告和开发任务清单：
   截图路径：/path/to/image1.png, /path/to/image2.png
@@ -142,4 +110,3 @@ Agent(subagent_type="requirements-analyzer",
 - 与 `bug-detective` / `fix-bug` 的区别：本技能面向**新功能开发前的需求分析**，不涉及 Bug 排查
 - 数据库设计必须遵循项目规范（雪花 ID、审计字段、del_flag=2 正常）
 - 如果需求信息不完整，主动列出需要确认的点，而不是猜测
-- **Axure 链接必须用 Playwright 截图，禁止 WebFetch**

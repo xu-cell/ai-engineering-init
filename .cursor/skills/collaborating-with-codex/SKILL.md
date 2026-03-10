@@ -1,8 +1,8 @@
 ---
 name: collaborating-with-codex
 description: |
-  与 OpenAI Codex CLI 协同开发。支持 MCP 原生集成和桥接脚本两种模式。
-  默认模型：gpt-5.3-codex
+  与 Codex MCP 协同开发。通过 GuDaStudio/codexmcp 集成，使用 mcp__codex__codex 工具。
+  默认沙箱：read-only（严禁 codex 修改真实代码）。
 
   触发场景：
   - 需要算法实现或复杂逻辑分析
@@ -14,110 +14,128 @@ description: |
   触发词：Codex、协作、多模型、原型、Diff、算法分析、代码审查、codex协同
 
   前置要求：
-  - 已安装 Codex CLI (npm install -g @openai/codex)
-  - 已配置 OpenAI API Key (codex auth login)
+  - 已通过 `claude mcp add codex -s user --transport stdio -- uvx --from git+https://github.com/GuDaStudio/codexmcp.git codexmcp` 注册
+  - ~/.claude/settings.json 的 permissions.allow 已加入 mcp__codex__codex
 ---
 
-# 与 Codex CLI 协同开发
+# 与 Codex MCP 协同开发
 
-> 两种调用方式：**MCP 原生集成**（推荐）和桥接脚本。默认模型 `gpt-5.3-codex`。
-
----
-
-## 方式一：MCP 原生集成（推荐）
-
-已通过 `codex-mcp-server` 注册为 Claude Code 的 MCP 工具，可直接在对话中使用。
-
-### MCP 工具列表
-
-| 工具 | 用途 | 示例指令 |
-|------|------|---------|
-| `codex` | AI 编码助手，支持会话、模型选择 | "用 codex 分析这个函数" |
-| `review` | 代码审查（未提交代码、分支、提交） | "用 codex review 检查 main 分支差异" |
-| `listSessions` | 查看活跃会话 | "列出 codex 会话" |
-| `ping` | 测试连接 | "ping codex" |
-
-### MCP 使用示例
-
-**基础调用**：直接在 Claude Code 对话中说：
-- "用 codex 工具分析 OrderInfoService 的业务逻辑"
-- "用 codex review 检查当前未提交的代码变更"
-- "用 codex 生成这个方法的单元测试，模型用 gpt-5.3-codex"
-
-**多轮会话**：codex 工具支持 `sessionId` 参数，自动维持上下文。
-
-**模型指定**：调用时传入 `model: "gpt-5.3-codex"` 参数（已配置为默认）。
-
-### MCP 配置位置
-
-```
-~/.claude.json → projects → mcpServers → codex-cli
-~/.codex/config.toml → profiles（review/analyze/prototype）
-```
+> 通过 `mcp__codex__codex` 工具直接调用，无需命令行。始终使用 `read-only` 沙箱，要求 codex 只输出 unified diff patch。
 
 ---
 
-## 方式二：桥接脚本
+## MCP 工具说明
 
-适用于需要精细控制参数或后台批量执行的场景。
+### 工具名
+`mcp__codex__codex`
 
-### 快速开始
-
-```bash
-python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
-  --cd . --model gpt-5.3-codex --PROMPT "Your task"
-```
-
-### 参数说明
+### 参数
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| `--PROMPT` | str | ✅ | - | 发送给 Codex 的任务指令（使用英语） |
-| `--cd` | Path | ✅ | - | 工作目录根路径 |
-| `--model` | str | ❌ | `gpt-5.3-codex` | 指定模型 |
-| `--sandbox` | Literal | ❌ | `read-only` | 沙箱策略 |
-| `--SESSION_ID` | UUID | ❌ | `None` | 会话 ID（继续之前的对话） |
-| `--profile` | str | ❌ | `None` | Codex profile（review/analyze/prototype） |
-| `--return-all-messages` | bool | ❌ | `False` | 返回完整推理信息 |
-| `--image` | List[Path] | ❌ | `None` | 附加图片 |
-| `--yolo` | bool | ❌ | `False` | 跳过审批（危险） |
+| `PROMPT` | string | ✅ | - | 发送给 Codex 的任务指令（建议用英语） |
+| `cd` | Path | ✅ | - | 工作目录根路径（必须存在） |
+| `sandbox` | string | ❌ | `read-only` | `read-only` / `workspace-write` / `danger-full-access` |
+| `SESSION_ID` | UUID | ❌ | None | 继续之前的会话，保持上下文 |
+| `return_all_messages` | bool | ❌ | False | 是否返回推理过程和工具调用详情 |
+| `model` | string | ❌ | None | 指定模型（None 使用用户默认配置） |
+| `image` | List[Path] | ❌ | None | 附加图片文件 |
+| `yolo` | bool | ❌ | False | 跳过沙箱审批（危险，不推荐） |
+| `profile` | string | ❌ | None | 从 `~/.codex/config.toml` 加载的配置名 |
+| `skip_git_repo_check` | bool | ❌ | False | 允许在非 Git 仓库中运行 |
 
-### 使用示例
+### 返回值
 
-```bash
-# 代码分析（只读）
-python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
-  --cd . --model gpt-5.3-codex --profile analyze \
-  --PROMPT "Analyze the four-layer architecture in OrderInfoWebController"
+```json
+// 成功
+{
+  "success": true,
+  "SESSION_ID": "uuid-string",     // 必须保存，用于多轮交互
+  "agent_messages": "codex回复内容"
+}
 
-# 代码审查
-python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
-  --cd . --model gpt-5.3-codex --profile review \
-  --PROMPT "Review OrderWebBusiness.java for bugs. OUTPUT: Review with line numbers."
-
-# 生成 Diff 补丁
-python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
-  --cd . --model gpt-5.3-codex \
-  --PROMPT "Generate unified diff to add logging. OUTPUT: Unified Diff Patch ONLY."
-
-# 多轮会话
-python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
-  --cd . --model gpt-5.3-codex \
-  --SESSION_ID "uuid-from-previous" \
-  --PROMPT "Now write unit tests for the method we discussed"
+// 失败
+{
+  "success": false,
+  "error": "错误信息"
+}
 ```
 
 ---
 
-## Codex Profile 配置
+## 标准协作流程
 
-已在 `~/.codex/config.toml` 中预设 3 个 profile：
+```
+1. 需求分析阶段
+   Claude 形成初步分析 → 告知 codex → codex 完善方案
 
-| Profile | 模型 | 沙箱 | 推理强度 | 适用场景 |
-|---------|------|------|---------|---------|
-| `review` | gpt-5.3-codex | read-only | medium | 快速代码审查 |
-| `analyze` | gpt-5.3-codex | read-only | high | 深度逻辑分析 |
-| `prototype` | gpt-5.3-codex | workspace-write | high | 原型生成 |
+2. 编码前（原型阶段）
+   调用 codex（read-only）→ 要求输出 unified diff patch
+   Claude 以 diff 为逻辑参考 → 重写为生产级代码
+
+3. 编码后（审查阶段）
+   调用 codex review 改动 → 验证需求完成度和代码质量
+```
+
+---
+
+## 调用示例
+
+### 场景一：需求分析完善
+
+```
+PROMPT: "Here is my requirement: [需求描述]. My initial approach: [初步思路].
+Please review and improve the analysis and implementation plan.
+Output: structured analysis with potential risks."
+
+cd: /path/to/project
+sandbox: read-only
+```
+
+### 场景二：获取代码原型（Diff）
+
+```
+PROMPT: "Generate a unified diff patch to implement [功能描述].
+File: [目标文件路径]
+Requirements:
+- [要求1]
+- [要求2]
+
+IMPORTANT: Output unified diff patch ONLY. Do NOT modify any real files.
+IMPORTANT: All Java comments and SQL COMMENTs MUST be in Chinese."
+
+cd: /path/to/project
+sandbox: read-only
+```
+
+### 场景三：代码审查
+
+```
+PROMPT: "Review the following code changes for correctness, performance, and security.
+[粘贴代码或说明文件路径]
+
+Check:
+1. Logic correctness
+2. Edge cases
+3. Performance issues
+4. Security vulnerabilities
+
+Output: review with line numbers and severity (CRITICAL/WARNING/INFO)."
+
+cd: /path/to/project
+sandbox: read-only
+```
+
+### 场景四：多轮交互（继续会话）
+
+```
+// 第一轮
+SESSION_ID: None → 保存返回的 SESSION_ID
+
+// 第二轮
+SESSION_ID: "上一轮返回的 uuid"
+PROMPT: "Now refine the diff based on the feedback: [反馈内容]"
+```
 
 ---
 
@@ -125,24 +143,18 @@ python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
 
 | 角色 | Claude Code 负责 | Codex 负责 |
 |------|-----------------|-----------|
-| **架构** | 设计、决策、审校 | 分析现有代码 |
-| **开发** | 规范重构、最终代码 | 原型生成（Diff） |
-| **审查** | 规范检查、最终判定 | 逐文件审查、安全扫描 |
-| **调试** | 日志分析、定位 | 深度代码分析、补丁 |
+| **架构** | 设计决策、规范审校 | 分析现有代码结构 |
+| **开发** | 规范重写、最终代码实施 | 输出原型 diff（只读参考） |
+| **审查** | 规范检查、最终判定 | 逐文件逻辑审查 |
+| **调试** | 日志分析、问题定位 | 深度代码分析、补丁建议 |
 
 ### 重要约束
 
-1. **只读优先**: 默认 `read-only`，仅原型生成用 `workspace-write`
-2. **英语 Prompt**: 与 Codex 交互用英语
-3. **中文强制**: 每次 PROMPT 末尾追加：
-   ```
-   IMPORTANT LANGUAGE RULES:
-   - All SQL COMMENT values MUST be in Chinese
-   - All Java/code comments MUST be in Chinese
-   - Variable names and class names remain in English
-   ```
-4. **脏原型思维**: Codex 输出视为草稿，Claude 按项目规范重构
-5. **后台运行**: 长时间任务用 subagent `run_in_background`
+1. **只读优先**：始终使用 `sandbox="read-only"`
+2. **英语 Prompt**：与 codex 交互用英语，代码注释要求中文
+3. **脏原型思维**：codex 输出视为草稿，Claude 按项目规范重构
+4. **保存 SESSION_ID**：每次调用后记录，多轮对话时传入
+5. **质疑 codex**：codex 仅供参考，必须有独立判断
 
 ---
 
@@ -150,8 +162,19 @@ python .claude/skills/collaborating-with-codex/scripts/codex_bridge.py \
 
 | 问题 | 解决方案 |
 |------|---------|
-| MCP 工具未出现 | 重启 Claude Code 会话，检查 `~/.claude.json` |
-| `codex: command not found` | `npm i -g @openai/codex` 并确认 PATH |
-| 模型不对 | 调用时显式传 `model: "gpt-5.3-codex"` |
-| MCP 连接超时 | `npx -y codex-mcp-server` 手动测试 |
-| 桥接脚本 SESSION_ID 失败 | 检查网络和 API Key |
+| 工具未出现 | 重启 Claude Code，检查 `~/.claude.json` 中 codex 配置 |
+| `cd` 参数报错 | 确认目录存在，使用绝对路径 |
+| 连接超时 | 检查网络，`uvx --from git+https://github.com/GuDaStudio/codexmcp.git codexmcp` 手动测试 |
+| SESSION_ID 失效 | 重新开启新会话（不传 SESSION_ID） |
+| codex 修改了文件 | 确认 `sandbox="read-only"` 已设置 |
+
+## 安装验证
+
+```bash
+# 查看 MCP 配置
+cat ~/.claude.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('mcpServers', {}).get('codex', 'not found'))"
+
+# 重启后运行
+claude mcp list
+# 期望看到: codex: uvx ... - ✓ Connected
+```
