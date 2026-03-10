@@ -84,6 +84,7 @@
 | `lanhu-design` | 蓝湖设计稿、原型图、蓝湖链接、设计图、切图 |
 | `task-tracker` | 任务跟踪、进度管理 |
 | `test-development` | 测试、单元测试 |
+| `auto-test` | API 自动化测试、Hurl、接口测试、测试报告、回归测试 |
 | `analyze-requirements` | 需求分析全流程编排（原型图/云效任务 → 开发任务清单） |
 | `fix-bug` | 修复 Bug 全流程编排（排查+修复+提交） |
 | `bug-detective` | Bug 排查、报错、异常 |

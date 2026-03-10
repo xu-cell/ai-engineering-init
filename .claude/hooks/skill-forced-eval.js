@@ -90,6 +90,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - json-serialization: JSON/序列化/反序列化/日期格式/BigDecimal/精度
 - redis-cache: Redis/缓存/@Cacheable/分布式锁/限流
 - scheduled-jobs: 定时任务/@Scheduled/Quartz/XXL-Job/任务调度
+- auto-test: 自动测试/auto-test/接口测试/API测试/Hurl/测试报告/回归测试
 - add-skill: 添加技能/创建技能/新技能/技能开发
 - banana-image: 生成图片/AI图片/产品图/海报/缩略图
 - lanhu-design: 蓝湖/lanhu/设计稿/原型图/蓝湖链接/设计图/切图

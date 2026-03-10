@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>tests/hurl/finance/voucher-upload.hurl</title>
+    <style>
+        body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.timeline-container {
+    max-width: 1400px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #dcdcde;
+    display: flex;
+}
+
+.calls {
+    position: sticky;
+    left: 0;
+    right: 0;
+    width: 260px;
+    flex-shrink: 0;
+}
+
+.waterfall {
+    overflow: auto;
+    overflow-y: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #19191c;
+        color: #c2c2c2;
+    }
+
+    .timeline-container {
+        border-color: #444;
+    }
+}
+
+        .report-nav {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.report-nav-links {
+    display: flex;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.report-nav a {
+    color: royalblue;
+    margin-right: 20px;
+}
+
+.report-nav a[aria-selected="true"] {
+    color: #ff0288;
+}
+
+.report-nav-summary > div {
+    display: flex;
+}
+
+.report-nav-summary .item-name {
+    min-width: 100px;
+    font-weight: bold;
+}
+
+.error {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-left: red 4px solid;
+}
+
+.error-desc {
+    background: #f5f5f5;
+}
+
+.error-desc pre {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    margin: 0.75rem;
+    padding: 0.8rem;
+    overflow-x: auto;
+}
+
+.error-desc pre code {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.success, .success a {
+    color: green;
+}
+
+.failure, .failure a {
+    color: red;
+}
+
+@media (prefers-color-scheme: dark) {
+    .report-nav a {
+        color: #34a7ff;
+    }
+    
+    .success, .success a {
+        color: green;
+    }
+
+    .report-nav a[aria-selected="true"] {
+        color: #ff0288;
+    }
+
+    .error-desc {
+        background: #27272c;
+    }
+}
+
+    </style>
+<body>
+<div>
+    <div class="container">
+        <div class="report-nav">
+    <div class="report-nav-links">
+        <div><a href="../index.html">Report</a></div>
+        <div><a aria-selected="false" href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html">Source</a></div>
+        <div><a aria-selected="true" href="292d81cc-0c7f-4882-bdc9-c7140f918326-timeline.html">Timeline</a></div>
+        <div><a aria-selected="false" href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html">Run</a></div>
+    </div>
+    <div class="report-nav-summary">
+        <div><div class="item-name">File:</div><div><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html">tests/hurl/finance/voucher-upload.hurl</a></div></div>
+        <div><div class="item-name">Status:</div><div><span class="success"><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-timeline.html">success</a></span></div></div>
+        <div><div class="item-name">Duration:</div><div>836 ms</div></div>
+        <div><div class="item-name">Errors:</div><div>-</div></div>
+        <div></div>
+    </div>
+    <div class="errors"></div>
+</div>
+
+    </div>
+    <div class="timeline-container">
+        <div class="calls"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 492" width="260" height="492"><style>@media (prefers-color-scheme: dark) {
+    .calls-list {
+        fill: #c2c2c2;
+    }
+
+    .calls-back {
+        fill: #27272c;
+    }
+
+    .calls-grid rect {
+        fill: #444;
+    }
+}</style><symbol id="success" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="#10bb00" /></symbol><symbol id="failure" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="red" /></symbol><symbol id="retry" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="gold" /></symbol><rect class="calls-back" x="0" y="0" width="100%" height="100%" fill="#fbfafd" /><g class="calls-grid"><rect x="0" y="50" width="260" height="1" fill="#ddd" /><rect x="0" y="73" width="260" height="1" fill="#ddd" /><rect x="0" y="98" width="260" height="1" fill="#ddd" /><rect x="0" y="121" width="260" height="1" fill="#ddd" /><rect x="0" y="146" width="260" height="1" fill="#ddd" /><rect x="0" y="169" width="260" height="1" fill="#ddd" /><rect x="0" y="194" width="260" height="1" fill="#ddd" /><rect x="0" y="217" width="260" height="1" fill="#ddd" /><rect x="0" y="242" width="260" height="1" fill="#ddd" /><rect x="0" y="265" width="260" height="1" fill="#ddd" /><rect x="259" y="0" width="1" height="492" fill="#ddd" /></g><g class="calls-list" font-size="13px" font-family="sans-serif" fill="#777"><use href="#success" x="7" y="56" width="13" height="13" /><text x="25" y="67"><title>POST 192.168.97.235:58300/api/v2/alloc/canteen/page-canteen</title>POST 192.168.97.235:5830...</text><text x="205" y="67">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e1:c1"><text x="233" y="67" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="80" width="13" height="13" /><text x="25" y="91"><title>POST 192.168.97.235:58300/report/finance/setting/voucher-type/page</title>POST 192.168.97.235:5830...</text><text x="205" y="91">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e2:c1"><text x="233" y="91" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="104" width="13" height="13" /><text x="25" y="115"><title>POST 192.168.97.235:58300/report/finance/setting/voucher-word/page</title>POST 192.168.97.235:5830...</text><text x="205" y="115">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e3:c1"><text x="233" y="115" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="128" width="13" height="13" /><text x="25" y="139"><title>POST 192.168.97.235:58300/report/finance/voucher/save</title>POST 192.168.97.235:5830...</text><text x="205" y="139">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e4:c1"><text x="233" y="139" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="152" width="13" height="13" /><text x="25" y="163"><title>POST 192.168.97.235:58300/report/finance/voucher/detail</title>POST 192.168.97.235:5830...</text><text x="205" y="163">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e5:c1"><text x="233" y="163" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="176" width="13" height="13" /><text x="25" y="187"><title>POST 192.168.97.235:58300/report/finance/voucher/save</title>POST 192.168.97.235:5830...</text><text x="205" y="187">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e6:c1"><text x="233" y="187" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="200" width="13" height="13" /><text x="25" y="211"><title>POST 192.168.97.235:58300/report/finance/voucher/detail</title>POST 192.168.97.235:5830...</text><text x="205" y="211">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e7:c1"><text x="233" y="211" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="224" width="13" height="13" /><text x="25" y="235"><title>POST 192.168.97.235:58300/report/finance/voucher/delete</title>POST 192.168.97.235:5830...</text><text x="205" y="235">200</text><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e8:c1"><text x="233" y="235" fill="royalblue" text-decoration="underline">run</text></a></g></svg></div>
+        <div class="waterfall"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1138 492" width="1138" height="492"><style>.call-detail {
+    display: none;
+}
+
+.call-summary:hover + .call-detail, .call-detail:hover {
+    display: block;
+}
+
+.call-sel {
+    pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .grid-strip rect {
+        fill: #27272c;
+    }
+
+    .grid-ticks {
+        stroke: #444;
+    }
+
+    .call-back {
+        stroke: #444;
+        fill: #19191c;
+    }
+
+    .call-sel {
+        opacity: 0.1;
+    }
+
+    .call-legend {
+        fill: #c2c2c2;
+    }
+}</style><defs><filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25" /></filter></defs><symbol id="success" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="#10bb00" /></symbol><symbol id="failure" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="red" /></symbol><symbol id="retry" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="gold" /></symbol><g><g class="grid-strip"><rect x="0" y="50" width="1138" height="24" fill="#f5f5f5" /><rect x="0" y="98" width="1138" height="24" fill="#f5f5f5" /><rect x="0" y="146" width="1138" height="24" fill="#f5f5f5" /><rect x="0" y="194" width="1138" height="24" fill="#f5f5f5" /><rect x="0" y="242" width="1138" height="24" fill="#f5f5f5" /></g><g><g class="grid-ticks" stroke="#ccc"><line x1="136" y1="0" x2="136" y2="492" /><line x1="272" y1="0" x2="272" y2="492" /><line x1="408" y1="0" x2="408" y2="492" /><line x1="544" y1="0" x2="544" y2="492" /><line x1="680" y1="0" x2="680" y2="492" /><line x1="817" y1="0" x2="817" y2="492" /><line x1="953" y1="0" x2="953" y2="492" /><line x1="1089" y1="0" x2="1089" y2="492" /></g><g font-size="15px" font-family="sans-serif" fill="#777"><text x="5" y="20">0 ms</text><text x="141" y="20">100 ms</text><text x="277" y="20">200 ms</text><text x="413" y="20">300 ms</text><text x="549" y="20">400 ms</text><text x="685" y="20">500 ms</text><text x="822" y="20">600 ms</text><text x="958" y="20">700 ms</text><text x="1094" y="20">800 ms</text></g></g></g><g><g class="call-summary"><rect x="1044.8996440889587" y="221" width="0.02177563253141728" height="18" fill="#1d9688" /><rect x="1044.9813027109515" y="221" width="92.60632124798485" height="18" fill="#18c852" /><rect x="1137.5876239589363" y="221" width="0.2817222458752111" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="1044.8996440889587" y="0" width="93.10035591104133" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="239" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="253" width="20" height="20" /><text x="576" y="269" font-weight="bold">POST http://192.168.97.235:58300/report/finance/vouche...  200</text><g><rect x="558" y="285" width="20" height="20" fill="#1d9688" /><text x="594" y="302">DNS lookup</text><text x="738" y="302">16.0 µs</text></g><g><rect x="558" y="315" width="20" height="20" fill="#9933ff" /><text x="594" y="332">SSL handshake</text><text x="738" y="332">0.0 µs</text></g><g><rect x="558" y="345" width="20" height="20" fill="#18c852" /><text x="594" y="362">Wait</text><text x="738" y="362">68.0 ms</text></g><g><rect x="558" y="375" width="20" height="20" fill="#36a9f4" /><text x="594" y="392">Data transfer</text><text x="738" y="392">207.0 µs</text></g><g font-weight="bold"><text x="594" y="422">Total</text><text x="738" y="422">68.3 ms</text></g><g><text x="912" y="303">Start:</text><text x="1012" y="303">767.8 ms</text></g><g><text x="912" y="333">Stop:</text><text x="1012" y="333">836.2 ms</text></g><g><text x="912" y="363">Transferred:</text><text x="1012" y="363">41.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e8:c1"><text x="912" y="419" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l192"><text x="1002" y="419" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="449" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="1012.1069024736775" y="197" width="0.01905367846499012" height="18" fill="#1d9688" /><rect x="1012.1558976468731" y="197" width="30.726778478862997" height="18" fill="#18c852" /><rect x="1042.8826761257362" y="197" width="0.04355126506283456" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="1012.1069024736775" y="0" width="30.849266411852227" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="215" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="229" width="20" height="20" /><text x="576" y="245" font-weight="bold">POST http://192.168.97.235:58300/report/finance/vouche...  200</text><g><rect x="558" y="261" width="20" height="20" fill="#1d9688" /><text x="594" y="278">DNS lookup</text><text x="738" y="278">14.0 µs</text></g><g><rect x="558" y="291" width="20" height="20" fill="#9933ff" /><text x="594" y="308">SSL handshake</text><text x="738" y="308">0.0 µs</text></g><g><rect x="558" y="321" width="20" height="20" fill="#18c852" /><text x="594" y="338">Wait</text><text x="738" y="338">22.6 ms</text></g><g><rect x="558" y="351" width="20" height="20" fill="#36a9f4" /><text x="594" y="368">Data transfer</text><text x="738" y="368">32.0 µs</text></g><g font-weight="bold"><text x="594" y="398">Total</text><text x="738" y="398">22.6 ms</text></g><g><text x="912" y="279">Start:</text><text x="1012" y="279">743.7 ms</text></g><g><text x="912" y="309">Stop:</text><text x="1012" y="309">766.3 ms</text></g><g><text x="912" y="339">Transferred:</text><text x="1012" y="339">946.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e7:c1"><text x="912" y="395" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l173"><text x="1002" y="395" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="425" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="830.8234006725953" y="173" width="0.01497074736534938" height="18" fill="#1d9688" /><rect x="830.8655909606249" y="173" width="180.7037255849331" height="18" fill="#18c852" /><rect x="1011.569316545558" y="173" width="0.3797125922665889" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="830.8234006725953" y="0" width="181.14059921259468" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="191" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="205" width="20" height="20" /><text x="576" y="221" font-weight="bold">POST http://192.168.97.235:58300/report/finance/vouche...  200</text><g><rect x="558" y="237" width="20" height="20" fill="#1d9688" /><text x="594" y="254">DNS lookup</text><text x="738" y="254">11.0 µs</text></g><g><rect x="558" y="267" width="20" height="20" fill="#9933ff" /><text x="594" y="284">SSL handshake</text><text x="738" y="284">0.0 µs</text></g><g><rect x="558" y="297" width="20" height="20" fill="#18c852" /><text x="594" y="314">Wait</text><text x="738" y="314">132.8 ms</text></g><g><rect x="558" y="327" width="20" height="20" fill="#36a9f4" /><text x="594" y="344">Data transfer</text><text x="738" y="344">279.0 µs</text></g><g font-weight="bold"><text x="594" y="374">Total</text><text x="738" y="374">133.1 ms</text></g><g><text x="912" y="255">Start:</text><text x="1012" y="255">610.5 ms</text></g><g><text x="912" y="285">Stop:</text><text x="1012" y="285">743.6 ms</text></g><g><text x="912" y="315">Transferred:</text><text x="1012" y="315">57.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e6:c1"><text x="912" y="371" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l134"><text x="1002" y="371" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="401" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="776.0971531900441" y="149" width="0.013609770332135802" height="18" fill="#1d9688" /><rect x="776.1325385929076" y="149" width="54.27576408455757" height="18" fill="#18c852" /><rect x="830.4083026774653" y="149" width="0.22320023344702714" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="776.0971531900441" y="0" width="54.54795949120023" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="167" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="181" width="20" height="20" /><text x="576" y="197" font-weight="bold">POST http://192.168.97.235:58300/report/finance/vouche...  200</text><g><rect x="558" y="213" width="20" height="20" fill="#1d9688" /><text x="594" y="230">DNS lookup</text><text x="738" y="230">10.0 µs</text></g><g><rect x="558" y="243" width="20" height="20" fill="#9933ff" /><text x="594" y="260">SSL handshake</text><text x="738" y="260">0.0 µs</text></g><g><rect x="558" y="273" width="20" height="20" fill="#18c852" /><text x="594" y="290">Wait</text><text x="738" y="290">39.9 ms</text></g><g><rect x="558" y="303" width="20" height="20" fill="#36a9f4" /><text x="594" y="320">Data transfer</text><text x="738" y="320">164.0 µs</text></g><g font-weight="bold"><text x="594" y="350">Total</text><text x="738" y="350">40.1 ms</text></g><g><text x="912" y="231">Start:</text><text x="1012" y="231">570.2 ms</text></g><g><text x="912" y="261">Stop:</text><text x="1012" y="261">610.3 ms</text></g><g><text x="912" y="291">Transferred:</text><text x="1012" y="291">919.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e5:c1"><text x="912" y="347" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l113"><text x="1002" y="347" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="377" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="440.5482656512359" y="125" width="0.012248793298922221" height="18" fill="#1d9688" /><rect x="440.5972608244316" y="125" width="335.0793504623495" height="18" fill="#18c852" /><rect x="775.676611286781" y="125" width="0.31030276357269626" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="440.5482656512359" y="0" width="335.45634110054965" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="440.5482656512359" y="143" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="454.5482656512359" y="157" width="20" height="20" /><text x="484.5482656512359" y="173" font-weight="bold">POST http://192.168.97.235:58300/report/finance/vouche...  200</text><g><rect x="466.5482656512359" y="189" width="20" height="20" fill="#1d9688" /><text x="502.5482656512359" y="206">DNS lookup</text><text x="646.5482656512359" y="206">9.0 µs</text></g><g><rect x="466.5482656512359" y="219" width="20" height="20" fill="#9933ff" /><text x="502.5482656512359" y="236">SSL handshake</text><text x="646.5482656512359" y="236">0.0 µs</text></g><g><rect x="466.5482656512359" y="249" width="20" height="20" fill="#18c852" /><text x="502.5482656512359" y="266">Wait</text><text x="646.5482656512359" y="266">246.2 ms</text></g><g><rect x="466.5482656512359" y="279" width="20" height="20" fill="#36a9f4" /><text x="502.5482656512359" y="296">Data transfer</text><text x="646.5482656512359" y="296">228.0 µs</text></g><g font-weight="bold"><text x="502.5482656512359" y="326">Total</text><text x="646.5482656512359" y="326">246.5 ms</text></g><g><text x="820.5482656512359" y="207">Start:</text><text x="920.5482656512359" y="207">323.7 ms</text></g><g><text x="820.5482656512359" y="237">Stop:</text><text x="920.5482656512359" y="237">570.2 ms</text></g><g><text x="820.5482656512359" y="267">Transferred:</text><text x="920.5482656512359" y="267">57.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e4:c1"><text x="820.5482656512359" y="323" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l74"><text x="910.5482656512359" y="323" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="820.5482656512359" y="353" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="376.055646978344" y="101" width="0.01905367846499012" height="18" fill="#1d9688" /><rect x="376.1073641056061" y="101" width="63.953671767739344" height="18" fill="#18c852" /><rect x="440.0610358733454" y="101" width="0.012248793298922221" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="376.055646978344" y="0" width="64.0298864815993" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="376.055646978344" y="119" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="390.055646978344" y="133" width="20" height="20" /><text x="420.055646978344" y="149" font-weight="bold">POST http://192.168.97.235:58300/report/finance/settin...  200</text><g><rect x="402.055646978344" y="165" width="20" height="20" fill="#1d9688" /><text x="438.055646978344" y="182">DNS lookup</text><text x="582.0556469783439" y="182">14.0 µs</text></g><g><rect x="402.055646978344" y="195" width="20" height="20" fill="#9933ff" /><text x="438.055646978344" y="212">SSL handshake</text><text x="582.0556469783439" y="212">0.0 µs</text></g><g><rect x="402.055646978344" y="225" width="20" height="20" fill="#18c852" /><text x="438.055646978344" y="242">Wait</text><text x="582.0556469783439" y="242">47.0 ms</text></g><g><rect x="402.055646978344" y="255" width="20" height="20" fill="#36a9f4" /><text x="438.055646978344" y="272">Data transfer</text><text x="582.0556469783439" y="272">9.0 µs</text></g><g font-weight="bold"><text x="438.055646978344" y="302">Total</text><text x="582.0556469783439" y="302">47.0 ms</text></g><g><text x="756.0556469783439" y="183">Start:</text><text x="856.0556469783439" y="183">276.3 ms</text></g><g><text x="756.0556469783439" y="213">Stop:</text><text x="856.0556469783439" y="213">323.4 ms</text></g><g><text x="756.0556469783439" y="243">Transferred:</text><text x="856.0556469783439" y="243">253.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e3:c1"><text x="756.0556469783439" y="299" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l54"><text x="846.0556469783439" y="299" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="756.0556469783439" y="329" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="297.01146186633247" y="77" width="0.01769270143177654" height="18" fill="#1d9688" /><rect x="297.0590960624949" y="77" width="77.22047588750532" height="18" fill="#18c852" /><rect x="374.2795719500003" y="77" width="1.6345334168895098" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="297.01146186633247" y="0" width="78.9366679263876" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="297.01146186633247" y="95" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="311.01146186633247" y="109" width="20" height="20" /><text x="341.01146186633247" y="125" font-weight="bold">POST http://192.168.97.235:58300/report/finance/settin...  200</text><g><rect x="323.01146186633247" y="141" width="20" height="20" fill="#1d9688" /><text x="359.01146186633247" y="158">DNS lookup</text><text x="503.01146186633247" y="158">13.0 µs</text></g><g><rect x="323.01146186633247" y="171" width="20" height="20" fill="#9933ff" /><text x="359.01146186633247" y="188">SSL handshake</text><text x="503.01146186633247" y="188">0.0 µs</text></g><g><rect x="323.01146186633247" y="201" width="20" height="20" fill="#18c852" /><text x="359.01146186633247" y="218">Wait</text><text x="503.01146186633247" y="218">56.7 ms</text></g><g><rect x="323.01146186633247" y="231" width="20" height="20" fill="#36a9f4" /><text x="359.01146186633247" y="248">Data transfer</text><text x="503.01146186633247" y="248">1.2 ms</text></g><g font-weight="bold"><text x="359.01146186633247" y="278">Total</text><text x="503.01146186633247" y="278">58.0 ms</text></g><g><text x="677.0114618663324" y="159">Start:</text><text x="777.0114618663324" y="159">218.2 ms</text></g><g><text x="677.0114618663324" y="189">Stop:</text><text x="777.0114618663324" y="189">276.2 ms</text></g><g><text x="677.0114618663324" y="219">Transferred:</text><text x="777.0114618663324" y="219">274.0 B</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e2:c1"><text x="677.0114618663324" y="275" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l34"><text x="767.0114618663324" y="275" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="677.0114618663324" y="305" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="0" y="53" width="1.78287991350979" height="18" fill="#1d9688" /><rect x="1.78287991350979" y="53" width="1.91217273166508" height="18" fill="#fa7f03" /><rect x="3.718189254739501" y="53" width="292.4181643792366" height="18" fill="#18c852" /><rect x="296.1363536339761" y="53" width="0.49675661712295677" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="0" y="0" width="296.67121760802905" height="492" fill="green" opacity="0.05" class="call-sel" /><rect x="6" y="71" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="20" y="85" width="20" height="20" /><text x="50" y="101" font-weight="bold">POST http://192.168.97.235:58300/api/v2/alloc/canteen/...  200</text><g><rect x="32" y="117" width="20" height="20" fill="#1d9688" /><text x="68" y="134">DNS lookup</text><text x="212" y="134">1.3 ms</text></g><g><rect x="32" y="147" width="20" height="20" fill="#fa7f03" /><text x="68" y="164">TCP handshake</text><text x="212" y="164">1.4 ms</text></g><g><rect x="32" y="177" width="20" height="20" fill="#18c852" /><text x="68" y="194">Wait</text><text x="212" y="194">214.9 ms</text></g><g><rect x="32" y="207" width="20" height="20" fill="#36a9f4" /><text x="68" y="224">Data transfer</text><text x="212" y="224">365.0 µs</text></g><g font-weight="bold"><text x="68" y="254">Total</text><text x="212" y="254">218.0 ms</text></g><g><text x="386" y="135">Start:</text><text x="486" y="135">0.0 µs</text></g><g><text x="386" y="165">Stop:</text><text x="486" y="165">218.0 ms</text></g><g><text x="386" y="195">Transferred:</text><text x="486" y="195">1.6 kB</text></g><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-run.html#e1:c1"><text x="386" y="251" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="292d81cc-0c7f-4882-bdc9-c7140f918326-source.html#l11"><text x="476" y="251" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="386" y="281" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g></svg></div>
+    </div>
+</div>
+</body>
+</html>

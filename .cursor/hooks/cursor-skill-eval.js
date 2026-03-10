@@ -219,6 +219,10 @@ const skillMap = [
 
   // ========== 通用技能 ==========
   {
+    name: 'auto-test',
+    keywords: ['自动测试', 'auto-test', '接口测试', 'API测试', 'Hurl', '测试报告', '回归测试']
+  },
+  {
     name: 'crud-development',
     keywords: ['CRUD', '增删改查', 'Entity', 'Service', 'Controller', '业务模块开发']
   },

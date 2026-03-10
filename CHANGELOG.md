@@ -4,6 +4,20 @@
 
 ---
 
+## [v1.13.0] - 2026-03-10
+
+### 新增
+- **auto-test 技能**：API 自动化测试技能。基于 Apifox MCP 读取接口文档，使用 Hurl 生成并执行真实 HTTP 测试，支持单接口/单业务组合（CRUD 生命周期）/跨业务串联（多模块流程）三种粒度，生成 HTML/JSON 测试报告。测试失败时自动调用 fix-bug 技能走标准修复流程
+- **auto-test-generator Agent**：新增自动化测试生成 Agent（`.claude/agents/auto-test-generator.md`），支持 Hurl 集成测试规则、数据正确性验证、失败处理流程
+- **auto-test 斜杠命令**：新增 `/auto-test` 命令（`.claude/commands/auto-test.md`），支持读取 Param/VO 源码、测试数据检查清单、自动修复条件
+- **示例测试文件**：`tests/hurl/` 目录包含 env/finance/flows/reports 示例
+
+### 改进
+- **技能注册同步**：三个平台（Claude/Cursor/Codex）的技能注册文件同步新增 auto-test 关键词触发
+- **AGENTS.md**：新增 auto-test Agent 条目
+
+---
+
 ## [v1.12.2] - 2026-03-09
 
 ### 新增

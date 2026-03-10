@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>tests/hurl/finance/voucher-type.hurl</title>
+    <style>
+        body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.timeline-container {
+    max-width: 1400px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #dcdcde;
+    display: flex;
+}
+
+.calls {
+    position: sticky;
+    left: 0;
+    right: 0;
+    width: 260px;
+    flex-shrink: 0;
+}
+
+.waterfall {
+    overflow: auto;
+    overflow-y: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #19191c;
+        color: #c2c2c2;
+    }
+
+    .timeline-container {
+        border-color: #444;
+    }
+}
+
+        .report-nav {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.report-nav-links {
+    display: flex;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.report-nav a {
+    color: royalblue;
+    margin-right: 20px;
+}
+
+.report-nav a[aria-selected="true"] {
+    color: #ff0288;
+}
+
+.report-nav-summary > div {
+    display: flex;
+}
+
+.report-nav-summary .item-name {
+    min-width: 100px;
+    font-weight: bold;
+}
+
+.error {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-left: red 4px solid;
+}
+
+.error-desc {
+    background: #f5f5f5;
+}
+
+.error-desc pre {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    margin: 0.75rem;
+    padding: 0.8rem;
+    overflow-x: auto;
+}
+
+.error-desc pre code {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.success, .success a {
+    color: green;
+}
+
+.failure, .failure a {
+    color: red;
+}
+
+@media (prefers-color-scheme: dark) {
+    .report-nav a {
+        color: #34a7ff;
+    }
+    
+    .success, .success a {
+        color: green;
+    }
+
+    .report-nav a[aria-selected="true"] {
+        color: #ff0288;
+    }
+
+    .error-desc {
+        background: #27272c;
+    }
+}
+
+    </style>
+<body>
+<div>
+    <div class="container">
+        <div class="report-nav">
+    <div class="report-nav-links">
+        <div><a href="../index.html">Report</a></div>
+        <div><a aria-selected="false" href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html">Source</a></div>
+        <div><a aria-selected="true" href="e138c932-251d-487a-99b9-c595c9cca2bc-timeline.html">Timeline</a></div>
+        <div><a aria-selected="false" href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html">Run</a></div>
+    </div>
+    <div class="report-nav-summary">
+        <div><div class="item-name">File:</div><div><a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html">tests/hurl/finance/voucher-type.hurl</a></div></div>
+        <div><div class="item-name">Status:</div><div><span class="failure"><a href="e138c932-251d-487a-99b9-c595c9cca2bc-timeline.html">failure</a></span></div></div>
+        <div><div class="item-name">Duration:</div><div>147 ms</div></div>
+        <div><div class="item-name">Errors:</div><div>3</div></div>
+        <div></div>
+    </div>
+    <div class="errors"><div class="error"><div class="error-desc"><pre><code>Undefined variable
+   --&gt; <a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l45">tests/hurl/finance/voucher-type.hurl:45:28</a>
+    |
+    | POST {{base_url}}/report/finance/setting/voucher-type/save
+    | ...
+ 45 |     "typeCode": "AT_HURL_{{voucher_type_ts}}",
+    |                            ^^^^^^^^^^^^^^^ you must set the variable voucher_type_ts
+    |</code></pre></div></div><div class="error"><div class="error-desc"><pre><code>Undefined variable
+   --&gt; <a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l67">tests/hurl/finance/voucher-type.hurl:67:13</a>
+    |
+    | POST {{base_url}}/report/finance/setting/voucher-type/update
+    | ...
+ 67 |     "id": {{voucher_type_id}},
+    |             ^^^^^^^^^^^^^^^ you must set the variable voucher_type_id
+    |</code></pre></div></div><div class="error"><div class="error-desc"><pre><code>Undefined variable
+   --&gt; <a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l107">tests/hurl/finance/voucher-type.hurl:107:16</a>
+    |
+    | POST {{base_url}}/report/finance/setting/voucher-type/delete
+    | ...
+107 |   "content": {{voucher_type_id}}
+    |                ^^^^^^^^^^^^^^^ you must set the variable voucher_type_id
+    |</code></pre></div></div></div>
+</div>
+
+    </div>
+    <div class="timeline-container">
+        <div class="calls"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 372" width="260" height="372"><style>@media (prefers-color-scheme: dark) {
+    .calls-list {
+        fill: #c2c2c2;
+    }
+
+    .calls-back {
+        fill: #27272c;
+    }
+
+    .calls-grid rect {
+        fill: #444;
+    }
+}</style><symbol id="success" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="#10bb00" /></symbol><symbol id="failure" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="red" /></symbol><symbol id="retry" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="gold" /></symbol><rect class="calls-back" x="0" y="0" width="100%" height="100%" fill="#fbfafd" /><g class="calls-grid"><rect x="0" y="50" width="260" height="1" fill="#ddd" /><rect x="0" y="73" width="260" height="1" fill="#ddd" /><rect x="0" y="98" width="260" height="1" fill="#ddd" /><rect x="0" y="121" width="260" height="1" fill="#ddd" /><rect x="259" y="0" width="1" height="372" fill="#ddd" /></g><g class="calls-list" font-size="13px" font-family="sans-serif" fill="#777"><use href="#success" x="7" y="56" width="13" height="13" /><text x="25" y="67"><title>POST 192.168.97.235:58300/report/finance/setting/voucher-type/page</title>POST 192.168.97.235:5830...</text><text x="205" y="67">200</text><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e1:c1"><text x="233" y="67" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="80" width="13" height="13" /><text x="25" y="91"><title>POST 192.168.97.235:58300/report/finance/setting/voucher-type/page</title>POST 192.168.97.235:5830...</text><text x="205" y="91">200</text><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e4:c1"><text x="233" y="91" fill="royalblue" text-decoration="underline">run</text></a><use href="#success" x="7" y="104" width="13" height="13" /><text x="25" y="115"><title>POST 192.168.97.235:58300/report/finance/setting/voucher-type/page</title>POST 192.168.97.235:5830...</text><text x="205" y="115">401</text><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e6:c1"><text x="233" y="115" fill="royalblue" text-decoration="underline">run</text></a></g></svg></div>
+        <div class="waterfall"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1138 372" width="1138" height="372"><style>.call-detail {
+    display: none;
+}
+
+.call-summary:hover + .call-detail, .call-detail:hover {
+    display: block;
+}
+
+.call-sel {
+    pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .grid-strip rect {
+        fill: #27272c;
+    }
+
+    .grid-ticks {
+        stroke: #444;
+    }
+
+    .call-back {
+        stroke: #444;
+        fill: #19191c;
+    }
+
+    .call-sel {
+        opacity: 0.1;
+    }
+
+    .call-legend {
+        fill: #c2c2c2;
+    }
+}</style><defs><filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25" /></filter></defs><symbol id="success" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="#10bb00" /></symbol><symbol id="failure" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="red" /></symbol><symbol id="retry" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" fill="gold" /></symbol><g><g class="grid-strip"><rect x="0" y="50" width="1138" height="24" fill="#f5f5f5" /><rect x="0" y="98" width="1138" height="24" fill="#f5f5f5" /></g><g><g class="grid-ticks" stroke="#ccc"><line x1="156" y1="0" x2="156" y2="372" /><line x1="311" y1="0" x2="311" y2="372" /><line x1="467" y1="0" x2="467" y2="372" /><line x1="622" y1="0" x2="622" y2="372" /><line x1="778" y1="0" x2="778" y2="372" /><line x1="933" y1="0" x2="933" y2="372" /><line x1="1089" y1="0" x2="1089" y2="372" /></g><g font-size="15px" font-family="sans-serif" fill="#777"><text x="5" y="20">0 ms</text><text x="161" y="20">20 ms</text><text x="316" y="20">40 ms</text><text x="472" y="20">60 ms</text><text x="627" y="20">80 ms</text><text x="783" y="20">100 ms</text><text x="938" y="20">120 ms</text><text x="1094" y="20">140 ms</text></g></g></g><g><g class="call-summary"><rect x="1125.978243489788" y="101" width="0.15552078279705084" height="18" fill="#1d9688" /><rect x="1126.39814960334" y="101" width="10.70760589557695" height="18" fill="#18c852" /><rect x="1137.105755498917" y="101" width="0.7853799531251068" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="1125.978243489788" y="0" width="12.021756510212072" height="372" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="119" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="133" width="20" height="20" /><text x="576" y="149" font-weight="bold">POST http://192.168.97.235:58300/report/finance/settin...  401</text><g><rect x="558" y="165" width="20" height="20" fill="#1d9688" /><text x="594" y="182">DNS lookup</text><text x="738" y="182">20.0 µs</text></g><g><rect x="558" y="195" width="20" height="20" fill="#9933ff" /><text x="594" y="212">SSL handshake</text><text x="738" y="212">0.0 µs</text></g><g><rect x="558" y="225" width="20" height="20" fill="#18c852" /><text x="594" y="242">Wait</text><text x="738" y="242">1.4 ms</text></g><g><rect x="558" y="255" width="20" height="20" fill="#36a9f4" /><text x="594" y="272">Data transfer</text><text x="738" y="272">101.0 µs</text></g><g font-weight="bold"><text x="594" y="302">Total</text><text x="738" y="302">1.5 ms</text></g><g><text x="912" y="183">Start:</text><text x="1012" y="183">144.8 ms</text></g><g><text x="912" y="213">Stop:</text><text x="1012" y="213">146.3 ms</text></g><g><text x="912" y="243">Transferred:</text><text x="1012" y="243">126.0 B</text></g><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e6:c1"><text x="912" y="299" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l116"><text x="1002" y="299" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="329" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="843.8946476524972" y="77" width="0.1088645479579356" height="18" fill="#1d9688" /><rect x="844.1901371398116" y="77" width="278.63881049833617" height="18" fill="#18c852" /><rect x="1122.8289476381478" y="77" width="1.2985985363553745" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="843.8946476524972" y="0" width="280.39619534394285" height="372" fill="green" opacity="0.05" class="call-sel" /><rect x="532" y="95" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="546" y="109" width="20" height="20" /><text x="576" y="125" font-weight="bold">POST http://192.168.97.235:58300/report/finance/settin...  200</text><g><rect x="558" y="141" width="20" height="20" fill="#1d9688" /><text x="594" y="158">DNS lookup</text><text x="738" y="158">14.0 µs</text></g><g><rect x="558" y="171" width="20" height="20" fill="#9933ff" /><text x="594" y="188">SSL handshake</text><text x="738" y="188">0.0 µs</text></g><g><rect x="558" y="201" width="20" height="20" fill="#18c852" /><text x="594" y="218">Wait</text><text x="738" y="218">35.8 ms</text></g><g><rect x="558" y="231" width="20" height="20" fill="#36a9f4" /><text x="594" y="248">Data transfer</text><text x="738" y="248">167.0 µs</text></g><g font-weight="bold"><text x="594" y="278">Total</text><text x="738" y="278">36.0 ms</text></g><g><text x="912" y="159">Start:</text><text x="1012" y="159">108.5 ms</text></g><g><text x="912" y="189">Stop:</text><text x="1012" y="189">144.6 ms</text></g><g><text x="912" y="219">Transferred:</text><text x="1012" y="219">278.0 B</text></g><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e4:c1"><text x="912" y="275" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l80"><text x="1002" y="275" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="912" y="305" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g><g><g class="call-summary"><rect x="0" y="53" width="12.643839641400234" height="18" fill="#1d9688" /><rect x="12.643839641400234" y="53" width="5.373243045638107" height="18" fill="#fa7f03" /><rect x="18.281468017793326" y="53" width="820.5665302329395" height="18" fill="#18c852" /><rect x="838.8479982507329" y="53" width="0.8398122271040745" height="18" fill="#36a9f4" /></g><g class="call-detail" font-family="sans-serif" font-size="17px"><rect x="0" y="0" width="840.5198466658012" height="372" fill="green" opacity="0.05" class="call-sel" /><rect x="6" y="71" width="600" height="235" fill="white" class="call-back" filter="url(#shadow)" stroke="#ccc" stroke-width="1" /><g class="call-legend" fill="#555"><use href="#success" x="20" y="85" width="20" height="20" /><text x="50" y="101" font-weight="bold">POST http://192.168.97.235:58300/report/finance/settin...  200</text><g><rect x="32" y="117" width="20" height="20" fill="#1d9688" /><text x="68" y="134">DNS lookup</text><text x="212" y="134">1.6 ms</text></g><g><rect x="32" y="147" width="20" height="20" fill="#fa7f03" /><text x="68" y="164">TCP handshake</text><text x="212" y="164">691.0 µs</text></g><g><rect x="32" y="177" width="20" height="20" fill="#18c852" /><text x="68" y="194">Wait</text><text x="212" y="194">105.5 ms</text></g><g><rect x="32" y="207" width="20" height="20" fill="#36a9f4" /><text x="68" y="224">Data transfer</text><text x="212" y="224">108.0 µs</text></g><g font-weight="bold"><text x="68" y="254">Total</text><text x="212" y="254">108.0 ms</text></g><g><text x="386" y="135">Start:</text><text x="486" y="135">0.0 µs</text></g><g><text x="386" y="165">Stop:</text><text x="486" y="165">108.1 ms</text></g><g><text x="386" y="195">Transferred:</text><text x="486" y="195">277.0 B</text></g><a href="e138c932-251d-487a-99b9-c595c9cca2bc-run.html#e1:c1"><text x="386" y="251" fill="royalblue" text-decoration="underline">(view run)</text></a><a href="e138c932-251d-487a-99b9-c595c9cca2bc-source.html#l8"><text x="476" y="251" fill="royalblue" text-decoration="underline">(view source)</text></a><a href="https://hurl.dev/docs/response.html#timings"><text x="386" y="281" fill="royalblue" text-decoration="underline">Explanation</text></a></g></g></g></svg></div>
+    </div>
+</div>
+</body>
+</html>

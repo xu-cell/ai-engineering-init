@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Test Report</title>
+    <style>
+        body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h2 {
+    color: #ff0288;
+    font-size: 2.5rem;
+}
+
+.summary {
+    margin: 32px 0 32px 0;
+    font-size: 1.25rem;
+}
+
+a {
+    color: royalblue;
+}
+
+@media (prefers-color-scheme: dark) {
+    a {
+        color: #34a7ff;
+    }
+}
+
+.date {
+    margin-bottom: 20px;
+}
+
+td {
+    padding: 4px 8px 4px 0;
+}
+
+thead {
+    font-weight: bold;
+}
+
+.success, .success a {
+    color: green;
+}
+
+.failure, .failure a {
+    color: red;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #19191c;
+        color: #c2c2c2;
+    }
+}
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Report</h2>
+    <div class="summary">
+        <div class="date">Tue, 10 Mar 2026 16:35:58 +0800</div>
+        <div class="count">Executed: 52 (100%)</div>
+        <div class="count">Succeeded: 42 (80.8%)</div>
+        <div class="count">Failed: 10 (19.2%)</div>
+    </div>
+    <table>
+        <thead>
+        <td>File</td>
+        <td>Status</td>
+        <td>Start Time</td>
+        <td>Duration</td>
+        </thead>
+        <tbody>
+        <tr data-duration="309" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="6d51d325-8f9a-4e31-b430-68425d264ea0" data-timestamp="1773121204">
+    <td><a href="store/6d51d325-8f9a-4e31-b430-68425d264ea0-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/6d51d325-8f9a-4e31-b430-68425d264ea0-timeline.html">success</a></td>
+    <td>2026-03-10T05:40:04+08:00</td>
+    <td>0.309</td>
+</tr>
+<tr data-duration="177" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="a062f7cc-314d-4827-9d86-87580ae1e956" data-timestamp="1773121204">
+    <td><a href="store/a062f7cc-314d-4827-9d86-87580ae1e956-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/a062f7cc-314d-4827-9d86-87580ae1e956-timeline.html">success</a></td>
+    <td>2026-03-10T05:40:04+08:00</td>
+    <td>0.177</td>
+</tr>
+<tr data-duration="250" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="8409ca3d-80d7-4b66-a405-dea616a6ff5a" data-timestamp="1773121204">
+    <td><a href="store/8409ca3d-80d7-4b66-a405-dea616a6ff5a-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/8409ca3d-80d7-4b66-a405-dea616a6ff5a-timeline.html">success</a></td>
+    <td>2026-03-10T05:40:04+08:00</td>
+    <td>0.25</td>
+</tr>
+<tr data-duration="386" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="525a770f-a835-4320-a960-e13424df1875" data-timestamp="1773121204">
+    <td><a href="store/525a770f-a835-4320-a960-e13424df1875-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/525a770f-a835-4320-a960-e13424df1875-timeline.html">success</a></td>
+    <td>2026-03-10T05:40:04+08:00</td>
+    <td>0.386</td>
+</tr>
+<tr data-duration="1745" data-status="failure" data-filename="tests/hurl/finance/voucher.hurl" data-id="5c6ff8b5-9d1b-44d9-9d80-4e391e6fb889" data-timestamp="1773121204">
+    <td><a href="store/5c6ff8b5-9d1b-44d9-9d80-4e391e6fb889-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="failure"><a href="store/5c6ff8b5-9d1b-44d9-9d80-4e391e6fb889-timeline.html">failure</a></td>
+    <td>2026-03-10T05:40:04+08:00</td>
+    <td>1.745</td>
+</tr>
+<tr data-duration="1031" data-status="success" data-filename="tests/hurl/finance/voucher.hurl" data-id="ae214305-329a-4ebb-8fcd-7884718ff111" data-timestamp="1773122729">
+    <td><a href="store/ae214305-329a-4ebb-8fcd-7884718ff111-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="success"><a href="store/ae214305-329a-4ebb-8fcd-7884718ff111-timeline.html">success</a></td>
+    <td>2026-03-10T06:05:29+08:00</td>
+    <td>1.031</td>
+</tr>
+<tr data-duration="513" data-status="success" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="dee85b34-1dc5-4ede-924f-23d5db057031" data-timestamp="1773122729">
+    <td><a href="store/dee85b34-1dc5-4ede-924f-23d5db057031-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="success"><a href="store/dee85b34-1dc5-4ede-924f-23d5db057031-timeline.html">success</a></td>
+    <td>2026-03-10T06:05:29+08:00</td>
+    <td>0.513</td>
+</tr>
+<tr data-duration="397" data-status="success" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="893b9cc4-91df-486b-8ce2-e35ecad5258a" data-timestamp="1773122729">
+    <td><a href="store/893b9cc4-91df-486b-8ce2-e35ecad5258a-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="success"><a href="store/893b9cc4-91df-486b-8ce2-e35ecad5258a-timeline.html">success</a></td>
+    <td>2026-03-10T06:05:29+08:00</td>
+    <td>0.397</td>
+</tr>
+<tr data-duration="855" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="60248373-4798-4c02-aa2e-7bc2b22ecccd" data-timestamp="1773122729">
+    <td><a href="store/60248373-4798-4c02-aa2e-7bc2b22ecccd-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/60248373-4798-4c02-aa2e-7bc2b22ecccd-timeline.html">success</a></td>
+    <td>2026-03-10T06:05:29+08:00</td>
+    <td>0.855</td>
+</tr>
+<tr data-duration="622" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="238b4d13-f361-4665-be44-19374c63e6a1" data-timestamp="1773122729">
+    <td><a href="store/238b4d13-f361-4665-be44-19374c63e6a1-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/238b4d13-f361-4665-be44-19374c63e6a1-timeline.html">success</a></td>
+    <td>2026-03-10T06:05:29+08:00</td>
+    <td>0.622</td>
+</tr>
+<tr data-duration="1745" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="6155a510-050d-45e7-bc83-19b1bd8aab4f" data-timestamp="1773124465">
+    <td><a href="store/6155a510-050d-45e7-bc83-19b1bd8aab4f-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/6155a510-050d-45e7-bc83-19b1bd8aab4f-timeline.html">success</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>1.745</td>
+</tr>
+<tr data-duration="1869" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="f5a97242-cf3f-4b67-8388-d3d2ff66fce0" data-timestamp="1773124465">
+    <td><a href="store/f5a97242-cf3f-4b67-8388-d3d2ff66fce0-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/f5a97242-cf3f-4b67-8388-d3d2ff66fce0-timeline.html">success</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>1.869</td>
+</tr>
+<tr data-duration="1633" data-status="failure" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="6a81d9c5-c86b-483e-a2b9-0a011d27471d" data-timestamp="1773124465">
+    <td><a href="store/6a81d9c5-c86b-483e-a2b9-0a011d27471d-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="failure"><a href="store/6a81d9c5-c86b-483e-a2b9-0a011d27471d-timeline.html">failure</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>1.633</td>
+</tr>
+<tr data-duration="147" data-status="failure" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="e138c932-251d-487a-99b9-c595c9cca2bc" data-timestamp="1773124465">
+    <td><a href="store/e138c932-251d-487a-99b9-c595c9cca2bc-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="failure"><a href="store/e138c932-251d-487a-99b9-c595c9cca2bc-timeline.html">failure</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>0.147</td>
+</tr>
+<tr data-duration="1129" data-status="failure" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="46a828c2-7b6b-462a-b8a0-f1f209490f4d" data-timestamp="1773124465">
+    <td><a href="store/46a828c2-7b6b-462a-b8a0-f1f209490f4d-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="failure"><a href="store/46a828c2-7b6b-462a-b8a0-f1f209490f4d-timeline.html">failure</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>1.129</td>
+</tr>
+<tr data-duration="321" data-status="failure" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="35c2867f-8426-4826-9268-e9ed5cf58f6f" data-timestamp="1773124465">
+    <td><a href="store/35c2867f-8426-4826-9268-e9ed5cf58f6f-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="failure"><a href="store/35c2867f-8426-4826-9268-e9ed5cf58f6f-timeline.html">failure</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>0.321</td>
+</tr>
+<tr data-duration="2380" data-status="failure" data-filename="tests/hurl/finance/voucher.hurl" data-id="e9f1b467-e46a-4037-b4d6-12fa2c679121" data-timestamp="1773124465">
+    <td><a href="store/e9f1b467-e46a-4037-b4d6-12fa2c679121-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="failure"><a href="store/e9f1b467-e46a-4037-b4d6-12fa2c679121-timeline.html">failure</a></td>
+    <td>2026-03-10T06:34:25+08:00</td>
+    <td>2.38</td>
+</tr>
+<tr data-duration="956" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="699086df-f305-4729-af33-2a24d89f2854" data-timestamp="1773124506">
+    <td><a href="store/699086df-f305-4729-af33-2a24d89f2854-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/699086df-f305-4729-af33-2a24d89f2854-timeline.html">success</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>0.956</td>
+</tr>
+<tr data-duration="1192" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="8a3b032d-bc38-46be-a5fc-532d166c119b" data-timestamp="1773124506">
+    <td><a href="store/8a3b032d-bc38-46be-a5fc-532d166c119b-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/8a3b032d-bc38-46be-a5fc-532d166c119b-timeline.html">success</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>1.192</td>
+</tr>
+<tr data-duration="1459" data-status="failure" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="3f5beaf6-5e59-41eb-b291-f3d2158e5058" data-timestamp="1773124506">
+    <td><a href="store/3f5beaf6-5e59-41eb-b291-f3d2158e5058-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="failure"><a href="store/3f5beaf6-5e59-41eb-b291-f3d2158e5058-timeline.html">failure</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>1.459</td>
+</tr>
+<tr data-duration="958" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="d6339f72-7ff6-4c72-9359-ea55910835be" data-timestamp="1773124506">
+    <td><a href="store/d6339f72-7ff6-4c72-9359-ea55910835be-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/d6339f72-7ff6-4c72-9359-ea55910835be-timeline.html">success</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>0.958</td>
+</tr>
+<tr data-duration="1020" data-status="failure" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="38cf2f9a-6c40-4861-b6c1-ecb1e556f7fd" data-timestamp="1773124506">
+    <td><a href="store/38cf2f9a-6c40-4861-b6c1-ecb1e556f7fd-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="failure"><a href="store/38cf2f9a-6c40-4861-b6c1-ecb1e556f7fd-timeline.html">failure</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>1.02</td>
+</tr>
+<tr data-duration="841" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="d18e15af-c619-48a5-8c15-c7827886e4f5" data-timestamp="1773124506">
+    <td><a href="store/d18e15af-c619-48a5-8c15-c7827886e4f5-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/d18e15af-c619-48a5-8c15-c7827886e4f5-timeline.html">success</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>0.841</td>
+</tr>
+<tr data-duration="2142" data-status="failure" data-filename="tests/hurl/finance/voucher.hurl" data-id="78db962d-6a28-4e72-8562-ce26f273b1b4" data-timestamp="1773124506">
+    <td><a href="store/78db962d-6a28-4e72-8562-ce26f273b1b4-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="failure"><a href="store/78db962d-6a28-4e72-8562-ce26f273b1b4-timeline.html">failure</a></td>
+    <td>2026-03-10T06:35:06+08:00</td>
+    <td>2.142</td>
+</tr>
+<tr data-duration="1102" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="e0b402ea-c19c-4381-a236-6e0ee9958d33" data-timestamp="1773126231">
+    <td><a href="store/e0b402ea-c19c-4381-a236-6e0ee9958d33-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/e0b402ea-c19c-4381-a236-6e0ee9958d33-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>1.102</td>
+</tr>
+<tr data-duration="1081" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="08eb9f62-118e-4152-a483-92f96bb38a88" data-timestamp="1773126231">
+    <td><a href="store/08eb9f62-118e-4152-a483-92f96bb38a88-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/08eb9f62-118e-4152-a483-92f96bb38a88-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>1.081</td>
+</tr>
+<tr data-duration="1138" data-status="success" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="c861fb40-3645-45db-918f-80b9a60ade74" data-timestamp="1773126231">
+    <td><a href="store/c861fb40-3645-45db-918f-80b9a60ade74-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="success"><a href="store/c861fb40-3645-45db-918f-80b9a60ade74-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>1.138</td>
+</tr>
+<tr data-duration="704" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="f0ad6e79-0252-4dd3-999a-777b3adefb2c" data-timestamp="1773126231">
+    <td><a href="store/f0ad6e79-0252-4dd3-999a-777b3adefb2c-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/f0ad6e79-0252-4dd3-999a-777b3adefb2c-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>0.704</td>
+</tr>
+<tr data-duration="841" data-status="success" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="477f0fe5-8957-462d-ba7d-34717ad78dce" data-timestamp="1773126231">
+    <td><a href="store/477f0fe5-8957-462d-ba7d-34717ad78dce-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="success"><a href="store/477f0fe5-8957-462d-ba7d-34717ad78dce-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>0.841</td>
+</tr>
+<tr data-duration="704" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="83b53ccc-04cb-49f2-9a6a-ead382e316a8" data-timestamp="1773126231">
+    <td><a href="store/83b53ccc-04cb-49f2-9a6a-ead382e316a8-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/83b53ccc-04cb-49f2-9a6a-ead382e316a8-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>0.704</td>
+</tr>
+<tr data-duration="2085" data-status="success" data-filename="tests/hurl/finance/voucher.hurl" data-id="4ac5bce0-e954-4da6-80da-a7fb02097a00" data-timestamp="1773126231">
+    <td><a href="store/4ac5bce0-e954-4da6-80da-a7fb02097a00-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="success"><a href="store/4ac5bce0-e954-4da6-80da-a7fb02097a00-timeline.html">success</a></td>
+    <td>2026-03-10T07:03:51+08:00</td>
+    <td>2.085</td>
+</tr>
+<tr data-duration="1845" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="c4c8efbf-6870-402b-bb62-d7a9226d4593" data-timestamp="1773130464">
+    <td><a href="store/c4c8efbf-6870-402b-bb62-d7a9226d4593-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/c4c8efbf-6870-402b-bb62-d7a9226d4593-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>1.845</td>
+</tr>
+<tr data-duration="1505" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="8d87fbd9-3cd6-4c51-82d5-f8f9faa6f1fb" data-timestamp="1773130464">
+    <td><a href="store/8d87fbd9-3cd6-4c51-82d5-f8f9faa6f1fb-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/8d87fbd9-3cd6-4c51-82d5-f8f9faa6f1fb-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>1.505</td>
+</tr>
+<tr data-duration="1110" data-status="success" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="edacfb30-ab16-47e7-92ae-613a47a9d710" data-timestamp="1773130464">
+    <td><a href="store/edacfb30-ab16-47e7-92ae-613a47a9d710-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="success"><a href="store/edacfb30-ab16-47e7-92ae-613a47a9d710-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>1.11</td>
+</tr>
+<tr data-duration="551" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="db48b99b-e6d7-4bf5-a82d-fd09ae3de9a1" data-timestamp="1773130464">
+    <td><a href="store/db48b99b-e6d7-4bf5-a82d-fd09ae3de9a1-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/db48b99b-e6d7-4bf5-a82d-fd09ae3de9a1-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>0.551</td>
+</tr>
+<tr data-duration="836" data-status="success" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="292d81cc-0c7f-4882-bdc9-c7140f918326" data-timestamp="1773130464">
+    <td><a href="store/292d81cc-0c7f-4882-bdc9-c7140f918326-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="success"><a href="store/292d81cc-0c7f-4882-bdc9-c7140f918326-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>0.836</td>
+</tr>
+<tr data-duration="542" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="74c66985-575c-457b-be8d-b96efd010b55" data-timestamp="1773130464">
+    <td><a href="store/74c66985-575c-457b-be8d-b96efd010b55-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/74c66985-575c-457b-be8d-b96efd010b55-timeline.html">success</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>0.542</td>
+</tr>
+<tr data-duration="1290" data-status="failure" data-filename="tests/hurl/finance/voucher.hurl" data-id="a63e98ce-1f10-4d2d-8190-0916517a05e6" data-timestamp="1773130464">
+    <td><a href="store/a63e98ce-1f10-4d2d-8190-0916517a05e6-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="failure"><a href="store/a63e98ce-1f10-4d2d-8190-0916517a05e6-timeline.html">failure</a></td>
+    <td>2026-03-10T08:14:24+08:00</td>
+    <td>1.29</td>
+</tr>
+<tr data-duration="1931" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="c5bd5e8a-a004-4fca-bf1b-71a5a93ceb0b" data-timestamp="1773130643">
+    <td><a href="store/c5bd5e8a-a004-4fca-bf1b-71a5a93ceb0b-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/c5bd5e8a-a004-4fca-bf1b-71a5a93ceb0b-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>1.931</td>
+</tr>
+<tr data-duration="1277" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="6368d595-d654-4e27-9fd9-aeb420534738" data-timestamp="1773130643">
+    <td><a href="store/6368d595-d654-4e27-9fd9-aeb420534738-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/6368d595-d654-4e27-9fd9-aeb420534738-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>1.277</td>
+</tr>
+<tr data-duration="1064" data-status="success" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="3156f1ff-0336-4bb1-9260-9fc14c17312d" data-timestamp="1773130643">
+    <td><a href="store/3156f1ff-0336-4bb1-9260-9fc14c17312d-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="success"><a href="store/3156f1ff-0336-4bb1-9260-9fc14c17312d-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>1.064</td>
+</tr>
+<tr data-duration="428" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="76ed8534-e457-4a8d-8050-4f4e3e02102f" data-timestamp="1773130643">
+    <td><a href="store/76ed8534-e457-4a8d-8050-4f4e3e02102f-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/76ed8534-e457-4a8d-8050-4f4e3e02102f-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>0.428</td>
+</tr>
+<tr data-duration="800" data-status="success" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="74ac530d-29a3-4046-a544-ce8f8e65664b" data-timestamp="1773130643">
+    <td><a href="store/74ac530d-29a3-4046-a544-ce8f8e65664b-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="success"><a href="store/74ac530d-29a3-4046-a544-ce8f8e65664b-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>0.8</td>
+</tr>
+<tr data-duration="888" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="527517f9-fde1-4c26-afe1-24479508a7e6" data-timestamp="1773130643">
+    <td><a href="store/527517f9-fde1-4c26-afe1-24479508a7e6-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/527517f9-fde1-4c26-afe1-24479508a7e6-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>0.888</td>
+</tr>
+<tr data-duration="2313" data-status="success" data-filename="tests/hurl/finance/voucher.hurl" data-id="9f6eecb6-ec97-42a6-ac1c-ff2994595194" data-timestamp="1773130643">
+    <td><a href="store/9f6eecb6-ec97-42a6-ac1c-ff2994595194-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="success"><a href="store/9f6eecb6-ec97-42a6-ac1c-ff2994595194-timeline.html">success</a></td>
+    <td>2026-03-10T08:17:23+08:00</td>
+    <td>2.313</td>
+</tr>
+<tr data-duration="856" data-status="success" data-filename="tests/hurl/finance/subject-detail.hurl" data-id="35315494-76d9-4d86-92ac-f9d43477a0fa" data-timestamp="1773131757">
+    <td><a href="store/35315494-76d9-4d86-92ac-f9d43477a0fa-source.html">tests/hurl/finance/subject-detail.hurl</a></td>
+    <td class="success"><a href="store/35315494-76d9-4d86-92ac-f9d43477a0fa-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.856</td>
+</tr>
+<tr data-duration="569" data-status="success" data-filename="tests/hurl/finance/subject-summary.hurl" data-id="33269dba-e91d-4100-8d1c-cef013bf6ffc" data-timestamp="1773131757">
+    <td><a href="store/33269dba-e91d-4100-8d1c-cef013bf6ffc-source.html">tests/hurl/finance/subject-summary.hurl</a></td>
+    <td class="success"><a href="store/33269dba-e91d-4100-8d1c-cef013bf6ffc-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.569</td>
+</tr>
+<tr data-duration="568" data-status="success" data-filename="tests/hurl/finance/voucher-entry-modify.hurl" data-id="17cef3fb-08ed-42e1-a5c8-74f5badeb187" data-timestamp="1773131757">
+    <td><a href="store/17cef3fb-08ed-42e1-a5c8-74f5badeb187-source.html">tests/hurl/finance/voucher-entry-modify.hurl</a></td>
+    <td class="success"><a href="store/17cef3fb-08ed-42e1-a5c8-74f5badeb187-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.568</td>
+</tr>
+<tr data-duration="343" data-status="success" data-filename="tests/hurl/finance/voucher-type.hurl" data-id="3a74196f-0de6-446a-9694-e564ce8e6fc5" data-timestamp="1773131757">
+    <td><a href="store/3a74196f-0de6-446a-9694-e564ce8e6fc5-source.html">tests/hurl/finance/voucher-type.hurl</a></td>
+    <td class="success"><a href="store/3a74196f-0de6-446a-9694-e564ce8e6fc5-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.343</td>
+</tr>
+<tr data-duration="272" data-status="success" data-filename="tests/hurl/finance/voucher-upload.hurl" data-id="4a30142d-b89c-4a6b-ad24-4dd131bd3089" data-timestamp="1773131757">
+    <td><a href="store/4a30142d-b89c-4a6b-ad24-4dd131bd3089-source.html">tests/hurl/finance/voucher-upload.hurl</a></td>
+    <td class="success"><a href="store/4a30142d-b89c-4a6b-ad24-4dd131bd3089-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.272</td>
+</tr>
+<tr data-duration="346" data-status="success" data-filename="tests/hurl/finance/voucher-word.hurl" data-id="9df763f8-fce7-4ab6-9d3f-86d12fc2c848" data-timestamp="1773131757">
+    <td><a href="store/9df763f8-fce7-4ab6-9d3f-86d12fc2c848-source.html">tests/hurl/finance/voucher-word.hurl</a></td>
+    <td class="success"><a href="store/9df763f8-fce7-4ab6-9d3f-86d12fc2c848-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>0.346</td>
+</tr>
+<tr data-duration="1110" data-status="success" data-filename="tests/hurl/finance/voucher.hurl" data-id="e09f9229-fda4-4fbd-82e0-cd273885acab" data-timestamp="1773131757">
+    <td><a href="store/e09f9229-fda4-4fbd-82e0-cd273885acab-source.html">tests/hurl/finance/voucher.hurl</a></td>
+    <td class="success"><a href="store/e09f9229-fda4-4fbd-82e0-cd273885acab-timeline.html">success</a></td>
+    <td>2026-03-10T08:35:57+08:00</td>
+    <td>1.11</td>
+</tr>
+
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

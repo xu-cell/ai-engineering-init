@@ -83,6 +83,7 @@ alwaysApply: true
 | 头脑风暴/方案设计/怎么设计/有什么办法 | `.cursor/skills/brainstorm/SKILL.md` |
 | 工作流/审批流/Flowable/WarmFlow | `.cursor/skills/workflow-engine/SKILL.md` |
 | 单元测试/@Test/JUnit5/Mockito | `.cursor/skills/test-development/SKILL.md` |
+| 自动测试/auto-test/接口测试/API测试/Hurl/测试报告/回归测试 | `.cursor/skills/auto-test/SKILL.md` |
 | JSON/序列化/反序列化/JsonUtils/BigDecimal精度 | `.cursor/skills/json-serialization/SKILL.md` |
 | Redis/缓存/@Cacheable/@CacheEvict/分布式锁/RLock | `.cursor/skills/redis-cache/SKILL.md` |
 | 定时任务/SnailJob/@Scheduled/@JobExecutor | `.cursor/skills/scheduled-jobs/SKILL.md` |
