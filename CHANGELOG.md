@@ -4,6 +4,18 @@
 
 ---
 
+## [v1.14.0] - 2026-03-10
+
+### 新增
+- **Codex MCP 集成**：通过 `GuDaStudio/codexmcp` 将 Codex 注册为 MCP 工具（`mcp__codex__codex`），支持 `read-only` 沙箱直接在对话中调用，无需命令行
+- **collaborating-with-codex 技能升级**：从桥接脚本模式迁移至纯 MCP 模式，更新前置要求、工具参数说明、调用示例、多轮交互规范
+- **CLAUDE.md Codex 协作规范**：新增 MCP 触发词条目及完整 Codex 工具调用规范（四步协作流程、沙箱策略、SESSION_ID 管理）
+
+### 改进
+- **uvx 安装**：通过 Homebrew 安装 `uv`（含 `uvx`），为 codexmcp 提供运行时支持
+
+---
+
 ## [v1.13.0] - 2026-03-10
 
 ### 新增
