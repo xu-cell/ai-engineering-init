@@ -1327,6 +1327,14 @@ const MCP_REGISTRY = [
     env: { YUQUE_TOKEN: '<YOUR_TOKEN>' },
     recommended: false,
   },
+  {
+    name: 'codex',
+    command: 'uvx',
+    args: ['--from', 'git+https://github.com/GuDaStudio/codexmcp.git', 'codexmcp'],
+    description: 'Codex 协作 — 代码审查、算法分析、生成补丁（需安装 uv）',
+    env: {},
+    recommended: false,
+  },
 ];
 
 /** MCP 配置文件路径映射 */
@@ -1335,43 +1343,73 @@ const MCP_CONFIG_PATHS = {
   cursor: { file: '.cursor/mcp.json',      key: 'mcpServers' },
 };
 
-/** 检测项目中已有的工具配置目录 */
-function detectMcpTools() {
+/** 解析 MCP 配置文件绝对路径 */
+function resolveMcpConfigPath(toolName, scope = 'project') {
+  const config = MCP_CONFIG_PATHS[toolName];
+  if (!config) return '';
+  const baseDir = scope === 'global' ? HOME_DIR : targetDir;
+  return path.join(baseDir, config.file);
+}
+
+/** 检测指定作用域中已有的工具配置目录 */
+function detectMcpTools(scope = 'project') {
+  const baseDir = scope === 'global' ? HOME_DIR : targetDir;
   const tools = [];
-  if (isRealDir(path.join(targetDir, '.claude'))) tools.push('claude');
-  if (isRealDir(path.join(targetDir, '.cursor'))) tools.push('cursor');
+  if (isRealDir(path.join(baseDir, '.claude'))) tools.push('claude');
+  if (isRealDir(path.join(baseDir, '.cursor'))) tools.push('cursor');
   return tools;
 }
 
 /** 读取指定工具的 MCP 已配置服务器 */
-function getMcpServers(toolName) {
+function getMcpServers(toolName, filePath) {
   const config = MCP_CONFIG_PATHS[toolName];
   if (!config) return {};
-  const filePath = path.join(targetDir, config.file);
+  const resolvedPath = filePath || resolveMcpConfigPath(toolName, 'project');
   try {
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const data = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
     return data[config.key] || {};
   } catch { return {}; }
 }
 
 /** 写入指定工具的 MCP 配置（保留文件其他字段） */
-function setMcpServers(toolName, mcpServers) {
+function setMcpServers(toolName, mcpServers, filePath) {
   const config = MCP_CONFIG_PATHS[toolName];
   if (!config) return;
-  const filePath = path.join(targetDir, config.file);
+  const resolvedPath = filePath || resolveMcpConfigPath(toolName, 'project');
   let data = {};
-  try { data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { /* 新建 */ }
+  try { data = JSON.parse(fs.readFileSync(resolvedPath, 'utf8')); } catch { /* 新建 */ }
   data[config.key] = mcpServers;
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
+  fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+  fs.writeFileSync(resolvedPath, JSON.stringify(data, null, 2) + '\n');
+}
+
+/** 生成等效的手动安装 CLI 命令提示 */
+function buildCliHints(entry, scope) {
+  const scopeFlag = scope === 'global' ? '-s user ' : '';
+  const hints = [];
+
+  // Claude Code CLI
+  if (entry.command && entry.command !== 'npx') {
+    hints.push(`claude: claude mcp add ${entry.name} ${scopeFlag}--transport stdio -- ${entry.command} ${entry.args.join(' ')}`);
+  } else {
+    hints.push(`claude: claude mcp add ${entry.name} ${scopeFlag}-- npx -y ${entry.package}`);
+  }
+
+  // Cursor：无官方 CLI，提示手动编辑
+  const cursorFile = scope === 'global' ? '~/.cursor/mcp.json' : '.cursor/mcp.json';
+  hints.push(`cursor: 手动编辑 ${cursorFile}，在 mcpServers 中添加 "${entry.name}" 配置`);
+
+  return hints;
 }
 
 /** 构建单个 MCP 服务器的配置对象 */
 function buildMcpServerConfig(entry) {
-  const config = {
-    command: 'npx',
-    args: ['-y', entry.package],
-  };
+  const command = entry.command || 'npx';
+  const args = Array.isArray(entry.args) && entry.args.length > 0
+    ? [...entry.args]
+    : ['-y', entry.package];
+
+  const config = { command, args };
   if (Object.keys(entry.env).length > 0) {
     config.env = { ...entry.env };
   }
@@ -1379,10 +1417,11 @@ function buildMcpServerConfig(entry) {
 }
 
 /** 获取所有工具中已安装的 MCP 服务器名称集合 */
-function getInstalledMcpNames(tools) {
+function getInstalledMcpNames(tools, scope = 'project') {
   const names = new Set();
   for (const t of tools) {
-    const servers = getMcpServers(t);
+    const configPath = resolveMcpConfigPath(t, scope);
+    const servers = getMcpServers(t, configPath);
     for (const name of Object.keys(servers)) names.add(name);
   }
   return names;
@@ -1394,17 +1433,6 @@ function runMcp() {
     process.exit(1);
   }
 
-  const tools = detectMcpTools();
-  if (tools.length === 0) {
-    console.log(fmt('yellow', '⚠  当前目录未检测到 .claude/ 或 .cursor/ 配置目录。'));
-    console.log(`   请先运行: ${fmt('bold', hintCmd('init --tool claude'))}`);
-    console.log('');
-    process.exit(1);
-  }
-
-  console.log(`  检测到工具: ${fmt('bold', tools.join(', '))}`);
-  console.log('');
-
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = (question) => new Promise((resolve) => {
     rl.question(question, (answer) => resolve(answer.trim()));
@@ -1412,6 +1440,42 @@ function runMcp() {
 
   (async () => {
     try {
+      // 第一步：选择作用域
+      console.log(fmt('cyan', '请选择 MCP 作用域：'));
+      console.log('');
+      console.log(`  ${fmt('bold', '1')}) ${fmt('green',  '项目级')}                       — 写入当前项目 .claude/.cursor`);
+      console.log(`  ${fmt('bold', '2')}) ${fmt('yellow', '全局（~/.claude / ~/.cursor）')} — 对当前用户所有项目生效`);
+      console.log('');
+      const scopeAnswer = await ask(fmt('bold', '请输入选项 [1-2]: '));
+      const scopeMap = { '1': 'project', '2': 'global' };
+      const scope = scopeMap[scopeAnswer];
+      if (!scope) {
+        console.error(fmt('red', '无效作用域选项，退出。'));
+        process.exit(1);
+      }
+      console.log('');
+
+      const tools = detectMcpTools(scope);
+      if (tools.length === 0) {
+        if (scope === 'global') {
+          console.log(fmt('yellow', '⚠  全局目录未检测到 ~/.claude/ 或 ~/.cursor/ 配置目录。'));
+          console.log(`   请先运行: ${fmt('bold', 'npx ai-engineering-init global --tool claude')}`);
+        } else {
+          console.log(fmt('yellow', '⚠  当前目录未检测到 .claude/ 或 .cursor/ 配置目录。'));
+          console.log(`   请先运行: ${fmt('bold', hintCmd('init --tool claude'))}`);
+        }
+        console.log('');
+        process.exit(1);
+      }
+
+      const scopeLabel = scope === 'global'
+        ? `全局（${HOME_DIR}/.claude / ${HOME_DIR}/.cursor）`
+        : `项目级（${targetDir}）`;
+      console.log(`  作用域: ${fmt('bold', scopeLabel)}`);
+      console.log(`  检测到工具: ${fmt('bold', tools.join(', '))}`);
+      console.log('');
+
+      // 第二步：选择操作
       console.log(fmt('cyan', '请选择 MCP 操作：'));
       console.log('');
       console.log(`  ${fmt('bold', '1')}) ${fmt('green',  '安装 MCP 服务器')}    — 从预置列表选择并安装到配置`);
@@ -1423,10 +1487,10 @@ function runMcp() {
       console.log('');
 
       switch (action) {
-        case '1': await mcpInstall(tools, ask); break;
-        case '2': await mcpUninstall(tools, ask); break;
-        case '3': mcpStatus(tools); break;
-        case '4': await mcpRecommend(tools, ask); break;
+        case '1': await mcpInstall(tools, ask, scope); break;
+        case '2': await mcpUninstall(tools, ask, scope); break;
+        case '3': mcpStatus(tools, scope); break;
+        case '4': await mcpRecommend(tools, ask, scope); break;
         default:
           console.error(fmt('red', '无效选项，退出。'));
           process.exit(1);
@@ -1438,8 +1502,8 @@ function runMcp() {
 }
 
 /** 安装 MCP 服务器 */
-async function mcpInstall(tools, ask) {
-  const installed = getInstalledMcpNames(tools);
+async function mcpInstall(tools, ask, scope = 'project') {
+  const installed = getInstalledMcpNames(tools, scope);
 
   console.log(fmt('cyan', '可用的 MCP 服务器：'));
   console.log('');
@@ -1478,25 +1542,38 @@ async function mcpInstall(tools, ask) {
 
   // 写入所有检测到的工具配置
   for (const toolName of tools) {
-    const servers = getMcpServers(toolName);
+    const configPath = resolveMcpConfigPath(toolName, scope);
+    const servers = getMcpServers(toolName, configPath);
     for (const entry of selected) {
       servers[entry.name] = buildMcpServerConfig(entry);
     }
-    setMcpServers(toolName, servers);
+    setMcpServers(toolName, servers, configPath);
     console.log(`  ${fmt('green', '✓')}  ${toolName}: 已写入 ${selected.map(e => e.name).join(', ')}`);
   }
 
   console.log('');
   console.log(fmt('green', fmt('bold', `✅ 已安装 ${selected.length} 个 MCP 服务器！`)));
   console.log('');
+
+  // 输出等效手动安装命令供参考
+  console.log(fmt('cyan', '💡 等效手动安装命令（仅供参考）：'));
+  console.log('');
+  for (const entry of selected) {
+    console.log(`  ${fmt('bold', entry.name)}:`);
+    for (const hint of buildCliHints(entry, scope)) {
+      console.log(`    ${fmt('yellow', hint)}`);
+    }
+    console.log('');
+  }
 }
 
 /** 卸载 MCP 服务器 */
-async function mcpUninstall(tools, ask) {
+async function mcpUninstall(tools, ask, scope = 'project') {
   // 收集所有已安装的服务器（合并去重）
   const allServers = new Map(); // name → 出现在哪些工具中
   for (const toolName of tools) {
-    const servers = getMcpServers(toolName);
+    const configPath = resolveMcpConfigPath(toolName, scope);
+    const servers = getMcpServers(toolName, configPath);
     for (const name of Object.keys(servers)) {
       if (!allServers.has(name)) allServers.set(name, []);
       allServers.get(name).push(toolName);
@@ -1531,7 +1608,8 @@ async function mcpUninstall(tools, ask) {
   console.log('');
 
   for (const toolName of tools) {
-    const servers = getMcpServers(toolName);
+    const configPath = resolveMcpConfigPath(toolName, scope);
+    const servers = getMcpServers(toolName, configPath);
     let removed = 0;
     for (const name of toRemove) {
       if (name in servers) {
@@ -1540,7 +1618,7 @@ async function mcpUninstall(tools, ask) {
       }
     }
     if (removed > 0) {
-      setMcpServers(toolName, servers);
+      setMcpServers(toolName, servers, configPath);
       console.log(`  ${fmt('green', '✓')}  ${toolName}: 已移除 ${toRemove.filter(n => !servers[n]).join(', ')}`);
     }
   }
@@ -1551,14 +1629,15 @@ async function mcpUninstall(tools, ask) {
 }
 
 /** 查看 MCP 状态 */
-function mcpStatus(tools) {
+function mcpStatus(tools, scope = 'project') {
   let hasAny = false;
 
   for (const toolName of tools) {
-    const servers = getMcpServers(toolName);
+    const configPath = resolveMcpConfigPath(toolName, scope);
+    const servers = getMcpServers(toolName, configPath);
     const names = Object.keys(servers);
 
-    console.log(fmt('cyan', `[${toolName}]`) + ` ${MCP_CONFIG_PATHS[toolName].file}`);
+    console.log(fmt('cyan', `[${toolName}]`) + ` ${configPath}`);
 
     if (names.length === 0) {
       console.log(`  ${fmt('yellow', '（无已安装的 MCP 服务器）')}`);
@@ -1566,10 +1645,12 @@ function mcpStatus(tools) {
       hasAny = true;
       for (const name of names) {
         const srv = servers[name];
-        const pkg = (srv.args || []).find(a => a.startsWith('@')) || '—';
+        const args = srv.args || [];
+        const pkg = args.find(a => a.startsWith('@'))
+          || (srv.command !== 'npx' ? `${srv.command} ${args.join(' ')}` : '—');
         const envKeys = srv.env ? Object.keys(srv.env).join(', ') : '—';
         console.log(`  ${fmt('green', '●')} ${fmt('bold', name)}`);
-        console.log(`    包: ${pkg}  |  环境变量: ${envKeys}`);
+        console.log(`    命令: ${pkg}  |  环境变量: ${envKeys}`);
       }
     }
     console.log('');
@@ -1583,14 +1664,14 @@ function mcpStatus(tools) {
 }
 
 /** 一键推荐安装 */
-async function mcpRecommend(tools, ask) {
-  const installed = getInstalledMcpNames(tools);
+async function mcpRecommend(tools, ask, scope = 'project') {
+  const installed = getInstalledMcpNames(tools, scope);
   const toInstall = MCP_REGISTRY.filter(e => e.recommended && !installed.has(e.name));
 
   if (toInstall.length === 0) {
     console.log(fmt('green', '  ✓ 所有推荐的 MCP 服务器已安装！'));
     console.log('');
-    mcpStatus(tools);
+    mcpStatus(tools, scope);
     return;
   }
 
@@ -1615,17 +1696,29 @@ async function mcpRecommend(tools, ask) {
 
   // 写入配置
   for (const toolName of tools) {
-    const servers = getMcpServers(toolName);
+    const configPath = resolveMcpConfigPath(toolName, scope);
+    const servers = getMcpServers(toolName, configPath);
     for (const entry of toInstall) {
       servers[entry.name] = buildMcpServerConfig(entry);
     }
-    setMcpServers(toolName, servers);
+    setMcpServers(toolName, servers, configPath);
     console.log(`  ${fmt('green', '✓')}  ${toolName}: 已写入 ${toInstall.map(e => e.name).join(', ')}`);
   }
 
   console.log('');
   console.log(fmt('green', fmt('bold', `✅ 已安装 ${toInstall.length} 个推荐 MCP 服务器！`)));
   console.log('');
+
+  // 输出等效手动安装命令供参考
+  console.log(fmt('cyan', '💡 等效手动安装命令（仅供参考）：'));
+  console.log('');
+  for (const entry of toInstall) {
+    console.log(`  ${fmt('bold', entry.name)}:`);
+    for (const hint of buildCliHints(entry, scope)) {
+      console.log(`    ${fmt('yellow', hint)}`);
+    }
+    console.log('');
+  }
 }
 
 // ── 工具选择菜单（init 用）─────────────────────────────────────────────────

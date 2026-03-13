@@ -101,6 +101,120 @@ feat(order): 新增订单导出功能
 Closes #123
 ```
 
+## 数据类型规范
+
+### 布尔语义字段必须使用 Boolean
+
+```java
+// ❌ 错误
+private Integer ifNarrow;
+private Integer isEnabled;
+
+// ✅ 正确
+private Boolean narrow;     // getter 自动生成 isNarrow()
+private Boolean enabled;    // getter 自动生成 isEnabled()
+```
+
+**规则**：
+- 语义为"是/否"的字段，类型必须为 `Boolean`
+- 字段名不加 `if`/`is`/`has` 前缀（JavaBean 规范中 `Boolean` 的 getter 自动生成 `isXxx()`）
+- 数据库字段使用 `TINYINT(1)` 或 `BIT(1)`
+
+### 枚举字段必须提供明确约束
+
+```java
+// ❌ 错误：调用方无法知道合法值
+@ApiModelProperty(value = "操作类型")
+private Integer tradeType;
+
+// ✅ 方案一：VO/DTO 层直接用枚举（推荐）
+@ApiModelProperty(value = "操作类型")
+private AccTradeTypeEnum tradeType;
+
+// ✅ 方案二：保留 Integer 但标注合法值
+@ApiModelProperty(value = "操作类型：1-充值 2-消费 3-退款", allowableValues = "1,2,3")
+private Integer tradeType;
+```
+
+### 金额字段禁止使用浮点类型
+
+```java
+// ❌ 错误
+private Double amount;
+private Float price;
+
+// ✅ 正确：Entity/Service 层用 Long（分），VO 层展示用 BigDecimal（元）
+private Long amountFen;
+private BigDecimal amountYuan;
+```
+
+### 原始类型 vs 包装类型
+
+| 场景 | 用原始类型 | 用包装类型 |
+|------|----------|----------|
+| Entity / VO / DTO 字段 | — | ✅ 统一用包装类型 |
+| 方法参数（不允许 null） | ✅ `int count` | — |
+| 方法参数（允许 null） | — | ✅ `Integer count` |
+| 局部变量 | ✅ `int i = 0` | — |
+
+## Optional 使用规范
+
+```java
+// ❌ 错误：of() 不接受 null，value 为 null 直接 NPE
+Optional.of(value).orElse(defaultValue);
+
+// ✅ 正确：ofNullable() 安全处理 null
+Optional.ofNullable(value).orElse(defaultValue);
+
+// ❌ 禁止：Optional 作为方法参数或类字段
+public void process(Optional<String> name) { ... }
+private Optional<String> name;
+
+// ✅ 允许：Optional 作为方法返回值、链式处理
+public Optional<Entity> findById(Long id) { ... }
+Optional.ofNullable(entity).map(Entity::getConfig).orElse(DEFAULT_VALUE);
+```
+
+## @Transactional 规范
+
+```java
+// ❌ 错误：默认只回滚 RuntimeException
+@Transactional
+public void createOrder() { ... }
+
+// ✅ 正确：显式指定回滚异常
+@Transactional(rollbackFor = Exception.class)
+public void createOrder() { ... }
+```
+
+- 所有 `@Transactional` 必须显式写 `rollbackFor = Exception.class`
+- 只读查询不加 `@Transactional`（或用 `readOnly = true`）
+- 事务方法不要 try-catch 吞掉异常，否则事务不回滚
+
+## TODO 管理规范
+
+```java
+// ❌ 错误：无负责人、无日期、无跟踪
+// TODO 修改一下
+
+// ✅ 正确：完整 TODO 格式
+// TODO(@陈沈杰, 2026-03-20, #TASK-1234): 移动端 AppId 赋值逻辑待产品确认
+```
+
+- 每个 TODO 必须有对应的任务号
+- 超过 2 个迭代未处理的 TODO 必须清理
+- 不用的代码直接删除，不要注释保留
+
+## 代码格式化规范
+
+| 项目 | 规范 |
+|------|------|
+| 缩进 | 4 个空格（不用 Tab） |
+| 行宽 | 120 字符 |
+| 大括号 | K&R 风格（同行开始） |
+| 空行 | 方法间 1 个空行，逻辑块间 1 个空行 |
+| import | 分组排序：java → jakarta → org → net → com，组间空行 |
+
 ## 代码示例
 
 ### 统一响应格式
@@ -161,3 +275,8 @@ public enum OrderStatusEnum {
 | Git 提交信息写"fix bug" | 写清楚修了什么：`fix(order): 修复金额计算精度丢失` |
 | Boolean 变量名：`flag` | 有意义的名字：`isActive`, `hasPermission` |
 | 缩写命名：`usr`, `mgr` | 完整命名：`user`, `manager` |
+| `Optional.of(可能null值)` | `Optional.ofNullable(value)` |
+| `@Transactional` 无 rollbackFor | `@Transactional(rollbackFor = Exception.class)` |
+| TODO 无负责人和日期 | `// TODO(@负责人, 日期, #任务号): 描述` |
+| 布尔字段用 `Integer` | 用 `Boolean` 类型 |
+| 枚举字段无合法值说明 | `@ApiModelProperty` 标注合法值或直接用枚举类型 |

@@ -280,19 +280,191 @@ voucher_type_id: jsonpath "$.data.records[0].id"
 
 ### 第四步：生成 .hurl 文件
 
-**查询条件完整覆盖**（每个 Param 字段都要有测试用例）：
+#### 4.1 查询条件类型识别与测试策略
+
+读取 Param 类后，**逐字段识别条件类型**，按下表生成对应测试用例：
+
+| 条件类型 | 识别特征 | 示例字段 | 必须生成的测试用例 |
+|---------|---------|---------|----------------|
+| **日期范围** | `startDate`/`endDate` 成对 | `startDate`, `endDate` | ① 正常区间 ② 单日（start==end） ③ 跨月区间 ④ 必填时留空（预期报错/空结果） |
+| **关键词搜索** | `keyword`, `name`, `code` 等 | `keyword`, `canteenName` | ① 精确匹配已知值 ② 模糊匹配前缀 ③ 无匹配的乱码（验证空数组） ④ 留空（不过滤，验证正常返回） |
+| **枚举/状态** | 字段类型为枚举或 Integer 语义明确 | `status`, `type`, `mealtype` | ① 每个有效枚举值各一条请求 ② 可选时留空（验证不过滤） |
+| **ID / 外键** | 字段名含 `Id`，关联其他表 | `canteenId`, `areaId` | ① 传有效 ID（有数据，验证过滤生效） ② 留空（不过滤，验证正常返回） ③ 传不存在 ID（验证空结果） |
+| **布尔开关** | boolean / Integer 表示开关 | `isSubmitted`, `isEnabled` | ① `true`/`1` ② `false`/`0` ③ 留空 |
+| **集合/多选** | `List<Integer>`, `List<String>` | `mealtimeTypes`, `statusList` | ① 单项 ② 多项组合 ③ 空列表或留空 |
+| **分页** | `page.current`/`page.size` | `page` | ① 第1页 size=10 ② 第2页（验证翻页） ③ size=1（验证精确分页） |
+
+#### 4.2 各条件类型 Hurl 示例
+
+**① 日期范围**
+```hurl
+# TC-DATE-1 正常日期区间
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count > 0
+
+# TC-DATE-2 单日查询（start == end）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-15","endDate":"2024-01-15"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+
+# TC-DATE-3 空区间（故意用无数据的日期）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2099-01-01","endDate":"2099-01-31"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count == 0
+```
+
+**② 关键词搜索**
+```hurl
+# TC-KW-1 精确关键词匹配
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31","keyword":"{{known_canteen_name}}"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count > 0
+
+# TC-KW-2 无匹配关键词
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31","keyword":"__NO_MATCH_XYZ__"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count == 0
+
+# TC-KW-3 留空 keyword（不过滤）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" isCollection
+```
+
+**③ 枚举/状态**
+```hurl
+# TC-ENUM-1 状态=1（已提交）
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10},"status":1}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.records[0].status" == 1
+
+# TC-ENUM-2 状态=2（已完成）
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10},"status":2}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+
+# TC-ENUM-3 不传 status（全部状态）
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10}}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+```
+
+**④ ID / 外键**
+```hurl
+# TC-ID-1 传有效 canteenId（有数据，过滤生效）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31","canteenId":{{canteen_id}}}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count > 0
+jsonpath "$.data.resultPage.records[0].canteenId" == {{canteen_id}}
+
+# TC-ID-2 不传 canteenId（不过滤）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31"}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+
+# TC-ID-3 传不存在 ID（空结果）
+POST {{base_url}}/api/v2/web/report/subject/page
+...
+{"content": {"page":{"current":1,"size":10},"startDate":"2024-01-01","endDate":"2024-01-31","canteenId":999999999}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.resultPage.records" count == 0
+```
+
+**⑤ 集合/多选**
+```hurl
+# TC-LIST-1 单项
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10},"mealtimeTypes":[1]}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+
+# TC-LIST-2 多项组合
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10},"mealtimeTypes":[1,2,3]}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+jsonpath "$.data.records" isCollection
+
+# TC-LIST-3 空列表（不过滤）
+POST {{base_url}}/api/v2/web/order/page
+...
+{"content": {"page":{"current":1,"size":10},"mealtimeTypes":[]}}
+HTTP 200
+[Asserts]
+jsonpath "$.code" == 10000
+```
+
+#### 4.3 测试场景清单（完整版）
+
+每个查询接口必须覆盖以下场景，按顺序在同一 `.hurl` 文件中组织：
 
 ```
-单接口测试场景清单：
-1. 基础分页查询 — 必填参数，预期 code=10000，验证分页结构+VO 所有字段
-2. 合计行验证 — 如有 totalLine，验证所有合计字段存在
-3. 逐个查询条件 — 每个 Param 字段单独或组合测试
-4. 空结果验证 — 故意使用不匹配的条件，验证 records count == 0
-5. 分页翻页 — current=2 验证翻页正确
-6. 导出接口 — 验证 code=10000（异步导出返回 void）
-7. 未授权测试 — 不带 X-Token，预期 HTTP 401
-8. 数据清理 — 删除测试创建的数据
+必须生成（顺序执行）：
+TC-BASE    基础分页查询   — 只传必填参数，验证分页结构 + VO 所有字段存在
+TC-TOTAL   合计行验证     — 如返回类型含 totalLine，验证所有合计字段
+TC-DATE-*  日期条件用例   — 若有 startDate/endDate（见上方策略）
+TC-KW-*    关键词用例     — 若有 keyword 类字段（见上方策略）
+TC-ENUM-*  枚举用例       — 若有状态/类型枚举，每个枚举值各一条
+TC-ID-*    外键 ID 用例   — 若有 xxxId 过滤（见上方策略）
+TC-LIST-*  集合用例       — 若有多选字段（见上方策略）
+TC-PAGE    翻页验证       — current=2，验证翻页正确（total > size 时才有意义）
+TC-EMPTY   空结果验证     — 使用必然无数据的条件，验证 records count == 0
+TC-EXPORT  导出接口       — 验证 code=10000（若有导出接口）
+TC-UNAUTH  未授权         — 不带 X-Token，预期 HTTP 401
 ```
+
+> **命名规范**：在 Hurl 文件中用注释标注场景编号，便于报告定位：
+> ```hurl
+> # TC-DATE-1 正常日期区间
+> # TC-KW-2 无匹配关键词
+> ```
 
 **数据正确性验证**（不只是结构存在，还要验证值合理）：
 

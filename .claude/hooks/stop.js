@@ -42,8 +42,7 @@ try {
 
     if (changedFiles.length > 0) {
       console.error(`\n💡 检测到 ${changedFiles.length} 个代码文件变更，建议执行代码审查：`);
-      console.error(`   → 输入 "review" 或 "审查代码" 使用 code-reviewer 进行规范检查`);
-      console.error(`   → 输入 "codex review" 调用 Codex 进行深度代码审查\n`);
+      console.error(`   → 输入 "review" 或 "审查代码" 使用 code-reviewer 进行规范检查\n`);
     }
   }
 } catch {

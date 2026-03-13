@@ -394,9 +394,186 @@ public class OrderService {
 }
 ```
 
-## 通用代码规范
+## 数据类型规范
 
-无论使用哪种项目架构，以下规范都是通用的：
+### 布尔字段命名
+
+```java
+// ❌ 错误：前缀冗余、类型错误
+private Integer ifNarrow;
+private Integer isEnabled;
+
+// ✅ 正确：Boolean 类型，无前缀
+private Boolean narrow;     // getter → isNarrow()
+private Boolean enabled;    // getter → isEnabled()
+```
+
+### 枚举字段标注
+
+```java
+// ❌ 错误：只靠注释 @see
+/** @see AccTradeTypeEnum */
+private Integer tradeType;
+
+// ✅ 方案一：VO/DTO 用枚举类型（配合 @JsonValue）
+private AccTradeTypeEnum tradeType;
+
+// ✅ 方案二：@ApiModelProperty 标注合法值
+@ApiModelProperty(value = "操作类型：1-充值 2-消费 3-退款", allowableValues = "1,2,3")
+private Integer tradeType;
+```
+
+## MyBatis-Plus 安全规范
+
+### selectOne 必须有唯一保障
+
+```java
+// ❌ 危险：多条记录时抛 TooManyResultsException
+Entity entity = mapper.selectOne(wrapper);
+
+// ✅ 方案一：LIMIT 1
+Entity entity = mapper.selectOne(wrapper.last("LIMIT 1"));
+
+// ✅ 方案二：selectList 取第一条
+List<Entity> list = mapper.selectList(wrapper);
+Entity entity = CollUtil.isNotEmpty(list) ? list.get(0) : null;
+
+// ✅ 方案三：确保有唯一索引（注释说明）
+// 唯一索引：UNIQUE KEY (order_no, del_flag)
+Entity entity = mapper.selectOne(wrapper);
+```
+
+### 存在性判断用 EXISTS，禁用 selectCount
+
+```java
+// ❌ 低效：100万行表 ~200ms
+Long count = mapper.selectCount(wrapper);
+if (count > 0) { ... }
+
+// ✅ 高效：~2ms（MyBatis-Plus 3.5.4+）
+boolean exists = mapper.exists(wrapper);
+
+// ✅ 或 selectList + LIMIT 1
+boolean exists = CollUtil.isNotEmpty(mapper.selectList(wrapper.last("LIMIT 1")));
+```
+
+### Wrapper 嵌套不超过 2 层
+
+```java
+// ❌ 过于复杂的 Wrapper
+wrapper.and(w -> w.eq(A::getType, type)
+    .or(q -> q.eq(A::getType, 0))
+    .or(!PersonTypeEnum.LABOUR.getKey().equals(type),
+        q -> q.eq(A::getType, PSN_TYPE_SHARED)));
+
+// ✅ 复杂查询写到 XML 中
+List<Entity> list = mapper.selectByTypeCondition(type, isLabour);
+```
+
+### 禁止 SELECT *
+
+```xml
+<!-- ❌ 禁止 -->
+<select id="selectAll">SELECT * FROM t_order WHERE del_flag = 2</select>
+
+<!-- ✅ 明确列出字段 -->
+<select id="selectAll">SELECT id, order_no, amount, status, crtime FROM t_order WHERE del_flag = 2</select>
+```
+
+## Redis 使用规范
+
+### 禁止 KEYS 命令
+
+```java
+// ❌ 严禁：KEYS 阻塞 Redis
+Set<Object> keys = keysByPattern(pattern);
+Set<Object> keys = redisTemplate.keys(pattern);
+
+// ✅ 使用 Redisson deleteByPattern（内部 SCAN + UNLINK）
+RedissonClient redisson = SpringUtil.getBean(RedissonClient.class);
+redisson.getKeys().deleteByPattern(keyPattern);
+```
+
+## Optional 使用规范
+
+```java
+// ❌ 错误：of() 不接受 null
+Optional.of(value).orElse(defaultValue);
+
+// ✅ 正确：ofNullable()
+Optional.ofNullable(value).orElse(defaultValue);
+
+// ✅ 链式安全转换
+Optional.ofNullable(model.getReserveRate())
+    .map(BigDecimal::new)
+    .orElse(BigDecimal.ZERO);
+
+// ❌ 禁止作为方法参数或类字段
+// ✅ 允许作为方法返回值
+```
+
+## @Transactional 规范
+
+```java
+// ❌ 默认只回滚 RuntimeException
+@Transactional
+public void createOrder() { ... }
+
+// ✅ 显式指定 rollbackFor
+@Transactional(rollbackFor = Exception.class)
+public void createOrder() { ... }
+```
+
+- 事务方法不要 try-catch 吞掉异常
+- 只读查询不加 `@Transactional`
+
+## 业务逻辑分层规范
+
+```java
+// ❌ 错误：业务判断混在数据操作中
+public void processOrder(Long orderId) {
+    OrderInfo order = orderMapper.selectById(orderId);
+    if (order.getStatus() == 1 && order.getPayTime() != null
+        && ChronoUnit.HOURS.between(order.getPayTime(), LocalDateTime.now()) < 24) {
+        order.setStatus(2);
+        orderMapper.updateById(order);
+        accWalletService.deduct(order.getCustId(), order.getAmount());
+    }
+}
+
+// ✅ 正确：分层清晰
+public void processOrder(Long orderId) {
+    OrderInfo order = orderMapper.selectById(orderId);
+    if (ObjectUtil.isNull(order)) {
+        throw new LeException(I18n.getMessage("order_not_found"));
+    }
+    checkCanProcess(order);           // 业务校验（独立方法）
+    order.markAsProcessed();          // 状态变更（Entity 方法封装）
+    orderMapper.updateById(order);
+    afterOrderProcessed(order);       // 后续动作（独立方法）
+}
+```
+
+| 层 | 职责 | 不应做的 |
+|----|------|---------|
+| Controller | 参数接收、格式转换 | 不含业务判断 |
+| Business | 业务编排、跨 Service 协调 | 不直接操作 Mapper |
+| Service | 单表 CRUD、单表事务 | 不含跨表业务逻辑 |
+| Mapper | SQL 映射 | 不含业务逻辑 |
+
+## TODO 管理规范
+
+```java
+// ❌ 错误
+// TODO 修改一下
+
+// ✅ 正确
+// TODO(@陈沈杰, 2026-03-20, #TASK-1234): 移动端 AppId 赋值逻辑待产品确认
+```
+
+- 不用的代码直接删除，不要注释保留
+
+## 通用代码规范
 
 1. **禁止使用 `SELECT *`**：明确指定字段
 2. **使用参数化查询**：`#{}` 而非 `${}`

@@ -4,6 +4,19 @@
 
 ---
 
+## [v1.14.1] - 2026-03-13
+
+### 改进
+- **代码规范技能增强**：基于架构师 Review 规范，完善 3 个代码规范相关技能
+  - **code-patterns**：新增数据类型规范（Boolean/枚举/金额/原始类型vs包装类型）、Optional 使用规范、@Transactional 规范、TODO 管理规范、代码格式化规范，常见错误表新增 5 项
+  - **leniu-code-patterns**：新增 MyBatis-Plus 安全规范（selectOne/EXISTS/Wrapper 复杂度/SELECT*）、Redis KEYS 禁令、布尔字段命名、枚举标注、Optional、业务逻辑分层规范
+  - **codex-code-review**：新增 7 个 Grep 检查项（selectOne 安全、selectCount→exists、Redis KEYS、Optional.of 误用、布尔字段类型、Wrapper 嵌套）
+- **CLI `mcp` 命令增强**：MCP 注册表新增 codex（GuDaStudio/codexmcp）条目，优化 MCP 配置路径解析逻辑
+- **CLAUDE.md 精简**：移除 Codex MCP 硬编码协作指令（已由 collaborating-with-codex 技能覆盖）
+- **三平台同步**：code-patterns、leniu-code-patterns 同步更新至 Cursor 和 Codex 平台
+
+---
+
 ## [v1.14.0] - 2026-03-10
 
 ### 新增
