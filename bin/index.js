@@ -143,7 +143,7 @@ function printHelp() {
   console.log('  npx ai-engineering-init sync-back                        # 扫描所有已安装工具');
   console.log('  npx ai-engineering-init sync-back --tool claude          # 只扫描 Claude');
   console.log('  npx ai-engineering-init sync-back --skill bug-detective  # 只对比指定技能');
-  console.log('  npx ai-engineering-init sync-back --skill bug-detective --submit # 提交 Issue\n');
+  console.log('  npx ai-engineering-init sync-back --skill bug-detective --submit # 提交 Issue');
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────

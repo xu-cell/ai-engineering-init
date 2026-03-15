@@ -17,13 +17,10 @@ alwaysApply: true
 | leniu-Entity/leniu-VO/leniu-DTO/@TableName/@TableField | `.cursor/skills/leniu-java-entity/SKILL.md` |
 | leniu-MyBatis/leniu-Mapper/LambdaQueryWrapper/leniu-XML | `.cursor/skills/leniu-java-mybatis/SKILL.md` |
 | leniu-并发/CompletableFuture/leniu-线程池 | `.cursor/skills/leniu-java-concurrent/SKILL.md` |
-| leniu-导出/leniu-Excel导出/leniu-@ExcelProperty | `.cursor/skills/leniu-java-export/SKILL.md` |
 | leniu-日志/@Slf4j/leniu-log.info | `.cursor/skills/leniu-java-logging/SKILL.md` |
 | leniu-消息队列/leniu-MQ/MqUtil/@MqConsumer | `.cursor/skills/leniu-java-mq/SKILL.md` |
 | leniu-定时任务/leniu-XXL-Job/@XxlJob | `.cursor/skills/leniu-java-task/SKILL.md` |
-| leniu-合计行/totalLine/ReportBaseTotalVO | `.cursor/skills/leniu-java-total-line/SKILL.md` |
-| leniu-金额/leniu-分转元/leniu-元转分/amountFen | `.cursor/skills/leniu-java-amount-handling/SKILL.md` |
-| leniu-报表查询/ReportBaseParam/leniu-分页参数 | `.cursor/skills/leniu-java-report-query-param/SKILL.md` |
+| 报表/报表开发/报表查询/报表导出/合计行/totalLine/金额处理/分转元/餐次/mealtime/ReportBaseTotalVO/CustomNumberConverter | `.cursor/skills/leniu-report-scenario/SKILL.md` |
 | leniu-异常/LeException/leniu-全局异常/leniu-I18n | `.cursor/skills/leniu-error-handler/SKILL.md` |
 | leniu-注解/@RequiresAuthentication/@Validated | `.cursor/skills/leniu-backend-annotations/SKILL.md` |
 | leniu-工具类/leniu-BeanUtil/leniu-StrUtil/LeBeanUtil | `.cursor/skills/leniu-utils-toolkit/SKILL.md` |
@@ -34,9 +31,6 @@ alwaysApply: true
 | leniu-规范/leniu-禁止/leniu-命名/leniu-代码风格 | `.cursor/skills/leniu-code-patterns/SKILL.md` |
 | 营销计费/计费规则/RulePriceHandler | `.cursor/skills/leniu-marketing-price-rule-customizer/SKILL.md` |
 | 营销充值/充值规则/RuleRechargeHandler/满赠规则 | `.cursor/skills/leniu-marketing-recharge-rule-customizer/SKILL.md` |
-| 餐次/早餐/午餐/下午茶/晚餐/夜宵/mealtimeTypes | `.cursor/skills/leniu-mealtime/SKILL.md` |
-| 定制报表/汇总报表/report_order_info/v5.29报表/batchConsume/consumeType | `.cursor/skills/leniu-report-customization/SKILL.md` |
-| 标准版报表/core-report/report_refund/经营分析/fix重算/账户日结/菜品排行 | `.cursor/skills/leniu-report-standard-customization/SKILL.md` |
 
 ### OpenSpec 工作流技能
 

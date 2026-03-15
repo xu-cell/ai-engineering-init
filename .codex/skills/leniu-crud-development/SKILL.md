@@ -39,6 +39,7 @@ description: |
 | 架构 | Controller -> Business -> Service -> Mapper（四层） |
 | 无 DAO 层 | Service 直接注入 Mapper |
 | 对象转换 | `BeanUtil.copyProperties()` (Hutool) |
+| Service 模式 | **两种并存**：简单 CRUD 继承 `ServiceImpl`；业务聚合直接 `@Service` |
 | Entity 基类 | 无基类，自定义审计字段 |
 | 请求封装 | `LeRequest<T>` |
 | 响应封装 | `Page<T>` / `LeResponse<T>` / `void` |
@@ -110,18 +111,37 @@ private LocalDateTime uptime;
 private Integer delFlag;  // 1=删除, 2=正常
 ```
 
-### Service 注入模式
+### Service 两种模式
 
+项目中存在两种 Service 模式，根据业务复杂度选择：
+
+**模式 A：简单 CRUD Service**（适用于单表操作，利用 MyBatis-Plus 内置方法）
+```java
+// 接口
+public interface XxxService extends IService<XxxEntity> { }
+
+// 实现
+@Slf4j
+@Service
+public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements XxxService {
+    // 继承 ServiceImpl 获得 save/updateById/removeById/page 等内置方法
+    // 通过 this.baseMapper 访问 Mapper（父类提供）
+}
+```
+
+**模式 B：业务聚合 Service**（适用于跨表操作、复杂业务编排）
 ```java
 @Slf4j
 @Service
-public class XxxServiceImpl implements XxxService {
-    @Resource
+public class XxxService {
+    @Autowired
     private XxxMapper xxxMapper;  // 直接注入 Mapper，无 DAO 层
-
-    // 不继承 ServiceImpl，只实现接口
+    @Autowired
+    private YyyMapper yyyMapper;  // 可注入多个 Mapper
 }
 ```
+
+**选择建议**：新建简单单表 CRUD 用模式 A；涉及多表联查、报表、业务编排用模式 B。
 
 ### Controller 请求封装
 
@@ -366,7 +386,6 @@ private String createBy;                  // -> crby
 entity.setDelFlag(0);                     // -> setDelFlag(2) 表示正常
 throw new ServiceException("...");        // -> throw new LeException("...")
 MapstructUtils.convert(src, Dst.class);   // -> BeanUtil.copyProperties(src, Dst.class)
-extends ServiceImpl<XxxMapper, Xxx>       // -> implements XxxService（不继承）
 @Resource private XxxDao xxxDao;          // -> @Resource private XxxMapper xxxMapper
 // XML 放 resources/mapper/              // -> 与 Java 同目录
 return null;                              // -> return Collections.emptyList()
@@ -377,7 +396,7 @@ return null;                              // -> return Collections.emptyList()
 ## 生成前检查清单
 
 - [ ] 包名 `net.xnzn.core.*`
-- [ ] Service 只实现接口，不继承基类
+- [ ] Service 模式选择：简单 CRUD 用模式 A（继承 ServiceImpl）；业务聚合用模式 B（直接 @Service）
 - [ ] Service 直接注入 Mapper（无 DAO）
 - [ ] 审计字段 crby/crtime/upby/uptime
 - [ ] delFlag: 1=删除, 2=正常

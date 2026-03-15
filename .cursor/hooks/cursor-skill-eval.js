@@ -88,10 +88,6 @@ const skillMap = [
     keywords: ['leniu-并发', 'leniu-CompletableFuture', 'leniu-线程池', 'leniu-分布式锁']
   },
   {
-    name: 'leniu-java-export',
-    keywords: ['leniu-导出', 'leniu-Export', 'leniu-Excel导出', 'leniu-异步导出', 'leniu-@ExcelProperty']
-  },
-  {
     name: 'leniu-java-logging',
     keywords: ['leniu-日志', 'leniu-@Slf4j', 'leniu-log.info', 'leniu-log.error']
   },
@@ -104,16 +100,10 @@ const skillMap = [
     keywords: ['leniu-定时任务', 'leniu-XXL-Job', 'leniu-@XxlJob', 'leniu-TenantLoader']
   },
   {
-    name: 'leniu-java-total-line',
-    keywords: ['leniu-合计行', 'leniu-totalLine', 'leniu-报表合计', 'leniu-SUM合计', 'leniu-ReportBaseTotalVO']
-  },
-  {
-    name: 'leniu-java-amount-handling',
-    keywords: ['leniu-金额', 'leniu-分转元', 'leniu-元转分', 'leniu-Long金额', 'amountFen', 'amountYuan']
-  },
-  {
-    name: 'leniu-java-report-query-param',
-    keywords: ['leniu-报表查询', 'leniu-Param类', 'leniu-分页参数', 'leniu-时间范围', 'ReportBaseParam']
+    name: 'leniu-report-scenario',
+    keywords: ['报表', '报表开发', '报表查询', '报表导出', '合计行', 'totalLine', '汇总报表', '定制报表',
+      'report_order_info', '金额处理', '分转元', '餐次', 'mealtime', 'ReportBaseTotalVO',
+      'CustomNumberConverter', 'ExcelProperty', 'ReportOrderConsumeService', 'ReportBaseParam']
   },
   {
     name: 'leniu-error-handler',
@@ -157,10 +147,6 @@ const skillMap = [
   {
     name: 'leniu-marketing-recharge-rule-customizer',
     keywords: ['营销充值', '充值规则', 'recharge规则', '满赠规则']
-  },
-  {
-    name: 'leniu-mealtime',
-    keywords: ['餐次', '早餐', '午餐', '下午茶', '晚餐', '夜宵', 'mealtimeTypes']
   },
   {
     name: 'leniu-customization-location',
@@ -366,17 +352,6 @@ const skillMap = [
     name: 'leniu-brainstorm',
     keywords: ['leniu-头脑风暴', '云食堂方案', '云食堂设计', '云食堂功能规划', 'leniu-方案设计',
       '云食堂怎么设计', '云食堂可行性']
-  },
-  {
-    name: 'leniu-report-customization',
-    keywords: ['定制报表', 'report_order_info', 'report_order_detail', 'report_account_flow',
-      '退款汇总', '消费金额统计', '订单报表', '流水报表', '汇总报表']
-  },
-  {
-    name: 'leniu-report-standard-customization',
-    keywords: ['标准版报表', 'core-report', 'report_refund', 'report_refund_detail',
-      '经营分析', '营业额分析', '用户活跃度', '菜品排行', '操作员统计', '账户日结',
-      'ReportOrderConsumeService', 'ReportAccountConsumeService']
   },
   {
     name: 'mysql-debug',
