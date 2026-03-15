@@ -141,12 +141,11 @@ const skillMap = [
     keywords: ['leniu-规范', 'leniu-禁止', 'leniu-命名', 'leniu-Git提交', 'leniu-代码风格']
   },
   {
-    name: 'leniu-marketing-price-rule-customizer',
-    keywords: ['营销计费', '计费规则', 'price规则', '折扣规则', '满减规则']
-  },
-  {
-    name: 'leniu-marketing-recharge-rule-customizer',
-    keywords: ['营销充值', '充值规则', 'recharge规则', '满赠规则']
+    name: 'leniu-marketing-scenario',
+    keywords: ['营销', '营销规则', '消费规则', '计价规则', '充值规则', '扣款规则', '就餐规则',
+      '折扣', '满减', '限额', '限次', '补贴', '赠送', '满赠', '管理费',
+      'MarketApi', 'RulePriceHandler', 'RuleRechargeHandler', 'RulePayHandler',
+      'RuleMealHandler', 'RulePriceEnum', 'RuleRechargeEnum', 'MarketRule', '规则定制']
   },
   {
     name: 'leniu-customization-location',

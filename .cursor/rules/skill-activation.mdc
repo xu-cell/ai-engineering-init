@@ -29,8 +29,7 @@ alwaysApply: true
 | leniu-缓存/leniu-Redis/leniu-RedisUtil/leniu-分布式锁 | `.cursor/skills/leniu-redis-cache/SKILL.md` |
 | leniu-数据权限/DataScope/leniu-行级权限 | `.cursor/skills/leniu-data-permission/SKILL.md` |
 | leniu-规范/leniu-禁止/leniu-命名/leniu-代码风格 | `.cursor/skills/leniu-code-patterns/SKILL.md` |
-| 营销计费/计费规则/RulePriceHandler | `.cursor/skills/leniu-marketing-price-rule-customizer/SKILL.md` |
-| 营销充值/充值规则/RuleRechargeHandler/满赠规则 | `.cursor/skills/leniu-marketing-recharge-rule-customizer/SKILL.md` |
+| 营销/营销规则/消费规则/计价规则/充值规则/扣款规则/就餐规则/折扣/满减/限额/限次/补贴/赠送/满赠/MarketApi/RulePriceHandler/RuleRechargeHandler | `.cursor/skills/leniu-marketing-scenario/SKILL.md` |
 
 ### OpenSpec 工作流技能
 

@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.15.0] - 2026-03-15
+
+### 新增
+- **leniu-marketing-scenario 统一营销技能**：合并 2 个碎片营销技能为场景化技能，覆盖四大规则模块（就餐/计价/扣款/充值）的新增、定制、调试全场景，包含决策树、架构总览、Handler 三层结构、18 种计价规则 + 5 种充值规则 + 3 种扣款规则 + 2 种就餐规则速查表、代码模板、references 按需加载
+
+### 移除
+- **9 个碎片技能**：已被场景技能替代（leniu-marketing-price-rule-customizer、leniu-marketing-recharge-rule-customizer、leniu-java-amount-handling、leniu-java-export、leniu-java-report-query-param、leniu-java-total-line、leniu-mealtime、leniu-report-customization、leniu-report-standard-customization）
+
+---
+
 ## [v1.14.3] - 2026-03-15
 
 ### 新增

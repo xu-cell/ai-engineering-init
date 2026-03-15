@@ -116,6 +116,7 @@ const instructions = `## 强制技能激活流程（必须执行）
 - update-status: 更新状态/状态变更
 - skill-creator: 创建技能模板/技能脚手架/skill scaffold
 - leniu-report-scenario: 报表/报表开发/报表查询/报表导出/合计行/totalLine/汇总报表/定制报表/report_order_info/金额处理/分转元/餐次/mealtime/ReportBaseTotalVO/CustomNumberConverter
+- leniu-marketing-scenario: 营销/营销规则/消费规则/计价规则/充值规则/扣款规则/就餐规则/折扣/满减/限额/限次/补贴/赠送/满赠/管理费/MarketApi/RulePriceHandler/RuleRechargeHandler/RulePayHandler/MarketRule/规则定制
 
 ### 步骤 2 - 激活（逐个调用，等待每个完成）
 
