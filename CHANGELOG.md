@@ -4,6 +4,15 @@
 
 ---
 
+## [v1.14.3] - 2026-03-15
+
+### 新增
+- **chrome-cdp 技能**：通过 Chrome DevTools Protocol 与本地 Chrome 浏览器交互（截图、导航、点击、执行 JS）
+- **/release 发版命令**：自动读取 RELEASE.md 规范，按标准流程执行版本发布（版本号推荐、CHANGELOG 生成、tag 推送、验证）
+- **claude-code-workflow-dewu 文档**：Claude Code 工作流参考文档
+
+---
+
 ## [v1.14.2] - 2026-03-15
 
 ### 新增
