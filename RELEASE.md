@@ -125,4 +125,4 @@ git push origin vx.y.z              # 推送新 tag
 echo "package.json: $(node -p \"require('./package.json').version\")" && \
 echo "latest tag:   $(git tag --sort=-version:refname | head -1)" && \
 echo "HEAD commit:  $(git log --oneline -1)"
-```
+q```
