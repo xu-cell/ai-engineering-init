@@ -4,6 +4,22 @@
 
 ---
 
+## [v1.14.2] - 2026-03-15
+
+### 新增
+- **leniu-report-scenario 统一报表技能**：合并 7 个碎片报表技能为场景化技能，包含决策树、Param/VO/Controller/Service/Mapper XML 完整模板、金额处理、退款净额、餐次速查，references 按需加载汇总表定制/数据权限/基础表字段
+- **定制报表对齐陷阱**（issue #12）：pay_time vs order_date 选择指南、order_type 覆盖范围、上线前数据验证检查项
+
+### 修复
+- **Service 模式描述修正**：leniu-crud-development/leniu-java-mybatis 中"不继承基类"改为混合模式（简单 CRUD 继承 ServiceImpl + 业务聚合直接 @Service）
+- **report-scenario WHY 解释**：金额处理、合计行规则添加原因说明，description 采用 pushy 风格
+
+### 移除
+- **ai-index 代码索引功能**：技能（三平台）+ src/index-builder/ + CLI index 命令 + 设计文档
+- **7 个碎片报表技能**：已被 leniu-report-scenario 替代
+
+---
+
 ## [v1.14.1] - 2026-03-13
 
 ### 改进
