@@ -197,6 +197,62 @@ Agent(mysql-runner, "根据日志发现涉及 order_info 表，查询 id=xxx 的
 | Bug 描述 + DB 信息 | bug-analyzer + mysql-runner | — |
 | Bug 描述 + traceId + DB 信息 | 全部 | 日志中有新表/ID → mysql-runner 追加查询 |
 
+## SQL 报表 Bug 专项流程
+
+当 Bug 涉及 **SQL 查询逻辑错误**（SUM/GROUP BY/CASE WHEN/金额计算等），启用以下验证流程：
+
+### 修复前：建立基线
+
+```
+1. 读取当前 Mapper XML，理解现有 SQL 逻辑
+2. 如果有已修复的参考查询（如同模块的明细查询），先读取其 SQL 逻辑作为正确参考
+3. 查库获取当前错误结果作为"修复前基线"（可选，用户提供 DB 时执行）
+```
+
+### 修复后：交叉验证（必须执行）
+
+**两步验证法**（以本项目销售汇总修复为典型案例）：
+
+```
+步骤 1：直接执行修改后的 SQL，验证基本逻辑
+  - 检查各记录类型是否正确处理（称重/按份、正向/逆向、入库/出库）
+  - 检查特殊值：NULL 处理、除零保护、边界条件
+
+步骤 2：交叉对比验证
+  - 方法 A：用已修复的明细查询做 SUM 汇总
+  - 方法 B：执行修改后的汇总查询
+  - 对比 A vs B：总计必须完全一致
+  - 按维度对比（按商品/按门店等）：逐行 MATCH/DIFF
+```
+
+### 验证 SQL 模板
+
+```sql
+-- 交叉验证：明细汇总 vs 汇总查询
+SELECT '明细汇总' as source, SUM(saleNum), SUM(cost), ...
+FROM (/* 明细查询逐行 */) detail
+UNION ALL
+SELECT '汇总查询' as source, ...
+FROM /* 汇总查询 */;
+
+-- 按维度逐行对比
+SELECT COALESCE(d.name, s.name) as name,
+       d.detail_value, s.summary_value,
+       CASE WHEN d.detail_value = s.summary_value THEN 'MATCH' ELSE 'DIFF' END as result
+FROM (/* 明细按维度 GROUP BY */) d
+LEFT JOIN (/* 汇总按维度 GROUP BY */) s ON d.id = s.id;
+```
+
+### SQL 修改注意事项
+
+| 规则 | 说明 |
+|------|------|
+| **保留 WHERE 条件** | 新增/修改查询必须包含与现有查询相同的过滤条件 |
+| **GROUP BY 优先** | 优先添加字段到 GROUP BY，不用 ANY_VALUE() |
+| **JOIN 一致性** | 主查询和合计查询的 JOIN 必须一致（如 drp_unit） |
+| **IFNULL 保护** | 除法运算中的分母必须用 IFNULL 防止除零 |
+| **业务类型分支** | CASE WHEN 必须覆盖所有业务类型（称重/按份、入库/出库等） |
+
 ## 提交规则
 
 修复完成后，**必须调用 `Skill(git-workflow)` 再执行 git 操作**。
@@ -210,3 +266,4 @@ Agent(mysql-runner, "根据日志发现涉及 order_info 表，查询 id=xxx 的
 - 简单 Bug 不要过度编排，直接修就行（但仍需先报告再修复）
 - 如果用户没提供 DB/Loki 信息但 Bug 涉及数据问题，主动询问
 - 与 `bug-detective` 技能的区别：`bug-detective` 是排查指南，`fix-bug` 是全流程编排（包含排查+修复+提交）
+- SQL 报表 Bug 修复后**必须执行交叉验证**，不能只看"能跑"就提交
