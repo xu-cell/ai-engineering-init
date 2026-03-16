@@ -4,6 +4,23 @@
 
 ---
 
+## [v1.17.0] - 2026-03-16
+
+### 新增
+- **`/init-config` 命令**：在 Claude Code 中从 Markdown 文件一键初始化 MySQL + Loki 配置，支持 `--scope global/local`
+- **`--from` 参数**：`npx ai-engineering-init config --from env-config.md` 非交互式解析 MD 表格写入配置
+- **Markdown 配置模板**：`.claude/templates/env-config.md`，填表即用，`YOUR_*` 占位符自动跳过
+- **MD 表格解析引擎**：自动识别 MySQL/Loki 段落，解析表头+数据行，支持 range 展开
+
+---
+
+## [v1.16.4] - 2026-03-16
+
+### 改进
+- **碎片技能合并**：9 个碎片技能内容迁移到场景技能 `references/` 目录，删除独立碎片目录
+
+---
+
 ## [v1.16.3] - 2026-03-16
 
 ### 新增

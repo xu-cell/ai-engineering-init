@@ -55,6 +55,7 @@ let submitIssue = false; // sync-back --submit
 let configType = '';  // config --type <mysql|loki|all>
 let configScope = '';  // config --scope <local|global>
 let configAdd = false; // config --add
+let configFrom = '';   // config --from <file.md>
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -121,6 +122,13 @@ for (let i = 0; i < args.length; i++) {
     case '--add':
       configAdd = true;
       break;
+    case '--from':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个文件路径`));
+        process.exit(1);
+      }
+      configFrom = path.resolve(args[++i]);
+      break;
     case '--help': case '-h':
       printHelp();
       process.exit(0);
@@ -154,6 +162,7 @@ function printHelp() {
   console.log('  --type   <类型>      config 时指定配置类型: mysql | loki | all');
   console.log('  --scope  <范围>      config 时指定范围: local（当前项目） | global（全局 ~/）');
   console.log('  --add                config 时追加环境（不覆盖已有配置）');
+  console.log('  --from   <文件>      config 时从 Markdown 文件解析配置（跳过交互）');
   console.log('  --help,  -h          显示此帮助\n');
   console.log('示例:');
   console.log('  npx ai-engineering-init --tool claude');
@@ -173,6 +182,7 @@ function printHelp() {
   console.log('  npx ai-engineering-init config --type all              # 配置全部');
   console.log('  npx ai-engineering-init config --type mysql --scope global  # 全局配置（所有项目共享）');
   console.log('  npx ai-engineering-init config --type mysql --add          # 追加环境到已有配置');
+  console.log('  npx ai-engineering-init config --from env-config.md --scope global  # 从 MD 文件一键初始化');
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────
@@ -1151,8 +1161,14 @@ function runSyncBack(selectedTool, selectedSkill, doSubmit) {
 // ── 环境配置初始化（MySQL / Loki）─────────────────────────────────────────
 
 function runConfig() {
+  // --from 模式：从 MD 文件解析配置（非交互式）
+  if (configFrom) {
+    runConfigFromFile(configFrom, configScope || 'global');
+    return;
+  }
+
   if (!process.stdin.isTTY) {
-    console.error(fmt('red', '错误：config 命令需要交互式终端'));
+    console.error(fmt('red', '错误：config 命令需要交互式终端（或使用 --from <file> 跳过交互）'));
     process.exit(1);
   }
 
@@ -1569,6 +1585,224 @@ function writeLokiConfig(config, configPath, isGlobal) {
   }
   console.log('');
   console.log(fmt('green', 'Loki 日志查询配置完成！'));
+}
+
+// ── 从 Markdown 文件解析配置（非交互式）──────────────────────────────────────
+
+function runConfigFromFile(filePath, scope) {
+  if (!fs.existsSync(filePath)) {
+    console.error(fmt('red', `错误：文件不存在 "${filePath}"`));
+    process.exit(1);
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const isGlobal = scope === 'global';
+
+  console.log(fmt('blue', fmt('bold', `从 Markdown 文件解析配置：${filePath}`)));
+  console.log(fmt('magenta', `配置范围：${isGlobal ? '全局（~/.claude/）' : '本地（当前项目）'}`));
+  console.log('');
+
+  // 解析 MySQL 表格
+  const mysqlConfig = parseMysqlFromMd(content);
+  if (mysqlConfig) {
+    const mysqlPath = isGlobal
+      ? path.join(HOME_DIR, '.claude', 'mysql-config.json')
+      : path.join(targetDir, '.claude', 'mysql-config.json');
+
+    const configJson = JSON.stringify(mysqlConfig, null, 2) + '\n';
+    const dir = path.dirname(mysqlPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(mysqlPath, configJson, 'utf-8');
+    console.log(`  ${fmt('green', '✔')} MySQL 配置（${Object.keys(mysqlConfig.environments).length} 个环境）→ ${mysqlPath}`);
+
+    // 全局同步到 cursor
+    if (isGlobal && fs.existsSync(path.join(HOME_DIR, '.cursor'))) {
+      const cursorPath = path.join(HOME_DIR, '.cursor', 'mysql-config.json');
+      fs.writeFileSync(cursorPath, configJson, 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已同步 → ${cursorPath}`);
+    }
+  }
+
+  // 解析 Loki 表格
+  const lokiConfig = parseLokiFromMd(content);
+  if (lokiConfig) {
+    const lokiPath = isGlobal
+      ? path.join(HOME_DIR, '.claude', 'loki-config.json')
+      : path.join(targetDir, '.claude', 'loki-config.json');
+
+    const configJson = JSON.stringify(lokiConfig, null, 2) + '\n';
+    const dir = path.dirname(lokiPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(lokiPath, configJson, 'utf-8');
+    console.log(`  ${fmt('green', '✔')} Loki 配置（${Object.keys(lokiConfig.environments).length} 个环境）→ ${lokiPath}`);
+
+    if (isGlobal && fs.existsSync(path.join(HOME_DIR, '.cursor'))) {
+      const cursorPath = path.join(HOME_DIR, '.cursor', 'loki-config.json');
+      fs.writeFileSync(cursorPath, configJson, 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已同步 → ${cursorPath}`);
+    }
+  }
+
+  if (!mysqlConfig && !lokiConfig) {
+    console.error(fmt('red', '未在文件中找到 MySQL 或 Loki 配置表格。'));
+    console.log('');
+    console.log('期望格式（MySQL）：');
+    console.log('  | 环境 | host | port | user | password | range | 描述 |');
+    console.log('');
+    console.log('期望格式（Loki）：');
+    console.log('  | 环境 | 名称 | URL | Token | 别名 | range |');
+    process.exit(1);
+  }
+
+  if (!isGlobal) ensureGitignore(['mysql-config.json', 'loki-config.json']);
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', '配置初始化完成！')));
+  if (isGlobal) {
+    console.log(fmt('cyan', '技能按 本地(.claude/) → 全局(~/.claude/) 顺序查找，本地优先。'));
+  }
+}
+
+/** 从 Markdown 内容中解析 MySQL 配置表格 */
+function parseMysqlFromMd(content) {
+  // 找到 "MySQL" 标题后的表格
+  const mysqlSection = extractSection(content, /mysql|数据库/i);
+  if (!mysqlSection) return null;
+
+  const rows = parseTable(mysqlSection);
+  if (rows.length === 0) return null;
+
+  const environments = {};
+  for (const row of rows) {
+    const env = row['环境'] || row['env'] || '';
+    if (!env) continue;
+
+    const host = row['host'] || '';
+    const port = parseInt(row['port'] || '3306', 10);
+    const user = row['user'] || '';
+    const password = row['password'] || '';
+    const range = row['range'] || '';
+    const desc = row['描述'] || row['desc'] || `${env}环境`;
+
+    if (!host || host.startsWith('YOUR_')) continue; // 跳过未填写的占位符
+
+    environments[env] = { host, port, user, password, _desc: desc };
+    if (range) environments[env].range = range;
+  }
+
+  if (Object.keys(environments).length === 0) return null;
+
+  // 提取默认环境
+  const defaultMatch = mysqlSection.match(/默认环境[:：]\s*(\S+)/);
+  const defaultEnv = defaultMatch ? defaultMatch[1] : Object.keys(environments)[0];
+
+  return {
+    environments,
+    default: defaultEnv,
+    _comment: '从 Markdown 文件解析生成。支持 range 字段，查找顺序：本地 > 全局 ~/.claude/',
+  };
+}
+
+/** 从 Markdown 内容中解析 Loki 配置表格 */
+function parseLokiFromMd(content) {
+  const lokiSection = extractSection(content, /loki|日志/i);
+  if (!lokiSection) return null;
+
+  const rows = parseTable(lokiSection);
+  if (rows.length === 0) return null;
+
+  const environments = {};
+  for (const row of rows) {
+    const env = row['环境'] || row['env'] || '';
+    if (!env) continue;
+
+    const name = row['名称'] || row['name'] || env;
+    const url = row['url'] || row['URL'] || '';
+    const token = row['token'] || row['Token'] || '';
+    const aliasStr = row['别名'] || row['aliases'] || env;
+    const aliases = aliasStr.split(',').map(s => s.trim()).filter(Boolean);
+    const rangeStr = row['range'] || '';
+
+    if (!url || url.startsWith('YOUR_')) continue;
+
+    const envData = { name, url, token: token.startsWith('YOUR_') ? '' : token, aliases };
+    if (rangeStr) {
+      envData.range = rangeStr;
+      envData.projects = expandRange(rangeStr);
+    } else {
+      envData.projects = [];
+    }
+
+    environments[env] = envData;
+  }
+
+  if (Object.keys(environments).length === 0) return null;
+
+  const defaultMatch = lokiSection.match(/默认环境[:：]\s*(\S+)/);
+  const activeEnv = defaultMatch ? defaultMatch[1] : Object.keys(environments)[0];
+
+  return {
+    _comment: '从 Markdown 文件解析生成。支持 range 字段，查找顺序：本地 > 全局 ~/.claude/',
+    _setup: 'Token：Grafana → Administration → Service accounts → Add（Viewer）→ Add token',
+    active: activeEnv,
+    environments,
+  };
+}
+
+/** 从 Markdown 中按标题提取段落 */
+function extractSection(content, titlePattern) {
+  const lines = content.split('\n');
+  let start = -1;
+  let end = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.match(/^#+\s/) && titlePattern.test(line)) {
+      start = i;
+      const level = line.match(/^(#+)/)[1].length;
+      // 找到同级或更高级标题作为结束
+      for (let j = i + 1; j < lines.length; j++) {
+        const nextMatch = lines[j].match(/^(#+)\s/);
+        if (nextMatch && nextMatch[1].length <= level) {
+          end = j;
+          break;
+        }
+      }
+      break;
+    }
+  }
+  if (start === -1) return null;
+  return lines.slice(start, end).join('\n');
+}
+
+/** 解析 Markdown 表格为对象数组 */
+function parseTable(text) {
+  const lines = text.split('\n');
+  let headerLine = -1;
+
+  // 找到表头行（含 | 的行，下一行是分隔线 |---|）
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (lines[i].includes('|') && lines[i + 1] && lines[i + 1].match(/^\|[\s-:|]+\|$/)) {
+      headerLine = i;
+      break;
+    }
+  }
+  if (headerLine === -1) return [];
+
+  const parseRow = (line) => line.split('|').map(s => s.trim()).filter(Boolean);
+  const headers = parseRow(lines[headerLine]);
+  const rows = [];
+
+  for (let i = headerLine + 2; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.includes('|')) break;
+    const cells = parseRow(line);
+    if (cells.length === 0) break;
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cells[idx] || ''; });
+    rows.push(row);
+  }
+
+  return rows;
 }
 
 // ── Config 工具函数 ─────────────────────────────────────────────────────────
