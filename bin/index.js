@@ -1350,12 +1350,23 @@ async function runMysqlConfig(ask, isGlobal) {
     _comment: '环境支持 range 字段（如 "1~15"），用户说"dev10"时自动匹配。查找顺序：本地 .claude/ > 全局 ~/.claude/',
   };
 
+  const configJson = JSON.stringify(config, null, 2) + '\n';
+  // 写入主路径
   const dir = path.dirname(configPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  fs.writeFileSync(configPath, configJson, 'utf-8');
   console.log(`  ${fmt('green', '✔')} 已写入：${configPath}`);
 
-  if (!isGlobal) ensureGitignore(['mysql-config.json']);
+  // 全局模式：同时写入 ~/.cursor/（如果目录存在）
+  if (isGlobal) {
+    const cursorConfigPath = path.join(HOME_DIR, '.cursor', 'mysql-config.json');
+    if (fs.existsSync(path.join(HOME_DIR, '.cursor'))) {
+      fs.writeFileSync(cursorConfigPath, configJson, 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已同步：${cursorConfigPath}`);
+    }
+  } else {
+    ensureGitignore(['mysql-config.json']);
+  }
 
   console.log('');
   console.log(fmt('green', 'MySQL 数据库配置完成！'));
@@ -1540,11 +1551,22 @@ async function collectLokiEnvInput(ask, index, total) {
 }
 
 function writeLokiConfig(config, configPath, isGlobal) {
+  const configJson = JSON.stringify(config, null, 2) + '\n';
   const dir = path.dirname(configPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  fs.writeFileSync(configPath, configJson, 'utf-8');
   console.log(`  ${fmt('green', '✔')} 已写入：${configPath}`);
-  if (!isGlobal) ensureGitignore(['loki-config.json', 'environments.json']);
+
+  // 全局模式：同时写入 ~/.cursor/（如果目录存在）
+  if (isGlobal) {
+    const cursorConfigPath = path.join(HOME_DIR, '.cursor', 'loki-config.json');
+    if (fs.existsSync(path.join(HOME_DIR, '.cursor'))) {
+      fs.writeFileSync(cursorConfigPath, configJson, 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已同步：${cursorConfigPath}`);
+    }
+  } else {
+    ensureGitignore(['loki-config.json', 'environments.json']);
+  }
   console.log('');
   console.log(fmt('green', 'Loki 日志查询配置完成！'));
 }

@@ -4,6 +4,14 @@
 
 ---
 
+## [v1.16.2] - 2026-03-16
+
+### 修复
+- **Cursor 兼容**：全局配置（`--scope global`）同时写入 `~/.claude/` 和 `~/.cursor/`，Cursor 用户可正确读取
+- **Cursor 技能同步**：mysql-debug、loki-log-query 技能同步到 `.cursor/skills/`（含全局查找、range 匹配）
+
+---
+
 ## [v1.16.1] - 2026-03-16
 
 ### 改进

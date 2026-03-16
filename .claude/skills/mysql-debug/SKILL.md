@@ -42,9 +42,10 @@ description: |
 
 项目目录下的配置文件，优先于全局配置。
 
-### 优先级 3：全局 `~/.claude/mysql-config.json`
+### 优先级 3：全局配置（所有项目共享）
 
-全局配置文件（通过 `npx ai-engineering-init config --scope global` 创建），所有项目共享。
+全局配置文件（通过 `npx ai-engineering-init config --scope global` 创建）。
+查找路径：`~/.claude/mysql-config.json` 或 `~/.cursor/mysql-config.json`（取决于使用的工具）。
 **推荐**：公司统一的数据库连接信息放全局，项目特定的覆盖放本地。
 
 ### 优先级 4：工程配置文件（零配置，本地开发默认）
@@ -115,11 +116,12 @@ brew install mysql-client
 ### 配置文件查找顺序
 
 ```
-1. 本地项目：.claude/mysql-config.json
-2. 全局配置：~/.claude/mysql-config.json
+1. 本地项目：.claude/mysql-config.json（或 .cursor/mysql-config.json）
+2. 全局配置：~/.claude/mysql-config.json（或 ~/.cursor/mysql-config.json）
 ```
 
 本地配置优先。如果本地无配置，使用全局。两者都存在时，本地覆盖全局（同名环境取本地值）。
+`config --scope global` 会同时写入 `~/.claude/` 和 `~/.cursor/`（如果目录存在）。
 
 ### 配置文件结构（支持 range 范围匹配）
 
