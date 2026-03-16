@@ -25,114 +25,81 @@ description: |
 
 ## 多环境配置
 
-### 配置文件查找顺序
+配置文件：`.claude/skills/loki-log-query/environments.json`
 
-```
-1. 本地项目：.claude/loki-config.json（新格式）
-2. 本地项目：.claude/skills/loki-log-query/environments.json（旧格式，兼容）
-3. 全局配置：~/.claude/loki-config.json
-```
+### 环境列表
 
-本地配置优先。全局配置推荐用 `npx ai-engineering-init config --type loki --scope global` 创建。
+| 环境别名 | 名称 | URL | 快捷词 |
+|----------|------|-----|--------|
+| `test13` | 测试13（主测试环境） | `https://test13.xnzn.net/grafana` | test13, 13 |
+| `monitor-test` | Monitor 测试环境 | `https://monitor-test.xnzn.net/grafana` | mtest |
+| `monitor-dev` | Monitor 开发环境 | `https://monitor-dev.xnzn.net/grafana` | mdev, dev |
+| `monitor02-dev` | Monitor02 开发环境 | `https://monitor02-dev.xnzn.net/grafana` | m02, monitor02 |
+| `monitor-tyy-dev` | Monitor 体验园开发环境 | `https://monitor-tyy-dev.xnzn.net/grafana` | tyy, 体验园 |
 
-### 配置结构（支持 range 范围匹配）
+### 环境匹配规则
 
-```json
-{
-  "active": "monitor-dev",
-  "environments": {
-    "monitor-dev": {
-      "name": "Monitor 开发环境",
-      "url": "https://monitor-dev.xnzn.net/grafana",
-      "token": "glsa_xxx",
-      "aliases": ["mdev", "dev"],
-      "range": "dev1~15",
-      "projects": ["dev01","dev02","dev03","dev04","dev05","dev06","dev07","dev08","dev09","dev10","dev11","dev12","dev13","dev14","dev15"]
-    }
-  }
-}
-```
+用户说的话 → 匹配环境：
+- "查 test13 的日志" → `test13`
+- "去 monitor-dev 查" → `monitor-dev`
+- "切到体验园" → `monitor-tyy-dev`
+- "去 m02 查一下" → `monitor02-dev`
+- 未指定环境 → 使用 `active` 字段指定的默认环境
 
-### 环境匹配规则（含 range 范围匹配）
-
-用户说的话 → 匹配逻辑：
-
-| 用户说法 | 匹配方式 | 结果 |
-|---------|---------|------|
-| "查 test13 的日志" | 精确匹配 key 或 aliases | `test13` 环境 |
-| "去 dev10 查" | **range 匹配**：dev10 在 monitor-dev 的 projects 中 | `monitor-dev` 环境，`project="dev10"` |
-| "去 monitor-dev 查" | 精确匹配 key | `monitor-dev` 环境 |
-| "切到体验园" | aliases 匹配 | `monitor-tyy-dev` 环境 |
-| 未指定环境 | 使用 `active` 字段 | 默认活跃环境 |
-
-**range 匹配算法**：
-```
-1. 用户输入 "dev10"
-2. 先精确匹配 key / aliases → 未命中
-3. 遍历所有环境的 projects 列表，检查是否包含 "dev10"
-4. 命中 → 使用该环境，并自动添加 project="dev10" 标签过滤
-```
-
-### 读取配置（含全局降级 + range 匹配）
+### 读取配置
 
 ```bash
-# 按优先级查找配置文件
-find_config() {
-  local PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
-  for f in \
-    "${PROJECT_DIR}/.claude/loki-config.json" \
-    "${PROJECT_DIR}/.claude/skills/loki-log-query/environments.json" \
-    "${HOME}/.claude/loki-config.json"; do
-    [ -f "$f" ] && echo "$f" && return
-  done
-  echo ""
+SKILL_DIR="$CLAUDE_PROJECT_DIR/.claude/skills/loki-log-query"
+ENV_FILE="${SKILL_DIR}/environments.json"
+
+# 读取指定环境（参数: 环境别名）
+read_env() {
+  local ENV_KEY="${1:-$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['active'])")}"
+  GRAFANA_URL=$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['environments']['${ENV_KEY}']['url'])")
+  TOKEN=$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['environments']['${ENV_KEY}']['token'])")
+  API="${GRAFANA_URL}/api/datasources/proxy/uid/loki/loki/api/v1"
+  echo "Environment: ${ENV_KEY} → ${GRAFANA_URL}"
 }
 
-ENV_FILE=$(find_config)
-
-# 通过别名或 range 查找环境 key + project
+# 通过别名查找环境 key
 find_env() {
   python3 -c "
-import json, re
+import json
 data = json.load(open('${ENV_FILE}'))
 alias = '${1}'.lower()
-# 1. 精确匹配 key 或 aliases
 for key, env in data['environments'].items():
     if alias == key or alias in env.get('aliases', []):
-        print(f'{key}|')  # key|project（project 为空）
-        exit()
-# 2. range 匹配：在 projects 列表中查找
-for key, env in data['environments'].items():
-    if alias in env.get('projects', []):
-        print(f'{key}|{alias}')
-        exit()
-# 3. 未命中，返回默认
-print(f'{data[\"active\"]}|')
+        print(key)
+        break
+else:
+    print(data['active'])
 "
 }
-
-# 使用示例：
-# result=$(find_env "dev10")
-# ENV_KEY=$(echo "$result" | cut -d'|' -f1)   # monitor-dev
-# PROJECT=$(echo "$result" | cut -d'|' -f2)    # dev10
-# 查询时：{app="yunshitang",project="${PROJECT}"}
 ```
 
-### 切换活跃环境 / 更新 Token
+### 切换活跃环境
 
 ```bash
+# 切换默认环境为 monitor-dev
 python3 -c "
 import json
 data = json.load(open('${ENV_FILE}'))
 data['active'] = 'monitor-dev'
 json.dump(data, open('${ENV_FILE}', 'w'), indent=2, ensure_ascii=False)
+print('Switched to:', data['active'])
 "
+```
 
+### 更新 Token
+
+```bash
+# 为某个环境设置 Token
 python3 -c "
 import json
 data = json.load(open('${ENV_FILE}'))
-data['environments']['monitor-dev']['token'] = 'glsa_新token'
+data['environments']['monitor-dev']['token'] = 'glsa_新的token值'
 json.dump(data, open('${ENV_FILE}', 'w'), indent=2, ensure_ascii=False)
+print('Token updated for monitor-dev')
 "
 ```
 

@@ -141,6 +141,38 @@ cd ai-engineering-init
 
 > **Codex MCP Server**：可通过 `codex mcp-server` 接入 Claude Code。Windows 用户需将 `.claude/settings.json` 中 `mcpServers.codex.command` 改为 `where codex` 查询到的实际路径。
 
+## GSD 集成（大型任务编排）
+
+本框架与 [GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done) 深度集成，实现**编排层 + 执行层**分工：
+
+- **GSD** — 项目编排：需求拆解、Phase 规划、Wave 并行执行、跨会话恢复
+- **ai-engineering-init** — 代码执行：领域 Skills、编码规范、工具链（MySQL/Loki/云效）
+
+### 使用场景路由
+
+| 场景 | 选择 | 原因 |
+|------|------|------|
+| 单个 CRUD 模块 | `/dev` 或 `/crud` | Skills 直接搞定 |
+| Bug 修复 | `fix-bug` 技能 | Agent 排查 + Loki/MySQL 联动 |
+| 新项目从零开始 | `/gsd:new-project` | 需求→路线图→分阶段 |
+| 大型重构（10+ 文件） | `/gsd:plan-phase` + Skills | GSD 拆任务，Skills 保规范 |
+| 跨多天的里程碑 | `/gsd:resume-work` | GSD 跨会话恢复上下文 |
+
+### 安装方式
+
+```bash
+# 先安装 GSD（全局）
+npx get-shit-done-cc@latest
+
+# 再安装 ai-engineering-init（全局）— agents/skills 会叠加到 GSD 旁边
+npx ai-engineering-init global --tool claude
+
+# 初始化环境配置（GSD agent 共享）
+npx ai-engineering-init config --type all --scope global
+```
+
+GSD executor 执行时会自动读取项目的 `CLAUDE.md` 和 `.claude/skills/`，从而遵循项目编码规范。
+
 ## OpenSpec 规格驱动开发
 
 基于 [OpenSpec](https://github.com/Fission-AI/OpenSpec) 的工作流，通过 `/opsx-*` 命令使用（Claude Code 为命令，Cursor/Codex 为技能）：

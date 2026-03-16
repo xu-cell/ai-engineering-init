@@ -219,6 +219,7 @@ CREATE TABLE [表名] (
 | **轻量** | 单表 CRUD、字段增删、简单查询 | `/dev` 或 `/crud` 直接开发 | 无需需求拆解 |
 | **中等** | 2-3 张表联动、跨 Service 调用、状态流转 | `/dev` 开发（可选 OpenSpec） | 建议先理清逻辑再编码 |
 | **复杂** | 多模块协作、复杂业务流程、需要设计评审 | OpenSpec → `/dev` | 先用 `/opsx:ff` 生成制品，再按 tasks 逐步实现 |
+| **大型项目** | 新项目从零开始、10+ 文件重构、多阶段里程碑 | `/gsd:new-project` 或 `/gsd:plan-phase` | GSD 编排 + Skills 执行 |
 
 ### 开发类型路由
 
@@ -249,3 +250,36 @@ tasks.md       ────→    /progress（跟踪进度）
 | `/check` | 代码规范检查 |
 | `/next` | 下一步建议（含 OpenSpec 变更扫描） |
 | `/progress` | 项目进度（含 OpenSpec 状态） |
+
+## GSD 集成（大型任务编排）
+
+本框架与 [GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done) 深度集成。GSD 负责项目编排，Skills 负责代码执行。
+
+### GSD + Skills 协作模式
+
+| GSD 阶段 | 自动激活的 Skills/Agents |
+|----------|------------------------|
+| `/gsd:debug` | 优先使用 `loki-runner` 查日志 + `mysql-runner` 查数据库 + `bug-analyzer` 根因分析 |
+| `/gsd:execute-phase` | 读取 `.claude/skills/` 自动应用项目编码规范（CRUD、API、数据库等） |
+| `/gsd:plan-phase` | 参考 Skills 中的架构设计和模块划分规范 |
+| `/gsd:verify-work` | 可调用 `auto-test-generator` 生成接口测试验证 |
+
+### 可用的领域 Agents（GSD 子 agent 可调用）
+
+| Agent | 能力 | 适用场景 |
+|-------|------|---------|
+| `loki-runner` | 查 Grafana Loki 线上日志 | debug 时查错误日志、traceId 链路 |
+| `mysql-runner` | 查 MySQL 数据库验证数据 | debug 时验证数据状态 |
+| `bug-analyzer` | 根因分析（含日志+数据库联动） | 复杂 Bug 的多维度排查 |
+| `code-scanner` | 快速扫描代码库定位文件 | 大型代码库的文件定位 |
+| `auto-test-generator` | 生成 Hurl 接口测试 | verify-work 阶段验证 |
+| `image-reader` | 读取 Axure 原型截图 | 需求分析阶段 |
+| `task-fetcher` | 获取云效任务信息 | 任务管理联动 |
+| `code-reviewer` | 代码审查（含 leniu 规范） | 执行完成后质量检查 |
+
+### 环境配置（GSD agent 共享）
+
+GSD 子 agent 可读取以下配置（全局或本地）：
+- `mysql-config.json` — 数据库连接（支持 range 环境匹配）
+- `loki-config.json` — Grafana Loki Token
+- 初始化：`npx ai-engineering-init config --type all --scope global`
