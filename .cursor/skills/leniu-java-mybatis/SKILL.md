@@ -22,7 +22,7 @@ description: |
 | XML 位置 | **与 Mapper 接口同目录**（非 `resources/mapper/`） |
 | 分页 | PageHelper → `PageMethod.startPage(PageDTO)` → `PageVO.of(list)` |
 | 逻辑删除 | **1=删除，2=正常**（与 RuoYi 相反） |
-| Service | **两种模式并存**：简单 CRUD 继承 `ServiceImpl`（`this.baseMapper`）；业务聚合直接 `@Service`（`@Autowired XxxMapper xxxMapper`） |
+| Service | 无接口，直接 `@Service` 类，Mapper 字段名统一用 `baseMapper` |
 | 循环依赖 | 跨模块依赖用 `@Autowired @Lazy` |
 
 ## Mapper 接口模板
@@ -147,36 +147,28 @@ List<XxxEntity> list = mapper.selectList(
 
 ## Service 注入规范
 
-项目中 Service 有两种模式，Mapper 字段名也不统一——参考周围已有代码的风格即可。
-
-**模式 A：继承 ServiceImpl（简单 CRUD）**
 ```java
+@Slf4j
 @Service
-public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements XxxService {
-    // 通过 this.baseMapper 访问 Mapper（父类自动注入）
+@Validated
+public class XxxService {
+
+    @Autowired
+    private XxxMapper baseMapper;        // ✅ 统一命名 baseMapper
+
+    @Autowired @Lazy
+    private XxxDetailService xxxDetailService;  // ✅ 跨模块用 @Lazy
+
+    public XxxEntity getOne(Long id) {
+        return baseMapper.selectById(id);
+    }
+
     public boolean exists(String macOrderId) {
-        return this.baseMapper.existsOne(
+        return baseMapper.existsOne(
             Wrappers.lambdaQuery(XxxEntity.class)
                 .eq(XxxEntity::getMacOrderId, macOrderId)
                 .eq(XxxEntity::getDelFlag, 2)
         );
-    }
-}
-```
-
-**模式 B：直接 @Service（业务聚合）**
-```java
-@Slf4j
-@Service
-public class XxxService {
-    @Autowired
-    private XxxMapper xxxMapper;  // 字段名跟随 Mapper 类名
-
-    @Autowired @Lazy
-    private YyyService yyyService;  // 跨模块用 @Lazy
-
-    public XxxEntity getOne(Long id) {
-        return xxxMapper.selectById(id);
     }
 }
 ```
@@ -258,9 +250,8 @@ wrapper.eq(XxxEntity::getDelFlag, 0);
 // ❌ MapstructUtils（用 BeanUtil.copyProperties）
 MapstructUtils.convert(source, Target.class);
 
-// ❌ 业务聚合 Service 不要继承 IService / ServiceImpl（简单 CRUD Service 可以继承）
-// 错误：在报表/业务编排 Service 中继承 ServiceImpl
-// 正确：简单单表 CRUD 可以继承 ServiceImpl，复杂业务直接 @Service
+// ❌ Service 继承 IService / ServiceImpl
+public interface IXxxService extends IService<XxxEntity> {}
 ```
 
 ## XML 文件位置

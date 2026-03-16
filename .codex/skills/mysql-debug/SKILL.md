@@ -27,22 +27,28 @@ description: |
 
 ---
 
-## 连接信息获取（三级降级，自动查找）
+## 连接信息获取（四级降级，自动查找）
 
 当本技能被激活时，**按以下优先级获取数据库连接信息**：
 
 ### 优先级 1：用户对话中指定（最高优先级）
 
 用户直接给出连接信息，或指定环境名：
-- "连 dev 环境查一下" → 使用 `.claude/mysql-config.json` 中 dev 环境的配置
+- "连 dev 环境查一下" → 使用配置中 dev 环境
+- "去 dev10 查" → **范围匹配** dev 环境（range: "1~15"）
 - 直接给出 host/port/user/password → 直接使用
 
-### 优先级 2：`.claude/mysql-config.json`（显式配置，可选）
+### 优先级 2：本地项目 `.claude/mysql-config.json`
 
-如果文件存在且当前环境的 password 不是占位符 `YOUR_PASSWORD`，使用该配置。
-**此文件为可选**，主要用于连接非本地环境（dev/prod 远程数据库）。
+项目目录下的配置文件，优先于全局配置。
 
-### 优先级 3：工程配置文件（零配置，本地开发默认）
+### 优先级 3：全局配置（所有项目共享）
+
+全局配置文件（通过 `npx ai-engineering-init config --scope global` 创建）。
+查找路径：`~/.claude/mysql-config.json` 或 `~/.cursor/mysql-config.json`（取决于使用的工具）。
+**推荐**：公司统一的数据库连接信息放全局，项目特定的覆盖放本地。
+
+### 优先级 4：工程配置文件（零配置，本地开发默认）
 
 从项目的 `bootstrap-dev.yml` 中自动提取连接信息：
 

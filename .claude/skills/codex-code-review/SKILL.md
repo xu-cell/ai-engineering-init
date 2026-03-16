@@ -88,45 +88,6 @@ Grep pattern: "@Transactional\((?!.*rollbackFor)" path: [命中文件]
 ```
 - ❌ `@Transactional` → ✅ `@Transactional(rollbackFor = Exception.class)`
 
-#### 🔴 A7b. selectOne 无唯一保障
-```bash
-Grep pattern: "selectOne(" path: [目标目录] glob: "*.java"
-# 命中行检查：是否有 LIMIT 1 或注释说明唯一索引
-```
-- ❌ 无 LIMIT 且无唯一索引 → ✅ 加 `.last("LIMIT 1")` 或确保有唯一索引
-
-#### 🟡 A7c. selectCount 用于存在性判断
-```bash
-Grep pattern: "selectCount" path: [目标目录] glob: "*.java"
-# 检查命中行是否用于 > 0 判断（存在性），而非真正计数
-```
-- ❌ `selectCount(w) > 0` → ✅ `mapper.exists(w)` 或 `selectList(w.last("LIMIT 1"))`
-
-#### 🔴 A7d. Redis KEYS 命令
-```bash
-Grep pattern: "keysByPattern|\.keys\(" path: [目标目录] glob: "*.java"
-```
-- ❌ `redisTemplate.keys()` / `keysByPattern()` → ✅ 使用 Redisson `deleteByPattern()`（内部 SCAN + UNLINK）
-
-#### 🟡 A7e. Optional.of 误用
-```bash
-Grep pattern: "Optional\.of\(" path: [目标目录] glob: "*.java"
-# 排除 ofNullable 的命中
-```
-- ❌ `Optional.of(可能为null)` → ✅ `Optional.ofNullable(value)`
-
-#### 🟡 A7f. 布尔字段类型错误
-```bash
-Grep pattern: "private Integer (if|is|has)" path: [目标目录] glob: "*.java"
-```
-- ❌ `private Integer isEnabled` → ✅ `private Boolean enabled`
-
-#### 🟡 A7g. Wrapper 嵌套过深
-```bash
-# 人工审查：Read 文件时检查 Wrapper 嵌套是否超过 2 层
-```
-- ❌ Wrapper 嵌套 >2 层 → ✅ 迁移到 XML 原生 SQL
-
 #### 🟡 A8. 请求体封装
 ```bash
 Grep pattern: "@RequestBody [^L]" path: [目标目录] glob: "*Controller.java"

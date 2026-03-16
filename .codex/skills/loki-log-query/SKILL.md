@@ -25,9 +25,35 @@ description: |
 
 ## 多环境配置
 
-配置文件：`.claude/skills/loki-log-query/environments.json`
+### 配置文件查找顺序
 
-### 环境列表
+```
+1. 本地项目：.claude/loki-config.json（新格式）
+2. 本地项目：.claude/skills/loki-log-query/environments.json（旧格式，兼容）
+3. 全局配置：~/.claude/loki-config.json（或 ~/.cursor/loki-config.json）
+```
+
+本地优先。全局配置用 `npx ai-engineering-init config --type loki --scope global` 创建。
+
+### 配置结构（支持 range 范围匹配）
+
+```json
+{
+  "active": "monitor-dev",
+  "environments": {
+    "monitor-dev": {
+      "name": "Monitor 开发环境",
+      "url": "https://monitor-dev.xnzn.net/grafana",
+      "token": "glsa_xxx",
+      "aliases": ["mdev", "dev"],
+      "range": "dev1~15",
+      "projects": ["dev01","dev02","...","dev15"]
+    }
+  }
+}
+```
+
+### 环境列表（默认）
 
 | 环境别名 | 名称 | URL | 快捷词 |
 |----------|------|-----|--------|
@@ -37,31 +63,34 @@ description: |
 | `monitor02-dev` | Monitor02 开发环境 | `https://monitor02-dev.xnzn.net/grafana` | m02, monitor02 |
 | `monitor-tyy-dev` | Monitor 体验园开发环境 | `https://monitor-tyy-dev.xnzn.net/grafana` | tyy, 体验园 |
 
-### 环境匹配规则
+### 环境匹配规则（含 range）
 
-用户说的话 → 匹配环境：
-- "查 test13 的日志" → `test13`
-- "去 monitor-dev 查" → `monitor-dev`
-- "切到体验园" → `monitor-tyy-dev`
-- "去 m02 查一下" → `monitor02-dev`
-- 未指定环境 → 使用 `active` 字段指定的默认环境
+| 用户说法 | 匹配方式 | 结果 |
+|---------|---------|------|
+| "查 test13 的日志" | 精确匹配 key/aliases | `test13` 环境 |
+| "去 dev10 查" | **range 匹配**：dev10 在 monitor-dev 的 projects 中 | `monitor-dev`，`project="dev10"` |
+| "去 monitor-dev 查" | 精确匹配 key | `monitor-dev` 环境 |
+| "切到体验园" | aliases 匹配 | `monitor-tyy-dev` 环境 |
+| 未指定环境 | 使用 `active` 字段 | 默认活跃环境 |
 
-### 读取配置
+### 读取配置（含全局降级 + range 匹配）
 
 ```bash
-SKILL_DIR="$CLAUDE_PROJECT_DIR/.claude/skills/loki-log-query"
-ENV_FILE="${SKILL_DIR}/environments.json"
-
-# 读取指定环境（参数: 环境别名）
-read_env() {
-  local ENV_KEY="${1:-$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['active'])")}"
-  GRAFANA_URL=$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['environments']['${ENV_KEY}']['url'])")
-  TOKEN=$(python3 -c "import json; print(json.load(open('${ENV_FILE}'))['environments']['${ENV_KEY}']['token'])")
-  API="${GRAFANA_URL}/api/datasources/proxy/uid/loki/loki/api/v1"
-  echo "Environment: ${ENV_KEY} → ${GRAFANA_URL}"
+# 按优先级查找配置文件
+find_config() {
+  local PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
+  for f in \
+    "${PROJECT_DIR}/.claude/loki-config.json" \
+    "${PROJECT_DIR}/.claude/skills/loki-log-query/environments.json" \
+    "${HOME}/.claude/loki-config.json" \
+    "${HOME}/.cursor/loki-config.json"; do
+    [ -f "$f" ] && echo "$f" && return
+  done
 }
 
-# 通过别名查找环境 key
+ENV_FILE=$(find_config)
+
+# 通过别名或 range 查找环境 key + project
 find_env() {
   python3 -c "
 import json
@@ -69,10 +98,11 @@ data = json.load(open('${ENV_FILE}'))
 alias = '${1}'.lower()
 for key, env in data['environments'].items():
     if alias == key or alias in env.get('aliases', []):
-        print(key)
-        break
-else:
-    print(data['active'])
+        print(f'{key}|'); exit()
+for key, env in data['environments'].items():
+    if alias in env.get('projects', []):
+        print(f'{key}|{alias}'); exit()
+print(f'{data[\"active\"]}|')
 "
 }
 ```

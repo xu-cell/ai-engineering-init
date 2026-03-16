@@ -113,61 +113,43 @@ brew install mysql-client
 
 ## 多环境支持
 
-### 配置文件查找顺序
+### 配置文件结构
 
-```
-1. 本地项目：.claude/mysql-config.json（或 .cursor/mysql-config.json）
-2. 全局配置：~/.claude/mysql-config.json（或 ~/.cursor/mysql-config.json）
-```
-
-本地配置优先。如果本地无配置，使用全局。两者都存在时，本地覆盖全局（同名环境取本地值）。
-`config --scope global` 会同时写入 `~/.claude/` 和 `~/.cursor/`（如果目录存在）。
-
-### 配置文件结构（支持 range 范围匹配）
+`.claude/mysql-config.json` 支持多环境配置：
 
 ```json
 {
   "environments": {
-    "local": { "host": "127.0.0.1", "port": 3306, "user": "root", "password": "xxx", "_desc": "本地环境" },
-    "dev":   { "host": "dev-db.example.com", "port": 3306, "user": "dev_user", "password": "xxx", "range": "1~15", "_desc": "覆盖 dev1→dev15" },
-    "test":  { "host": "test-db.example.com", "port": 3306, "user": "test_user", "password": "xxx", "range": "1~30", "_desc": "覆盖 test1→test30" },
+    "local": { "host": "127.0.0.1", "port": 3306, "user": "root", "password": "xxx" },
+    "dev":   { "host": "dev-db.example.com", "port": 3306, "user": "dev_user", "password": "xxx" },
     "prod":  { "host": "prod-db.example.com", "port": 3306, "user": "readonly", "password": "xxx" }
   },
   "default": "local"
 }
 ```
 
-### 环境范围匹配（range）
-
-`range` 字段支持 `起始~结束` 格式，用于一个配置覆盖多个编号环境：
-
-| 用户说法 | 匹配逻辑 | 结果 |
-|---------|---------|------|
-| "去 dev10 查" | 提取前缀 `dev`、编号 `10`，检查 dev 环境 range "1~15"，10 在范围内 | 使用 dev 配置 |
-| "连 test25" | 提取前缀 `test`、编号 `25`，检查 test 环境 range "1~30"，25 在范围内 | 使用 test 配置 |
-| "连 prod" | 精确匹配 prod 环境 | 使用 prod 配置 |
-
-**匹配算法**：
-```
-1. 用户输入的环境名（如 "dev10"）
-2. 先精确匹配环境 key（environments["dev10"]）
-3. 未命中 → 拆分为前缀+编号（"dev" + 10）
-4. 查找有 range 字段的环境，前缀匹配 + 编号在范围内
-5. 命中 → 使用该环境的 host/port/user/password
-```
-
 ### 环境选择规则
 
 | 优先级 | 来源 | 示例 |
 |--------|------|------|
-| 1（最高） | 用户对话中指定 | "连 dev10 环境查一下" |
+| 1（最高） | 用户对话中指定 | "连 dev 环境查一下"、"用生产库看看" |
 | 2 | 配置文件 `default` 字段 | `"default": "local"` |
+
+### 环境关键词映射
+
+用户说的话 → 对应环境名：
+
+| 用户说法 | 环境 |
+|---------|------|
+| "本地"、"local"、"本地环境" | `local` |
+| "开发"、"dev"、"测试环境"、"开发环境" | `dev` |
+| "生产"、"prod"、"线上"、"正式环境" | `prod` |
 
 ### 连接示例
 
 ```bash
-# 用户说"连 dev10 环境查一下 order_info"
-# → range 匹配到 dev 环境的连接信息 + 日志提取的数据库名
+# 用户说"连 dev 环境查一下 order_info"
+# → 读取 environments.dev 的连接信息 + 日志提取的数据库名
 mysql -h dev-db.example.com -P 3306 -u dev_user -p'xxx' 546198574447230976 -e "SELECT ..."
 ```
 

@@ -4,6 +4,21 @@
 
 ---
 
+## [v1.16.3] - 2026-03-16
+
+### 新增
+- **GSD 深度集成**：CLAUDE.md 新增 GSD 集成段落，GSD executor/debugger 可发现 loki-runner/mysql-runner 等领域 Agent
+- **docs/reference.md**：新增 GSD 集成使用场景路由和安装指南
+- **9 个碎片技能恢复**：leniu-java-amount-handling、leniu-java-export、leniu-java-report-query-param、leniu-java-total-line、leniu-mealtime、leniu-marketing-price-rule-customizer、leniu-marketing-recharge-rule-customizer、leniu-report-customization、leniu-report-standard-customization
+
+### 改进
+- **mysql-debug 技能**：四级降级查找 + range 范围匹配 + 全局配置（修复 linter 还原）
+- **loki-log-query 技能**：三级配置查找 + range→projects 展开 + 全局配置（修复 linter 还原）
+- **三平台技能同步**：所有 skills 修改自动同步到 .claude/ + .cursor/ + .codex/
+- **技能精简**：code-patterns、leniu-code-patterns、leniu-crud-development、leniu-java-mybatis、codex-code-review
+
+---
+
 ## [v1.16.2] - 2026-03-16
 
 ### 修复
