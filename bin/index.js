@@ -52,6 +52,7 @@ let targetDir = process.cwd();
 let force     = false;
 let skillFilter = '';  // sync-back --skill <名称>
 let submitIssue = false; // sync-back --submit
+let configType = '';  // config --type <mysql|loki|all>
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -101,6 +102,13 @@ for (let i = 0; i < args.length; i++) {
     case '--submit':
       submitIssue = true;
       break;
+    case '--type':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个值（mysql | loki | all）`));
+        process.exit(1);
+      }
+      configType = args[++i];
+      break;
     case '--help': case '-h':
       printHelp();
       process.exit(0);
@@ -122,7 +130,7 @@ function printHelp() {
   console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）`);
   console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效`);
   console.log(`  ${fmt('bold', 'sync-back')}        对比本地技能修改，生成 diff 或提交 GitHub Issue`);
-  console.log(`  ${fmt('bold', 'config')}           初始化数据库配置文件（.claude/mysql-config.json）`);
+  console.log(`  ${fmt('bold', 'config')}           初始化环境配置（数据库连接 / Loki 日志 / 全部）`);
   console.log(`  ${fmt('bold', 'mcp')}              MCP 服务器管理（安装/卸载/状态检查）\n`);
   console.log(`无命令时显示交互式主菜单。\n`);
   console.log('选项:');
@@ -131,6 +139,7 @@ function printHelp() {
   console.log('  --force, -f          强制覆盖（init 时覆盖已有文件；update/global 时同时更新保留文件）');
   console.log('  --skill, -s <技能>   sync-back 时只对比指定技能');
   console.log('  --submit             sync-back 时自动创建 GitHub Issue（需要 gh CLI）');
+  console.log('  --type   <类型>      config 时指定配置类型: mysql | loki | all');
   console.log('  --help,  -h          显示此帮助\n');
   console.log('示例:');
   console.log('  npx ai-engineering-init --tool claude');
@@ -144,6 +153,10 @@ function printHelp() {
   console.log('  npx ai-engineering-init sync-back --tool claude          # 只扫描 Claude');
   console.log('  npx ai-engineering-init sync-back --skill bug-detective  # 只对比指定技能');
   console.log('  npx ai-engineering-init sync-back --skill bug-detective --submit # 提交 Issue');
+  console.log('  npx ai-engineering-init config                         # 交互式选择配置类型');
+  console.log('  npx ai-engineering-init config --type mysql            # 只配置数据库连接');
+  console.log('  npx ai-engineering-init config --type loki             # 只配置 Loki 日志');
+  console.log('  npx ai-engineering-init config --type all              # 配置全部');
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────
@@ -1126,12 +1139,93 @@ function runConfig() {
     process.exit(1);
   }
 
-  const configPath = path.join(targetDir, '.claude', 'mysql-config.json');
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-
   const ask = (question) => new Promise((resolve) => {
     rl.question(question, (answer) => resolve(answer.trim()));
   });
+
+  (async () => {
+    try {
+      let type = configType;
+
+      // 未指定 --type 时显示交互式菜单
+      if (!type) {
+        console.log(fmt('cyan', '请选择要初始化的配置类型：'));
+        console.log('');
+        console.log(`  ${fmt('bold', '1')}) ${fmt('green', 'MySQL 数据库连接')}   — 配置 mysql-config.json`);
+        console.log(`  ${fmt('bold', '2')}) ${fmt('blue',  'Loki 日志查询')}      — 配置 Grafana Loki Token`);
+        console.log(`  ${fmt('bold', '3')}) ${fmt('yellow','全部配置')}            — 依次配置 MySQL + Loki`);
+        console.log('');
+        const answer = await ask(fmt('bold', '请输入选项 [1-3]: '));
+        switch (answer) {
+          case '1': type = 'mysql'; break;
+          case '2': type = 'loki';  break;
+          case '3': type = 'all';   break;
+          default:
+            console.error(fmt('red', '无效选项，退出。'));
+            rl.close();
+            process.exit(1);
+        }
+        console.log('');
+      }
+
+      if (!['mysql', 'loki', 'all'].includes(type)) {
+        console.error(fmt('red', `错误：不支持的配置类型 "${type}"，可选：mysql | loki | all`));
+        rl.close();
+        process.exit(1);
+      }
+
+      if (type === 'mysql' || type === 'all') {
+        await runMysqlConfig(ask);
+      }
+      if (type === 'loki' || type === 'all') {
+        if (type === 'all') console.log(''); // 分隔符
+        await runLokiConfig(ask);
+      }
+
+      console.log('');
+      console.log(fmt('green', fmt('bold', '配置初始化完成！')));
+    } finally {
+      rl.close();
+    }
+  })();
+}
+
+// ── MySQL 数据库配置 ────────────────────────────────────────────────────────
+
+async function runMysqlConfig(ask) {
+  console.log(fmt('blue', fmt('bold', '┌─ MySQL 数据库连接配置 ─┐')));
+  console.log('');
+
+  // 检测已安装的工具，决定写入哪些目录
+  const targets = detectConfigTargets('mysql-config.json');
+
+  if (targets.length === 0) {
+    console.log(fmt('yellow', '⚠ 未检测到 .claude/ 或 .cursor/ 目录。请先运行 init 安装框架。'));
+    return;
+  }
+
+  // 检测已有配置
+  const existingTarget = targets.find(t => fs.existsSync(t.configPath));
+  if (existingTarget) {
+    console.log(fmt('yellow', `⚠ 配置文件已存在：${existingTarget.configPath}`));
+    const overwrite = await ask(fmt('bold', '是否重新配置？[y/N]: '));
+    if (overwrite.toLowerCase() !== 'y') {
+      console.log('已跳过 MySQL 配置。');
+      return;
+    }
+    console.log('');
+  }
+
+  // 选择环境
+  console.log(fmt('cyan', '请选择要配置的数据库环境（多选，用逗号分隔）：'));
+  console.log('');
+  console.log(`  ${fmt('bold', '1')}) local  — 本地开发环境`);
+  console.log(`  ${fmt('bold', '2')}) dev    — 开发测试环境`);
+  console.log(`  ${fmt('bold', '3')}) test   — 测试环境`);
+  console.log(`  ${fmt('bold', '4')}) prod   — 生产环境`);
+  console.log('');
+  const envAnswer = await ask(fmt('bold', '请输入选项（如 1,2 或 1-3）: '));
 
   const ENV_DEFAULTS = {
     local: { host: '127.0.0.1', user: 'root', desc: '本地开发环境' },
@@ -1140,139 +1234,369 @@ function runConfig() {
     prod:  { host: '',          user: '',     desc: '生产环境' },
   };
 
-  (async () => {
-    try {
-      // 1. 检测已有配置
-      if (fs.existsSync(configPath)) {
-        console.log(fmt('yellow', `⚠ 配置文件已存在：${configPath}`));
-        const overwrite = await ask(fmt('bold', '是否重新配置？[y/N]: '));
-        if (overwrite.toLowerCase() !== 'y') {
-          console.log('已取消。');
-          rl.close();
-          return;
-        }
-        console.log('');
-      }
+  const envNames = ['local', 'dev', 'test', 'prod'];
+  const selected = parseSelection(envAnswer, envNames);
 
-      // 2. 选择环境
-      console.log(fmt('cyan', '请选择要配置的数据库环境（多选，用逗号分隔）：'));
-      console.log('');
-      console.log(`  ${fmt('bold', '1')}) local  — 本地开发环境`);
-      console.log(`  ${fmt('bold', '2')}) dev    — 开发测试环境`);
-      console.log(`  ${fmt('bold', '3')}) test   — 测试环境`);
-      console.log(`  ${fmt('bold', '4')}) prod   — 生产环境`);
-      console.log('');
-      const envAnswer = await ask(fmt('bold', '请输入选项（如 1,2 或 1-3）: '));
+  if (selected.length === 0) {
+    console.error(fmt('red', '未选择任何环境，跳过 MySQL 配置。'));
+    return;
+  }
 
-      // 解析选择
-      const envNames = ['local', 'dev', 'test', 'prod'];
-      const selected = new Set();
-      for (const part of envAnswer.split(',')) {
-        const trimmed = part.trim();
-        const rangeMatch = trimmed.match(/^(\d)-(\d)$/);
-        if (rangeMatch) {
-          const start = parseInt(rangeMatch[1], 10);
-          const end = parseInt(rangeMatch[2], 10);
-          for (let n = start; n <= end; n++) {
-            if (n >= 1 && n <= 4) selected.add(envNames[n - 1]);
-          }
-        } else {
-          const n = parseInt(trimmed, 10);
-          if (n >= 1 && n <= 4) selected.add(envNames[n - 1]);
-        }
-      }
+  console.log('');
+  console.log(fmt('green', `已选择环境：${selected.join(', ')}`));
+  console.log('');
 
-      const selectedEnvs = [...selected];
-      if (selectedEnvs.length === 0) {
-        console.error(fmt('red', '未选择任何环境，退出。'));
-        rl.close();
-        process.exit(1);
-      }
+  // 收集每个环境的配置
+  const environments = {};
+  for (const env of selected) {
+    const defaults = ENV_DEFAULTS[env];
+    console.log(fmt('cyan', `── ${env} 环境配置 ──`));
 
-      console.log('');
-      console.log(fmt('green', `已选择环境：${selectedEnvs.join(', ')}`));
-      console.log('');
+    const host = await ask(`  host [${defaults.host || '无默认'}]: `) || defaults.host;
+    const port = await ask('  port [3306]: ') || '3306';
+    const user = await ask(`  user [${defaults.user || '无默认'}]: `) || defaults.user;
+    const password = await ask('  password: ');
+    const desc = await ask(`  描述 [${defaults.desc}]: `) || defaults.desc;
+    console.log('');
 
-      // 3. 收集每个环境的配置
-      const environments = {};
-      for (const env of selectedEnvs) {
-        const defaults = ENV_DEFAULTS[env];
-        console.log(fmt('cyan', `── ${env} 环境配置 ──`));
-
-        const host = await ask(`  host [${defaults.host || '无默认'}]: `) || defaults.host;
-        const port = await ask('  port [3306]: ') || '3306';
-        const user = await ask(`  user [${defaults.user || '无默认'}]: `) || defaults.user;
-        const password = await ask('  password: ');
-        const desc = await ask(`  描述 [${defaults.desc}]: `) || defaults.desc;
-        console.log('');
-
-        if (!host) {
-          console.error(fmt('red', `错误：${env} 环境的 host 不能为空`));
-          rl.close();
-          process.exit(1);
-        }
-        if (!user) {
-          console.error(fmt('red', `错误：${env} 环境的 user 不能为空`));
-          rl.close();
-          process.exit(1);
-        }
-
-        environments[env] = {
-          host,
-          port: parseInt(port, 10),
-          user,
-          password,
-          description: desc,
-        };
-      }
-
-      // 4. 选择默认环境
-      let defaultEnv = selectedEnvs[0];
-      if (selectedEnvs.length > 1) {
-        console.log(fmt('cyan', '请选择默认环境：'));
-        selectedEnvs.forEach((env, i) => {
-          console.log(`  ${fmt('bold', String(i + 1))}) ${env}`);
-        });
-        const defaultAnswer = await ask(fmt('bold', `请输入选项 [1-${selectedEnvs.length}]: `));
-        const idx = parseInt(defaultAnswer, 10) - 1;
-        if (idx >= 0 && idx < selectedEnvs.length) {
-          defaultEnv = selectedEnvs[idx];
-        }
-        console.log('');
-      }
-
-      // 5. 写入配置文件
-      const config = { defaultEnv, environments };
-      const claudeDir = path.join(targetDir, '.claude');
-      if (!fs.existsSync(claudeDir)) {
-        fs.mkdirSync(claudeDir, { recursive: true });
-      }
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-      console.log(fmt('green', `✔ 配置已写入：${configPath}`));
-
-      // 6. 确保 .gitignore 包含该文件
-      const gitignorePath = path.join(targetDir, '.gitignore');
-      const ignoreEntry = '.claude/mysql-config.json';
-      let needAppend = true;
-      if (fs.existsSync(gitignorePath)) {
-        const content = fs.readFileSync(gitignorePath, 'utf-8');
-        if (content.split('\n').some(line => line.trim() === ignoreEntry)) {
-          needAppend = false;
-        }
-      }
-      if (needAppend) {
-        const separator = fs.existsSync(gitignorePath) ? '\n' : '';
-        fs.appendFileSync(gitignorePath, `${separator}${ignoreEntry}\n`, 'utf-8');
-        console.log(fmt('green', `✔ 已添加 ${ignoreEntry} 到 .gitignore`));
-      }
-
-      console.log('');
-      console.log(fmt('green', '数据库配置初始化完成！'));
-      console.log(`使用 ${fmt('bold', 'mysql-debug')} 技能时将自动读取此配置。`);
-    } finally {
-      rl.close();
+    if (!host) {
+      console.error(fmt('red', `错误：${env} 环境的 host 不能为空，跳过此环境。`));
+      continue;
     }
-  })();
+    if (!user) {
+      console.error(fmt('red', `错误：${env} 环境的 user 不能为空，跳过此环境。`));
+      continue;
+    }
+
+    environments[env] = {
+      host,
+      port: parseInt(port, 10),
+      user,
+      password,
+      _desc: desc,
+    };
+  }
+
+  if (Object.keys(environments).length === 0) {
+    console.error(fmt('red', '未成功配置任何环境。'));
+    return;
+  }
+
+  // 选择默认环境
+  const configuredEnvs = Object.keys(environments);
+  let defaultEnv = configuredEnvs[0];
+  if (configuredEnvs.length > 1) {
+    console.log(fmt('cyan', '请选择默认环境：'));
+    configuredEnvs.forEach((env, i) => {
+      console.log(`  ${fmt('bold', String(i + 1))}) ${env}`);
+    });
+    const defaultAnswer = await ask(fmt('bold', `请输入选项 [1-${configuredEnvs.length}]: `));
+    const idx = parseInt(defaultAnswer, 10) - 1;
+    if (idx >= 0 && idx < configuredEnvs.length) {
+      defaultEnv = configuredEnvs[idx];
+    }
+    console.log('');
+  }
+
+  // 写入配置文件（多目标）
+  const config = {
+    environments,
+    default: defaultEnv,
+    _comment: 'database 从日志自动提取（租户ID=数据库名），也可手动指定。使用时说\'连 dev 环境\'即可切换',
+  };
+
+  for (const t of targets) {
+    const dir = path.dirname(t.configPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(t.configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+    console.log(`  ${fmt('green', '✔')} 已写入：${t.configPath}`);
+  }
+
+  // 确保 .gitignore
+  ensureGitignore(['mysql-config.json']);
+
+  console.log('');
+  console.log(fmt('green', 'MySQL 数据库配置完成！'));
+  console.log(`使用 ${fmt('bold', 'mysql-debug')} 技能时将自动读取此配置。`);
+}
+
+// ── Loki 日志查询配置 ──────────────────────────────────────────────────────
+
+async function runLokiConfig(ask) {
+  console.log(fmt('blue', fmt('bold', '┌─ Loki 日志查询配置 ─┐')));
+  console.log('');
+
+  // Loki 配置存放在 skills/loki-log-query/environments.json
+  const targets = detectLokiConfigTargets();
+
+  if (targets.length === 0) {
+    console.log(fmt('yellow', '⚠ 未检测到 loki-log-query 技能目录。请先运行 init 安装框架。'));
+    return;
+  }
+
+  // 读取已有配置作为模板
+  let existingConfig = null;
+  for (const t of targets) {
+    if (fs.existsSync(t.configPath)) {
+      try {
+        existingConfig = JSON.parse(fs.readFileSync(t.configPath, 'utf-8'));
+        break;
+      } catch { /* ignore */ }
+    }
+  }
+
+  // 默认环境模板
+  const DEFAULT_ENVS = {
+    test: {
+      name: '测试环境',
+      url: '',
+      aliases: ['test'],
+      projects: [],
+    },
+    dev: {
+      name: '开发环境',
+      url: '',
+      aliases: ['dev'],
+      projects: [],
+    },
+    prod: {
+      name: '生产环境',
+      url: '',
+      aliases: ['prod'],
+      projects: [],
+    },
+  };
+
+  // 如果已有配置，展示当前状态
+  if (existingConfig && existingConfig.environments) {
+    const envs = existingConfig.environments;
+    const envList = Object.keys(envs);
+    console.log(fmt('cyan', '当前已配置的 Loki 环境：'));
+    console.log('');
+    for (const key of envList) {
+      const env = envs[key];
+      const hasToken = env.token && env.token.length > 0;
+      const status = hasToken ? fmt('green', '✔ 已配置 Token') : fmt('red', '✗ 缺少 Token');
+      console.log(`  ${fmt('bold', key)} — ${env.name || key}  ${status}`);
+      if (env.url) console.log(`    URL: ${env.url}`);
+    }
+    console.log('');
+
+    // 检查是否所有环境都已有 Token
+    const missingTokenEnvs = envList.filter(k => !envs[k].token);
+    if (missingTokenEnvs.length === 0) {
+      const reconfig = await ask(fmt('bold', '所有环境已配置 Token，是否重新配置？[y/N]: '));
+      if (reconfig.toLowerCase() !== 'y') {
+        console.log('已跳过 Loki 配置。');
+        return;
+      }
+    } else {
+      console.log(fmt('yellow', `有 ${missingTokenEnvs.length} 个环境缺少 Token，将引导配置。`));
+    }
+    console.log('');
+
+    // 为已有环境补充 Token
+    console.log(fmt('cyan', fmt('bold', 'Grafana Token 获取步骤：')));
+    console.log(`  1. 打开 Grafana 管理后台`);
+    console.log(`  2. 进入 Administration → Service accounts`);
+    console.log(`  3. 创建 Service Account（角色选 ${fmt('bold', 'Viewer')}）`);
+    console.log(`  4. 点击 Add token → 复制 Token`);
+    console.log('');
+
+    for (const key of envList) {
+      const env = envs[key];
+      const hasToken = env.token && env.token.length > 0;
+      if (hasToken) {
+        const update = await ask(`  ${fmt('bold', key)} 已有 Token，是否更新？[y/N]: `);
+        if (update.toLowerCase() !== 'y') continue;
+      }
+      console.log(`  ${fmt('cyan', `── ${key}: ${env.name || key} ──`)}`);
+      if (env.url) console.log(`  Grafana URL: ${fmt('bold', env.url)}`);
+      const token = await ask(`  输入 Grafana Service Account Token: `);
+      if (token) {
+        envs[key].token = token;
+        console.log(`  ${fmt('green', '✔')} Token 已设置`);
+      } else {
+        console.log(`  ${fmt('yellow', '⚠')} 跳过（Token 为空）`);
+      }
+      console.log('');
+    }
+
+    // 选择默认环境
+    console.log(fmt('cyan', '请选择默认活跃环境：'));
+    envList.forEach((env, i) => {
+      console.log(`  ${fmt('bold', String(i + 1))}) ${env} — ${envs[env].name || env}`);
+    });
+    const activeAnswer = await ask(fmt('bold', `请输入选项 [1-${envList.length}]: `));
+    const activeIdx = parseInt(activeAnswer, 10) - 1;
+    const activeEnv = (activeIdx >= 0 && activeIdx < envList.length) ? envList[activeIdx] : existingConfig.active;
+    console.log('');
+
+    // 写入配置
+    existingConfig.active = activeEnv;
+    for (const t of targets) {
+      const dir = path.dirname(t.configPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(t.configPath, JSON.stringify(existingConfig, null, 2) + '\n', 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已写入：${t.configPath}`);
+    }
+  } else {
+    // 无已有配置，从零创建
+    console.log(fmt('cyan', '将创建新的 Loki 日志查询配置。'));
+    console.log('');
+    console.log(fmt('cyan', '请输入要配置的 Grafana 环境数量：'));
+    const countAnswer = await ask(fmt('bold', '环境数量 [1]: ')) || '1';
+    const count = Math.max(1, Math.min(10, parseInt(countAnswer, 10) || 1));
+    console.log('');
+
+    console.log(fmt('cyan', fmt('bold', 'Grafana Token 获取步骤：')));
+    console.log(`  1. 打开 Grafana 管理后台`);
+    console.log(`  2. 进入 Administration → Service accounts`);
+    console.log(`  3. 创建 Service Account（角色选 ${fmt('bold', 'Viewer')}）`);
+    console.log(`  4. 点击 Add token → 复制 Token`);
+    console.log('');
+
+    const environments = {};
+    let activeEnv = '';
+
+    for (let i = 0; i < count; i++) {
+      console.log(fmt('cyan', `── 环境 ${i + 1}/${count} ──`));
+      const envKey = await ask(`  环境标识（如 test、dev、prod）: `);
+      if (!envKey) {
+        console.log(fmt('yellow', '  跳过（标识为空）'));
+        continue;
+      }
+      const name = await ask(`  环境名称（如 "测试环境"）: `) || envKey;
+      const url = await ask(`  Grafana URL（如 https://grafana.example.com）: `);
+      const token = await ask(`  Grafana Service Account Token: `);
+      const aliasStr = await ask(`  别名（逗号分隔，如 test,t）[${envKey}]: `) || envKey;
+      const aliases = aliasStr.split(',').map(s => s.trim()).filter(Boolean);
+      console.log('');
+
+      environments[envKey] = { name, url, token: token || '', aliases, projects: [] };
+      if (!activeEnv) activeEnv = envKey;
+    }
+
+    if (Object.keys(environments).length === 0) {
+      console.error(fmt('red', '未配置任何环境。'));
+      return;
+    }
+
+    // 选择默认
+    const envKeys = Object.keys(environments);
+    if (envKeys.length > 1) {
+      console.log(fmt('cyan', '请选择默认活跃环境：'));
+      envKeys.forEach((env, i) => {
+        console.log(`  ${fmt('bold', String(i + 1))}) ${env}`);
+      });
+      const activeAnswer = await ask(fmt('bold', `请输入选项 [1-${envKeys.length}]: `));
+      const idx = parseInt(activeAnswer, 10) - 1;
+      if (idx >= 0 && idx < envKeys.length) activeEnv = envKeys[idx];
+      console.log('');
+    }
+
+    const config = {
+      _comment: 'Loki 多环境配置。每个环境需要独立的 Grafana Service Account Token。',
+      _usage: "用户说'查 test 的日志'或'去 dev 查'时，匹配对应环境。",
+      _setup: 'Token 创建：Grafana → Administration → Service accounts → Add（Viewer 角色）→ Add token → 复制到对应环境的 token 字段。',
+      active: activeEnv,
+      environments,
+    };
+
+    for (const t of targets) {
+      const dir = path.dirname(t.configPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(t.configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+      console.log(`  ${fmt('green', '✔')} 已写入：${t.configPath}`);
+    }
+  }
+
+  // 确保 .gitignore
+  ensureGitignore(['loki-log-query/environments.json']);
+
+  console.log('');
+  console.log(fmt('green', 'Loki 日志查询配置完成！'));
+  console.log(`使用 ${fmt('bold', 'loki-log-query')} 技能时将自动读取此配置。`);
+}
+
+// ── Config 工具函数 ─────────────────────────────────────────────────────────
+
+/** 检测已安装工具目录，返回 MySQL 配置文件路径列表 */
+function detectConfigTargets(filename) {
+  const targets = [];
+  // MySQL 配置统一放在 .claude/ 下，Cursor 技能也引用 .claude/mysql-config.json
+  const claudePath = path.join(targetDir, '.claude', filename);
+
+  if (fs.existsSync(path.join(targetDir, '.claude'))) {
+    targets.push({ tool: 'claude', configPath: claudePath });
+  } else if (fs.existsSync(path.join(targetDir, '.cursor'))) {
+    // 如果只有 Cursor 没有 Claude，也写到 .claude/ 下（技能引用此路径）
+    targets.push({ tool: 'cursor', configPath: claudePath });
+  }
+  return targets;
+}
+
+/** 检测 Loki 配置文件路径列表 */
+function detectLokiConfigTargets() {
+  const targets = [];
+  const claudePath = path.join(targetDir, '.claude', 'skills', 'loki-log-query', 'environments.json');
+  const cursorPath = path.join(targetDir, '.cursor', 'skills', 'loki-log-query', 'environments.json');
+
+  if (fs.existsSync(path.join(targetDir, '.claude', 'skills', 'loki-log-query'))) {
+    targets.push({ tool: 'claude', configPath: claudePath });
+  }
+  if (fs.existsSync(path.join(targetDir, '.cursor', 'skills', 'loki-log-query'))) {
+    targets.push({ tool: 'cursor', configPath: cursorPath });
+  }
+  return targets;
+}
+
+/** 解析选择字符串（如 "1,2" 或 "1-3"） */
+function parseSelection(answer, names) {
+  const selected = new Set();
+  for (const part of answer.split(',')) {
+    const trimmed = part.trim();
+    const rangeMatch = trimmed.match(/^(\d)-(\d)$/);
+    if (rangeMatch) {
+      const start = parseInt(rangeMatch[1], 10);
+      const end = parseInt(rangeMatch[2], 10);
+      for (let n = start; n <= end; n++) {
+        if (n >= 1 && n <= names.length) selected.add(names[n - 1]);
+      }
+    } else {
+      const n = parseInt(trimmed, 10);
+      if (n >= 1 && n <= names.length) selected.add(names[n - 1]);
+    }
+  }
+  return [...selected];
+}
+
+/** 确保敏感配置文件在 .gitignore 中 */
+function ensureGitignore(patterns) {
+  const gitignorePath = path.join(targetDir, '.gitignore');
+  let content = '';
+  if (fs.existsSync(gitignorePath)) {
+    content = fs.readFileSync(gitignorePath, 'utf-8');
+  }
+  const lines = content.split('\n').map(l => l.trim());
+  const toAdd = [];
+
+  for (const pattern of patterns) {
+    // 检查是否已有任意形式的忽略规则（精确路径、通配符等）
+    const alreadyIgnored = lines.some(line =>
+      line.endsWith(pattern) || line.endsWith(`/${pattern}`) || line === `**/${pattern}`
+    );
+    if (!alreadyIgnored) {
+      toAdd.push(`# 敏感配置 - ${pattern}`);
+      toAdd.push(`**/${pattern}`);
+    }
+  }
+
+  if (toAdd.length > 0) {
+    const separator = content.endsWith('\n') || content === '' ? '' : '\n';
+    fs.appendFileSync(gitignorePath, `${separator}${toAdd.join('\n')}\n`, 'utf-8');
+    console.log(`  ${fmt('green', '✔')} 已更新 .gitignore（防止提交敏感配置）`);
+  }
 }
 
 // ── MCP 服务器管理 ──────────────────────────────────────────────────────────
@@ -1765,7 +2089,7 @@ function showMainMenu() {
   console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    '更新')}           — 更新已安装的框架文件`);
   console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  '全局安装')}       — 安装到 ~/.claude 等，对所有项目生效`);
   console.log(`  ${fmt('bold', '4')}) ${fmt('magenta', '技能同步反馈')}   — 对比本地技能修改，生成 diff`);
-  console.log(`  ${fmt('bold', '5')}) ${fmt('blue',    '数据库配置')}     — 初始化 mysql-config.json（数据库连接信息）`);
+  console.log(`  ${fmt('bold', '5')}) ${fmt('blue',    '环境配置')}       — 初始化数据库连接 / Loki 日志查询配置`);
   console.log(`  ${fmt('bold', '6')}) ${fmt('green',   'MCP 管理')}       — MCP 服务器安装/卸载/状态检查`);
   console.log('');
   rl.question(fmt('bold', '请输入选项 [1-6]: '), (answer) => {

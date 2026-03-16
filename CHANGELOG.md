@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.16.0] - 2026-03-16
+
+### 新增
+- **config 命令统一入口**：`npx ai-engineering-init config` 支持交互式选择配置类型（MySQL / Loki / 全部），新增 `--type` 参数（`mysql` | `loki` | `all`）
+- **Loki 日志查询配置初始化**：交互式配置 Grafana Service Account Token，支持已有环境补 Token 和从零创建两种模式
+- **多工具目录同步**：自动检测 `.claude/` 和 `.cursor/` 目录，配置同步写入对应位置
+- **敏感配置 .gitignore 保护**：自动检测并添加 mysql-config.json、environments.json 到 .gitignore
+
+---
+
 ## [v1.15.0] - 2026-03-15
 
 ### 新增
