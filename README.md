@@ -27,6 +27,8 @@ npx ai-engineering-init --tool all      # 全部
 | `npx ai-engineering-init` | 交互式初始化到当前项目 |
 | `npx ai-engineering-init@latest update` | 更新已安装的框架文件 |
 | `npx ai-engineering-init@latest global` | 全局安装到 `~/.claude` 等，所有项目生效 |
+| `npx ai-engineering-init config` | 初始化数据库连接 / Loki 日志配置（支持全局/本地/追加） |
+| `npx ai-engineering-init mcp` | MCP 服务器管理（安装/卸载/状态） |
 | `npx ai-engineering-init sync-back` | 对比本地技能修改，反馈回源仓库 |
 
 > 所有命令均支持 `--tool <claude|cursor|codex|all>` 指定工具。运行 `--help` 查看全部选项。

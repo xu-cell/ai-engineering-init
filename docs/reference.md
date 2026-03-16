@@ -105,6 +105,9 @@ cd ai-engineering-init
 --force, -f          强制覆盖已有文件
 --skill, -s <技能>   sync-back 时只对比指定技能
 --submit             sync-back 时自动创建 GitHub Issue（需要 gh CLI）
+--type   <类型>      config 时指定配置类型: mysql | loki | all
+--scope  <范围>      config 时指定范围: local（当前项目） | global（全局 ~/）
+--add                config 时追加环境（不覆盖已有配置）
 --help,  -h          显示帮助
 ```
 
@@ -270,3 +273,58 @@ npx ai-engineering-init sync-back --skill bug-detective --submit  # 自动创建
 ```
 
 > **闭环**：安装 → 使用 → 发现问题 → `sync-back` → 维护者合并 → 重新发布。
+
+### config
+
+初始化数据库连接和 Loki 日志查询的环境配置。支持全局配置（所有项目共享）和本地配置。
+
+```bash
+npx ai-engineering-init config                              # 交互式选择配置类型和范围
+npx ai-engineering-init config --type mysql                 # 只配置 MySQL 数据库连接
+npx ai-engineering-init config --type loki                  # 只配置 Loki 日志查询 Token
+npx ai-engineering-init config --type all                   # 依次配置 MySQL + Loki
+npx ai-engineering-init config --type mysql --scope global  # 全局配置，写入 ~/.claude/
+npx ai-engineering-init config --type mysql --scope local   # 本地配置，写入当前项目 .claude/
+npx ai-engineering-init config --type mysql --add           # 追加环境到已有配置
+```
+
+**配置类型**：
+
+| 类型 | 配置文件 | 用于 |
+|------|---------|------|
+| `mysql` | `mysql-config.json` | `mysql-debug` 技能的数据库连接信息 |
+| `loki` | `loki-config.json` | `loki-log-query` 技能的 Grafana Token |
+
+**配置范围**：
+
+| 范围 | 写入位置 | 说明 |
+|------|---------|------|
+| `global` | `~/.claude/` | 所有项目共享，只需配置一次 |
+| `local` | 当前项目 `.claude/` | 项目特定配置，优先级高于全局 |
+
+> **推荐**：先用 `--scope global` 配置全公司统一的数据库连接和 Loki Token，项目有特殊需求时再用 `--scope local` 覆盖。
+
+**环境范围匹配（range）**：
+
+配置环境时可输入覆盖范围（如 `1~15`），表示该配置覆盖 dev1 到 dev15 共 15 个编号环境。使用时说"去 dev10 查"会自动匹配。
+
+```json
+{
+  "environments": {
+    "dev": { "host": "dev-db.com", "port": 3306, "user": "root", "password": "xxx", "range": "1~15" }
+  },
+  "default": "dev"
+}
+```
+
+**技能查找顺序**：本地项目 `.claude/` → 全局 `~/.claude/`（本地优先）
+
+### mcp
+
+MCP 服务器的安装、卸载和状态管理。
+
+```bash
+npx ai-engineering-init mcp                                 # 交互式管理 MCP 服务器
+```
+
+> 支持 sequential-thinking、context7、github 等常用 MCP Server 的一键安装。
