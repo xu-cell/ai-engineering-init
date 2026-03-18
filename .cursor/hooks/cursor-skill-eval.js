@@ -417,6 +417,10 @@ const skillMap = [
   {
     name: 'skill-creator',
     keywords: ['创建技能', '技能模板', '技能脚手架', 'skill scaffold', '新建skill']
+  },
+  {
+    name: 'jenkins-deploy',
+    keywords: ['打包', '部署', 'Jenkins', '构建', 'Portainer', '发布到dev', '发布到test', '更新环境', '自动部署']
   }
 ];
 

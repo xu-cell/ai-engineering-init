@@ -94,6 +94,7 @@
 | `collaborating-with-gemini` | 与 Gemini 协同设计 |
 | `codex-code-review` | 代码审查 |
 | `leniu-marketing-scenario` | 营销规则开发（折扣/满减/限额/限次/补贴/充值赠送/扣款/就餐规则） |
+| `jenkins-deploy` | 打包部署（Jenkins 构建 + Portainer 更新，dev/test 环境） |
 
 ### OpenSpec 规格驱动开发技能（SDD）
 

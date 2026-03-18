@@ -1,0 +1,51 @@
+{
+  "portainer_api_url": {
+    "dev": "https://devops-dev.xnzn.net/api",
+    "dev16": "https://xnzn-dev.xnzn.net/api",
+    "test": "https://devops-test.xnzn.net/api"
+  },
+  "portainer_user_name": {
+    "dev": "__PORTAINER_DEV_USER__",
+    "dev16": "__PORTAINER_DEV16_USER__",
+    "test": "__PORTAINER_TEST_USER__"
+  },
+  "portainer_user_pwd": {
+    "dev": "__PORTAINER_DEV_PWD__",
+    "dev16": "__PORTAINER_DEV16_PWD__",
+    "test": "__PORTAINER_TEST_PWD__"
+  },
+  "portainer_endpoints": {
+    "dev": "2",
+    "dev16": "1",
+    "test": "2"
+  },
+  "portainer_server_suffix": {
+    "dev": "_yunshitang-api",
+    "dev16": "_yunshitang-api-offline",
+    "test": "_yunshitang-api"
+  },
+  "core_job": {
+    "dev": "dev-tengyun-core",
+    "test": "test-tengyun-core"
+  },
+  "core_job_custom": {
+    "dev": "dev-后端-core",
+    "test": "test-后端-core"
+  },
+  "api_job": {
+    "dev": "dev-tengyun-yunshitang-api",
+    "test": "test-tengyun-yunshitang-api"
+  },
+  "api_job_custom": {
+    "dev": "dev-后端-api",
+    "test": "test-后端-api"
+  },
+  "jenkins_user_id": {
+    "dev": "__JENKINS_DEV_USER__",
+    "test": "__JENKINS_TEST_USER__"
+  },
+  "jenkins_api_token": {
+    "dev": "__JENKINS_DEV_TOKEN__",
+    "test": "__JENKINS_TEST_TOKEN__"
+  }
+}

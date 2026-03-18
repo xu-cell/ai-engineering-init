@@ -586,6 +586,24 @@ function showDoneHint(toolKey) {
     console.log(`  2. 在 Codex 中使用 .codex/skills/ 下的技能`);
     console.log('');
   }
+  showJenkinsHint();
+}
+
+/** 检测 jenkins/ 是否已初始化，提示用户配置部署环境 */
+function showJenkinsHint() {
+  const jenkinsDir = path.join(targetDir, 'jenkins');
+  const envParamFile = path.join(jenkinsDir, 'env_param.json');
+  const skillAssetsDir = path.join(targetDir, '.claude', 'skills', 'jenkins-deploy', 'assets');
+
+  // 技能 assets 存在但 jenkins/ 未初始化
+  if (fs.existsSync(skillAssetsDir) && !fs.existsSync(envParamFile)) {
+    console.log(fmt('yellow', fmt('bold', '📦 Jenkins 部署环境未初始化')));
+    console.log(`  项目包含 ${fmt('bold', 'jenkins-deploy')} 技能，但 jenkins/ 目录尚未配置。`);
+    console.log(`  初始化方式：`);
+    console.log(`    方式 1：在 AI 对话中说 ${fmt('bold', '"初始化部署环境"')}`);
+    console.log(`    方式 2：从团队成员处拷贝 ${fmt('bold', 'jenkins/')} 目录`);
+    console.log('');
+  }
 }
 
 function run(selectedTool) {
@@ -748,6 +766,7 @@ function runUpdate(selectedTool) {
     console.log(`  强制更新保留文件: ${fmt('bold', hintCmd('update --force'))}`);
   }
   console.log('');
+  showJenkinsHint();
 
   if (totalFailed > 0) process.exitCode = 1;
 }

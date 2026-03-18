@@ -87,6 +87,7 @@ alwaysApply: true
 | 多租户/租户隔离/TenantEntity/tenantId/SaaS | `.cursor/skills/tenant-management/SKILL.md` |
 | Element UI/前端组件/el-table/el-form/管理页面 | `.cursor/skills/ui-pc/SKILL.md` |
 | Vuex/store/mapState/mapActions/状态管理 | `.cursor/skills/store-pc/SKILL.md` |
+| 打包/部署/Jenkins/构建/Portainer/发布到dev/发布到test/自动部署 | `.cursor/skills/jenkins-deploy/SKILL.md` |
 
 ### 执行规则
 

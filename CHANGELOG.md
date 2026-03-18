@@ -4,6 +4,15 @@
 
 ---
 
+## [v1.17.1] - 2026-03-18
+
+### 新增
+- **`jenkins-deploy` 技能**：Jenkins + Portainer 自动打包部署，支持 dev/test 环境构建、4 种构建模式、定制项目部署
+- **部署初始化模板**：`assets/` 目录包含 `jk_build.py`、`env_param.template.json`、`last_cd_env.template.json`，团队成员可一键初始化
+- **安装/更新后提示**：`npx ai-engineering-init` 和 `update` 完成后自动检测 `jenkins/` 目录，提示初始化部署环境
+
+---
+
 ## [v1.17.0] - 2026-03-16
 
 ### 新增
