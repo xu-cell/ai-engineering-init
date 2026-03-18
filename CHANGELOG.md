@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.17.2] - 2026-03-18
+
+### 改进
+- **jenkins-deploy 架构重构**：脚本留在技能 `assets/` 不再复制到项目，凭证改为全局 `~/.claude/jenkins-config.json`（本地 > 全局优先级）
+- **构建状态自动创建**：`jenkins/last_cd_env.json` 脚本运行时自动生成，无需模板初始化
+- **安装提示优化**：`showJenkinsHint()` 改为检测 `jenkins-config.json` 是否存在
+- **文档补充**：`docs/reference.md` 新增打包部署工作流说明（含定制项目流程）
+
+---
+
 ## [v1.17.1] - 2026-03-18
 
 ### 新增

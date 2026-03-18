@@ -56,6 +56,56 @@ AI 判断复杂度
 
 **触发词**：`审查代码`、`review`、`代码审查`、`code review`
 
+### 打包部署
+
+```
+用户说："打包到 dev63" / "部署到 test1" / "更新 dev 环境"
+  ↓ 自动激活 jenkins-deploy 技能
+AI 读取 jenkins/last_cd_env.json（上次构建参数）
+  ↓ 确认参数（环境、分支、模式）
+修改 last_cd_env.json → 执行构建脚本
+  ↓
+Jenkins 构建 core（10分钟超时）→ 构建 api（5分钟超时）
+  ↓
+Portainer 更新容器
+  ├─ dev1~15：Webhook 触发
+  ├─ dev16~43：Force Update
+  └─ dev44+：仅构建，需手动更新
+```
+
+**4 种模式**：`0` 只构建 | `1` 全构建+更新 | `2` 构建api+更新 | `3` 只更新容器
+
+**定制项目打包**（如武汉协和定制）：
+
+```
+用户说："打包定制项目到 dev10，文件夹 leniu-tengyun-wuhanxieheyiyuan"
+  ↓
+脚本自动将 Jenkins Job 路径替换为：
+  leniu-tengyun-wuhanxieheyiyuan/dev-后端-core   （替代 dev-tengyun-core）
+  leniu-tengyun-wuhanxieheyiyuan/dev-后端-api    （替代 dev-tengyun-yunshitang-api）
+  ↓
+其余流程与标准项目一致
+```
+
+> 定制项目通过 `api_param_folder` 参数指定文件夹名，脚本交互时输入或在 AI 对话中告知即可。
+
+**首次配置**（一次性）：
+
+```bash
+# 1. 更新框架
+npx ai-engineering-init@latest global --tool claude --force
+
+# 2. 配置凭证（从团队成员拷贝或从模板创建）
+cp /path/to/teammate/jenkins-config.json ~/.claude/jenkins-config.json
+
+# 3. 安装依赖
+pip install python-jenkins requests
+```
+
+**手动运行**：`python ~/.claude/skills/jenkins-deploy/assets/jk_build.py`
+
+**触发词**：`打包`、`部署`、`Jenkins`、`构建`、`发布到dev`、`发布到test`、`更新环境`
+
 ### 其他常用命令
 
 | 命令 | 说明 | 场景 |
@@ -221,6 +271,7 @@ GSD executor 执行时会自动读取项目的 `CLAUDE.md` 和 `.claude/skills/`
 | `analyze-requirements` | 需求分析全流程编排（原型图/云效任务 → 开发任务清单） |
 | `fix-bug` | Bug 修复全流程编排（排查+修复+提交） |
 | `add-skill` | 创建新技能 |
+| `jenkins-deploy` | Jenkins + Portainer 自动打包部署（dev/test 环境） |
 | `ui-pc` | 前端 PC 端组件库 |
 | `store-pc` | 前端 Vuex 状态管理 |
 

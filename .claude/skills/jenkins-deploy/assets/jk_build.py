@@ -2,6 +2,7 @@
 import html
 import json
 import os
+import sys
 import time
 
 import jenkins
@@ -23,6 +24,32 @@ jenkins_user_id = ''
 jenkins_api_token = ''
 core_job = ''
 api_job = ''
+
+
+# ~~~~~~~~~~~~~~~~~ 配置文件查找 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+def find_config_file(filename, search_paths):
+    """按优先级查找配置文件：本地 > 全局"""
+    for p in search_paths:
+        filepath = os.path.join(p, filename)
+        if os.path.exists(filepath):
+            return filepath
+    return None
+
+
+# 配置文件搜索路径
+project_dir = os.getcwd()
+home_claude_dir = os.path.join(os.path.expanduser('~'), '.claude')
+
+# jenkins-config.json 搜索路径：项目本地 .claude/ > 全局 ~/.claude/
+config_search_paths = [
+    os.path.join(project_dir, '.claude'),
+    home_claude_dir,
+]
+
+# last_cd_env.json 搜索路径：项目本地 jenkins/
+state_dir = os.path.join(project_dir, 'jenkins')
+
 
 # 执行job方法，通过等待时间来判断是否构建成功
 def do_job_by_time(server, job_name, param_branch, param_env, wait_time):
@@ -134,8 +161,6 @@ def get_server_id(token):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    # Get list of services
-    # services_response = requests.get(portainer_api_url + "/endpoints/1/docker/services", headers=headers) // dev改成了2
     url = portainer_api_url + f'/endpoints/{portainer_endpoints}/docker/services'
     services_response = requests.get(url, headers=headers)
     services = services_response.json()
@@ -162,8 +187,6 @@ def get_service_web_hook():
         "Content-Type": "application/json"
     }
 
-    # 查询service的webhook
-    # url = portainer_api_url + f'/webhooks?filters=%7B%22ResourceID%22:%22{service_id}%22,%22EndpointID%22:1%7D' // dev改成了2
     url = portainer_api_url + f'/webhooks?filters=%7B%22ResourceID%22:%22{service_id}%22,%22EndpointID%22:{portainer_endpoints}%7D'
     services_response = requests.get(url, headers=headers)
     webhook_json = services_response.json()
@@ -226,11 +249,33 @@ print('\n~~~~~~~~~~~~~~')
 print('正在使用jenkins+portainer构建工具，目前支持dev和test环境的自动化构建+更新')
 print('~~~~~~~~~~~~~~\n')
 
-# 获取当前目录
-current_dir = os.getcwd()
-# 读取上一次构建的环境
-with open(current_dir + '/last_cd_env.json', 'r', encoding='utf-8') as f:
-    cd_env_json = json.load(f)
+# 查找环境配置文件（jenkins-config.json）
+config_file = find_config_file('jenkins-config.json', config_search_paths)
+if config_file is None:
+    print('❌ 未找到 jenkins-config.json')
+    print(f'  请将配置文件放到以下任一位置：')
+    for p in config_search_paths:
+        print(f'    - {os.path.join(p, "jenkins-config.json")}')
+    print(f'\n  或运行: npx ai-engineering-init config --type jenkins')
+    exit(1)
+print(f'配置文件: {config_file}')
+
+# 确保构建状态目录存在
+os.makedirs(state_dir, exist_ok=True)
+state_file = os.path.join(state_dir, 'last_cd_env.json')
+
+# 读取上一次构建的环境（如果不存在则使用默认值）
+if os.path.exists(state_file):
+    with open(state_file, 'r', encoding='utf-8') as f:
+        cd_env_json = json.load(f)
+else:
+    cd_env_json = {
+        "build_mode": "1",
+        "cd_env": "dev1",
+        "core_param_branch": "master",
+        "api_param_branch": "master",
+        "api_param_folder": None
+    }
 
 # 从终端获取用户输入模式
 build_mode = input(f"请输入模式 0-只构建 1-全构建+更新 2-构建api+更新 3-只更新（预设{cd_env_json['build_mode']}）：", ) or cd_env_json['build_mode']
@@ -245,7 +290,6 @@ core_param_branch = input(f"请输入core分支（预设：{cd_env_json['core_pa
 api_param_branch = input(f"请输入api分支（预设：{cd_env_json['api_param_branch']}）:") or cd_env_json['api_param_branch']
 
 # 从终端输入api文件夹名
-# 读取上一次构建的分支
 api_param_folder = input(f"请输入定制工程文件夹名（空格或None表示不需要，预设：{cd_env_json['api_param_folder']}）:") or cd_env_json['api_param_folder']
 
 # 校验模式：
@@ -270,21 +314,19 @@ if cd_env.startswith('dev') and int(cd_env[3:]) >= 44 and build_mode != '0':
     print("dev43及以上环境只能使用模式0，结束")
     exit(1)
 
-# 保存到本地环境
+# 保存到本地状态文件
 cd_env_json['cd_env'] = cd_env
 cd_env_json['core_param_branch'] = core_param_branch
 cd_env_json['api_param_branch'] = api_param_branch
 cd_env_json['api_param_folder'] = api_param_folder
 cd_env_json['build_mode'] = build_mode
-json.dump(cd_env_json, open(current_dir + '/last_cd_env.json', 'w', encoding='utf-8'), ensure_ascii=False)
-
-# exit(0)
+json.dump(cd_env_json, open(state_file, 'w', encoding='utf-8'), ensure_ascii=False)
 
 # 根据环境输入，设置前缀
 env_prefix = 'dev' if cd_env.startswith('dev') else 'test'
 
-# 读取上一次构建的环境
-with open(current_dir + '/env_param.json', 'r', encoding='utf-8') as f:
+# 读取环境配置（从全局或本地 jenkins-config.json）
+with open(config_file, 'r', encoding='utf-8') as f:
     env_param = json.load(f)
 
 jenkins_user_id = env_param['jenkins_user_id'][env_prefix]
@@ -331,10 +373,6 @@ if int(build_mode) < 2:
 if int(build_mode) < 3:
     print('开始构建api：' + api_job + ' ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     rs = do_job(j_server, api_job, api_param_branch, cd_env, api_timeout)
-    # 如果构建api失败，再次构建
-    # if rs is False:
-    #     print('第一次构建api失败，再次构建')
-    #     rs = do_job_1(j_server, api_job, api_param_branch, cd_env, api_timeout)
     if rs is False:
         print('构建api失败，结束')
         exit(1)

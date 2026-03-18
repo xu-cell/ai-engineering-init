@@ -1,7 +1,0 @@
-{
-  "build_mode": "1",
-  "cd_env": "dev1",
-  "core_param_branch": "master",
-  "api_param_branch": "master",
-  "api_param_folder": null
-}

@@ -591,17 +591,23 @@ function showDoneHint(toolKey) {
 
 /** 检测 jenkins/ 是否已初始化，提示用户配置部署环境 */
 function showJenkinsHint() {
-  const jenkinsDir = path.join(targetDir, 'jenkins');
-  const envParamFile = path.join(jenkinsDir, 'env_param.json');
+  const homeClaudeDir = path.join(os.homedir(), '.claude');
+  const globalConfig = path.join(homeClaudeDir, 'jenkins-config.json');
+  const localConfig = path.join(targetDir, '.claude', 'jenkins-config.json');
   const skillAssetsDir = path.join(targetDir, '.claude', 'skills', 'jenkins-deploy', 'assets');
+  // 全局安装时也检查全局技能目录
+  const globalSkillDir = path.join(homeClaudeDir, 'skills', 'jenkins-deploy', 'assets');
 
-  // 技能 assets 存在但 jenkins/ 未初始化
-  if (fs.existsSync(skillAssetsDir) && !fs.existsSync(envParamFile)) {
-    console.log(fmt('yellow', fmt('bold', '📦 Jenkins 部署环境未初始化')));
-    console.log(`  项目包含 ${fmt('bold', 'jenkins-deploy')} 技能，但 jenkins/ 目录尚未配置。`);
-    console.log(`  初始化方式：`);
-    console.log(`    方式 1：在 AI 对话中说 ${fmt('bold', '"初始化部署环境"')}`);
-    console.log(`    方式 2：从团队成员处拷贝 ${fmt('bold', 'jenkins/')} 目录`);
+  const hasSkill = fs.existsSync(skillAssetsDir) || fs.existsSync(globalSkillDir);
+  const hasConfig = fs.existsSync(globalConfig) || fs.existsSync(localConfig);
+
+  // 技能存在但凭证未配置
+  if (hasSkill && !hasConfig) {
+    console.log(fmt('yellow', fmt('bold', '📦 Jenkins 部署凭证未配置')));
+    console.log(`  已安装 ${fmt('bold', 'jenkins-deploy')} 技能，但 ${fmt('bold', 'jenkins-config.json')} 尚未配置。`);
+    console.log(`  配置方式：`);
+    console.log(`    方式 1：从团队成员处拷贝 ${fmt('bold', '~/.claude/jenkins-config.json')}`);
+    console.log(`    方式 2：在 AI 对话中说 ${fmt('bold', '"初始化部署环境"')}`);
     console.log('');
   }
 }
