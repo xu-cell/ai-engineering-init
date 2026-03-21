@@ -1,6 +1,6 @@
 {
   "name": "leniu-dev",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "AI 工程化开发工具 — 一键安装 Skills、Commands、Hooks 到 Claude Code / Cursor / Codex",
   "keywords": [
     "claude-code",

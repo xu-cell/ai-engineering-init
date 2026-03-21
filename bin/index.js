@@ -2053,7 +2053,7 @@ const MCP_REGISTRY = [
   },
   {
     name: 'fetch',
-    package: '@anthropic-ai/mcp-fetch',
+    package: 'mcp-fetch',
     description: '网页抓取 — 获取网页内容',
     env: {},
     recommended: false,
@@ -2082,14 +2082,14 @@ const MCP_REGISTRY = [
   },
   {
     name: 'lanhu',
-    package: '@anthropic-ai/mcp-lanhu',
+    package: 'lanhu-mcp-server',
     description: '蓝湖 — 读取 Axure 原型页面、UI 设计图、切图资源',
     env: { LANHU_TOKEN: '<YOUR_TOKEN>' },
     recommended: true,
   },
   {
     name: 'apifox',
-    package: '@anthropic-ai/mcp-apifox',
+    package: 'apifox-mcp-server',
     description: 'Apifox — 接口文档读取，API 自动化测试联动',
     env: { APIFOX_TOKEN: '<YOUR_TOKEN>' },
     recommended: true,
@@ -2110,7 +2110,7 @@ const MCP_REGISTRY = [
   },
   {
     name: 'chrome-devtools',
-    package: '@anthropic-ai/mcp-chrome-devtools',
+    package: 'chrome-devtools-mcp',
     description: 'Chrome DevTools — 浏览器截图、导航、点击、执行JS（需本地 Chrome）',
     env: {},
     recommended: false,

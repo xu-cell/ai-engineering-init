@@ -4,6 +4,13 @@
 
 ---
 
+## [v2.0.3] - 2026-03-21
+
+### 修复
+- **MCP 包名修正**：修复 4 个错误包名导致安装 404（fetch→mcp-fetch、lanhu→lanhu-mcp-server、apifox→apifox-mcp-server、chrome-devtools→chrome-devtools-mcp）
+
+---
+
 ## [v2.0.2] - 2026-03-21
 
 ### 改进
