@@ -1,14 +1,14 @@
 {
-  "name": "ai-engineering-init",
-  "version": "1.17.2",
-  "description": "AI 工程化配置初始化工具 — 一键为 Claude Code、OpenAI Codex 等 AI 工具初始化 Skills 和项目规范",
+  "name": "leniu-dev",
+  "version": "2.0.0",
+  "description": "AI 工程化开发工具 — 一键安装 Skills、Commands、Hooks 到 Claude Code / Cursor / Codex",
   "keywords": [
     "claude-code",
     "cursor",
     "codex",
     "ai-engineering",
     "skills",
-    "init"
+    "leniu"
   ],
   "homepage": "https://github.com/xu-cell/ai-engineering-init",
   "repository": {
@@ -21,7 +21,7 @@
     "check:skills": "node scripts/build-skills.js --check"
   },
   "bin": {
-    "ai-engineering-init": "./bin/index.js"
+    "leniu-dev": "./bin/index.js"
   },
   "files": [
     "bin/",

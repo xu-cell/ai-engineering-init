@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 /**
- * AI Engineering 初始化 / 更新 CLI
+ * leniu-dev — AI 工程化开发工具
  * 用法:
- *   npx ai-engineering-init              # 交互式初始化
- *   npx ai-engineering-init --tool claude
- *   npx ai-engineering-init --tool all
- *   npx ai-engineering-init update       # 自动检测已安装工具并更新
- *   npx ai-engineering-init update --tool claude
- *   npx ai-engineering-init global       # 全局安装（对所有项目生效）
- *   npx ai-engineering-init global --tool claude
+ *   npx leniu-dev install     # 交互式安装向导（用户级）
+ *   npx leniu-dev update      # 更新已安装的框架文件
+ *   npx leniu-dev syncback    # 推送本地技能修改到源仓库
+ *   npx leniu-dev config      # 环境配置（数据库/日志）
+ *   npx leniu-dev mcp         # MCP 服务器管理
+ *   npx leniu-dev doctor      # 诊断安装状态
+ *   npx leniu-dev uninstall   # 卸载
+ *   npx leniu-dev help        # 帮助
+ *
+ * 向后兼容（v1 命令自动映射）:
+ *   init → install, global → install, sync-back → syncback
  */
 'use strict';
 
@@ -40,43 +44,60 @@ const PKG_VERSION = require('../package.json').version;
 // ── Banner ─────────────────────────────────────────────────────────────────
 console.log('');
 console.log(fmt('blue', fmt('bold', '┌─────────────────────────────────────────┐')));
-console.log(fmt('blue', fmt('bold', `│      AI Engineering 工具  v${PKG_VERSION}        │`)));
+console.log(fmt('blue', fmt('bold', `│       🐂 leniu-dev  v${PKG_VERSION}             │`)));
+console.log(fmt('blue', fmt('bold', `│      AI 工程化开发工具                  │`)));
 console.log(fmt('blue', fmt('bold', '└─────────────────────────────────────────┘')));
 console.log('');
 
 // ── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-let command   = '';   // 'update' | 'global' | 'sync-back' | ''
+let command   = '';   // 'install' | 'update' | 'syncback' | 'config' | 'mcp' | 'help' | 'doctor' | 'uninstall'
 let tool      = '';
 let targetDir = process.cwd();
 let force     = false;
-let skillFilter = '';  // sync-back --skill <名称>
-let submitIssue = false; // sync-back --submit
+let skillFilter = '';  // syncback --skill <名称>
+let submitIssue = false; // syncback --submit
 let configType = '';  // config --type <mysql|loki|all>
 let configScope = '';  // config --scope <local|global>
 let configAdd = false; // config --add
 let configFrom = '';   // config --from <file.md>
+let installRole = '';  // install --role <backend|frontend|product|all>
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
   switch (arg) {
+    case 'install':
+      command = 'install';
+      break;
     case 'update':
       command = 'update';
       break;
-    case 'global':
-      command = 'global';
-      break;
-    case 'init':
-      command = 'init';
-      break;
-    case 'sync-back':
-      command = 'sync-back';
+    case 'syncback':
+      command = 'syncback';
       break;
     case 'config':
       command = 'config';
       break;
     case 'mcp':
       command = 'mcp';
+      break;
+    case 'help':
+      printHelp();
+      process.exit(0);
+      break;
+    case 'doctor':
+      command = 'doctor';
+      break;
+    case 'uninstall':
+      command = 'uninstall';
+      break;
+    // ── 向后兼容 v1 命令 ──
+    case 'init':
+    case 'global':
+      command = 'install';
+      break;
+    case 'sync-back':
+      command = 'syncback';
       break;
     case '--tool': case '-t':
       if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
@@ -129,6 +150,13 @@ for (let i = 0; i < args.length; i++) {
       }
       configFrom = path.resolve(args[++i]);
       break;
+    case '--role': case '-r':
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        console.error(fmt('red', `错误：${arg} 需要一个值（backend | frontend | product | all）`));
+        process.exit(1);
+      }
+      installRole = args[++i];
+      break;
     case '--help': case '-h':
       printHelp();
       process.exit(0);
@@ -144,45 +172,37 @@ for (let i = 0; i < args.length; i++) {
 }
 
 function printHelp() {
-  console.log(`用法: ${fmt('bold', 'npx ai-engineering-init')} [命令] [选项]\n`);
+  console.log(`用法: ${fmt('bold', 'npx leniu-dev')} <命令> [选项]\n`);
   console.log('命令:');
-  console.log(`  ${fmt('bold', 'init')}             交互式初始化（安装到当前项目目录）`);
+  console.log(`  ${fmt('bold', 'install')}          交互式安装向导（安装到用户目录 ~/.claude 等）`);
   console.log(`  ${fmt('bold', 'update')}           更新已安装的框架文件（跳过用户自定义文件）`);
-  console.log(`  ${fmt('bold', 'global')}           全局安装到 ~/.claude / ~/.cursor 等，对所有项目生效`);
-  console.log(`  ${fmt('bold', 'sync-back')}        对比本地技能修改，生成 diff 或提交 GitHub Issue`);
-  console.log(`  ${fmt('bold', 'config')}           初始化环境配置（数据库连接 / Loki 日志 / 全部）`);
-  console.log(`  ${fmt('bold', 'mcp')}              MCP 服务器管理（安装/卸载/状态检查）\n`);
-  console.log(`无命令时显示交互式主菜单。\n`);
+  console.log(`  ${fmt('bold', 'syncback')}         对比本地技能修改，生成 diff 或提交 GitHub Issue`);
+  console.log(`  ${fmt('bold', 'config')}           环境配置（数据库连接 / Loki 日志）`);
+  console.log(`  ${fmt('bold', 'mcp')}              MCP 服务器管理（安装/卸载/状态）`);
+  console.log(`  ${fmt('bold', 'doctor')}           诊断安装状态（检查文件/配置/MCP）`);
+  console.log(`  ${fmt('bold', 'uninstall')}        卸载已安装的文件`);
+  console.log(`  ${fmt('bold', 'help')}             显示此帮助\n`);
   console.log('选项:');
   console.log('  --tool,  -t <工具>   指定工具: claude | cursor | codex | all');
-  console.log('  --dir,   -d <目录>   目标目录（默认：当前目录，仅 init/update 有效）');
-  console.log('  --force, -f          强制覆盖（init 时覆盖已有文件；update/global 时同时更新保留文件）');
-  console.log('  --skill, -s <技能>   sync-back 时只对比指定技能');
-  console.log('  --submit             sync-back 时自动创建 GitHub Issue（需要 gh CLI）');
-  console.log('  --type   <类型>      config 时指定配置类型: mysql | loki | all');
-  console.log('  --scope  <范围>      config 时指定范围: local（当前项目） | global（全局 ~/）');
-  console.log('  --add                config 时追加环境（不覆盖已有配置）');
-  console.log('  --from   <文件>      config 时从 Markdown 文件解析配置（跳过交互）');
+  console.log('  --role,  -r <角色>   安装角色: backend | frontend | product | all');
+  console.log('  --force, -f          强制覆盖已有文件');
+  console.log('  --skill, -s <技能>   syncback 时只对比指定技能');
+  console.log('  --submit             syncback 时自动创建 GitHub Issue（需要 gh CLI）');
+  console.log('  --type   <类型>      config 时指定: mysql | loki | all');
+  console.log('  --scope  <范围>      config 时指定: local | global');
+  console.log('  --add                config 时追加环境');
+  console.log('  --from   <文件>      config 时从 Markdown 文件解析（跳过交互）');
   console.log('  --help,  -h          显示此帮助\n');
   console.log('示例:');
-  console.log('  npx ai-engineering-init --tool claude');
-  console.log('  npx ai-engineering-init --tool all --dir /path/to/project');
-  console.log('  npx ai-engineering-init update               # 自动检测已安装工具');
-  console.log('  npx ai-engineering-init update --tool claude # 只更新 Claude');
-  console.log('  npx ai-engineering-init update --force       # 强制更新，包括保留文件');
-  console.log('  npx ai-engineering-init global               # 全局安装所有工具');
-  console.log('  npx ai-engineering-init global --tool claude # 只全局安装 Claude');
-  console.log('  npx ai-engineering-init sync-back                        # 扫描所有已安装工具');
-  console.log('  npx ai-engineering-init sync-back --tool claude          # 只扫描 Claude');
-  console.log('  npx ai-engineering-init sync-back --skill bug-detective  # 只对比指定技能');
-  console.log('  npx ai-engineering-init sync-back --skill bug-detective --submit # 提交 Issue');
-  console.log('  npx ai-engineering-init config                         # 交互式选择配置类型');
-  console.log('  npx ai-engineering-init config --type mysql            # 只配置数据库连接');
-  console.log('  npx ai-engineering-init config --type loki             # 只配置 Loki 日志');
-  console.log('  npx ai-engineering-init config --type all              # 配置全部');
-  console.log('  npx ai-engineering-init config --type mysql --scope global  # 全局配置（所有项目共享）');
-  console.log('  npx ai-engineering-init config --type mysql --add          # 追加环境到已有配置');
-  console.log('  npx ai-engineering-init config --from env-config.md --scope global  # 从 MD 文件一键初始化');
+  console.log(`  ${fmt('cyan', 'npx leniu-dev install')}                          # 交互式安装`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev install --tool claude')}             # 安装 Claude Code`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev update')}                           # 更新到最新版本`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev syncback --submit')}                # 推送修改到源仓库`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev config --type mysql --scope global')} # 配置数据库`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev mcp')}                              # 管理 MCP 服务器`);
+  console.log(`  ${fmt('cyan', 'npx leniu-dev doctor')}                           # 诊断安装状态`);
+  console.log('');
+  console.log(fmt('yellow', '向后兼容：init/global → install, sync-back → syncback'));
 }
 
 // ── 工具定义（init 用）────────────────────────────────────────────────────
@@ -365,7 +385,7 @@ function rewriteJsonFilePaths(filePath, relPrefix, absPrefix) {
 }
 
 /** 全局安装单个工具 */
-function globalInstallTool(toolKey) {
+function globalInstallTool(toolKey, allowedSkills) {
   const rule       = GLOBAL_RULES[toolKey];
   const globalDest = rule.targetDir;
   console.log(fmt('cyan', `[${rule.label}]`) + fmt('blue', ` → ${globalDest}`));
@@ -400,7 +420,11 @@ function globalInstallTool(toolKey) {
     }
     try {
       if (item.isDir) {
-        const n = copyDir(srcPath, destPath);
+        // 对 skills 目录按角色过滤
+        const isSkillsDir = item.src.endsWith('/skills');
+        const n = (isSkillsDir && allowedSkills)
+          ? copyDirFiltered(srcPath, destPath, allowedSkills)
+          : copyDir(srcPath, destPath);
         console.log(`  ${fmt('green', '✓')}  ${item.label} ${fmt('magenta', `(${n} 个文件)`)}`);
         installed += n;
       } else {
@@ -481,6 +505,75 @@ function runGlobal(selectedTool) {
   if (totalFailed > 0) process.exitCode = 1;
 }
 
+// ── 牛马吃草动画 ──────────────────────────────────────────────────────────
+
+const COW_FRAMES = [
+  { cow: '🐂          ', grass: '🌿🌿🌿🌿🌿' },
+  { cow: '🐂🌿        ', grass: '🌿🌿🌿🌿' },
+  { cow: '🐂🌿🌿      ', grass: '🌿🌿🌿' },
+  { cow: '🐂🌿🌿🌿    ', grass: '🌿🌿' },
+  { cow: '🐂🌿🌿🌿🌿  ', grass: '🌿' },
+  { cow: '🐂🌿🌿🌿🌿🌿', grass: '' },
+];
+
+/** 显示牛马吃草进度动画（非 TTY 时静默） */
+function showCowProgress(current, total, label) {
+  if (!process.stdout.isTTY) return;
+  const ratio = Math.min(current / total, 1);
+  const frameIdx = Math.min(Math.floor(ratio * (COW_FRAMES.length - 1)), COW_FRAMES.length - 1);
+  const frame = COW_FRAMES[frameIdx];
+  const pct = Math.round(ratio * 100);
+  const bar = '█'.repeat(Math.floor(ratio * 20)) + '░'.repeat(20 - Math.floor(ratio * 20));
+  process.stdout.write(`\r  ${frame.cow} ${frame.grass}  ${bar} ${pct}%  ${label}  `);
+  if (ratio >= 1) process.stdout.write('\n');
+}
+
+// ── 版本更新检测 ──────────────────────────────────────────────────────────
+
+/** 检查 npm 上是否有更新版本（带 24h 缓存） */
+function checkForUpdates() {
+  const cachePath = path.join(HOME_DIR, '.claude', '.update-check-cache.json');
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+
+  // 读取缓存
+  try {
+    const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+    if (Date.now() - new Date(cache.checkedAt).getTime() < ONE_DAY) {
+      if (cache.latestVersion && cache.latestVersion !== PKG_VERSION) {
+        showUpdateNotice(cache.latestVersion);
+      }
+      return;
+    }
+  } catch { /* 无缓存或解析失败 */ }
+
+  // 异步检查（不阻塞主流程）
+  try {
+    const { execSync } = require('child_process');
+    const latest = execSync('npm view leniu-dev version 2>/dev/null', {
+      encoding: 'utf8', timeout: 5000, stdio: ['pipe', 'pipe', 'pipe']
+    }).trim();
+    // 写入缓存
+    try {
+      fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+      fs.writeFileSync(cachePath, JSON.stringify({ latestVersion: latest, checkedAt: new Date().toISOString() }) + '\n');
+    } catch { /* 静默 */ }
+    if (latest && latest !== PKG_VERSION) {
+      showUpdateNotice(latest);
+    }
+  } catch { /* 网络不通或命令失败，静默跳过 */ }
+}
+
+function showUpdateNotice(latestVersion) {
+  console.log(fmt('yellow', fmt('bold', `  🐂 leniu-dev 有新版本可用！ v${PKG_VERSION} → v${latestVersion}`)));
+  console.log(fmt('yellow', `     运行 ${fmt('bold', 'npx leniu-dev@latest update')} 更新`));
+  console.log('');
+}
+
+// 在非 help/doctor 命令时检查更新
+if (command !== '' && !['help', 'doctor'].includes(command)) {
+  checkForUpdates();
+}
+
 // ── 公共工具函数 ──────────────────────────────────────────────────────────
 const SOURCE_DIR = path.join(__dirname, '..');
 
@@ -519,8 +612,7 @@ function copyDir(src, dest) {
 
 /** 构建包含 --dir 上下文的提示命令（方便用户直接复制执行） */
 function hintCmd(subCmd) {
-  const dirPart = targetDir !== process.cwd() ? ` --dir "${targetDir}"` : '';
-  return `npx ai-engineering-init${dirPart} ${subCmd}`;
+  return `npx leniu-dev ${subCmd}`;
 }
 
 // ── INIT 逻辑 ─────────────────────────────────────────────────────────────
@@ -706,52 +798,66 @@ function updateTool(toolKey) {
   return { updated, failed, preserved };
 }
 
-/** update 命令主流程 */
+/** update 命令主流程 — 同时更新用户级和项目级 */
 function runUpdate(selectedTool) {
-  console.log(`  目标目录: ${fmt('bold', targetDir)}`);
   console.log(`  本机版本: ${fmt('bold', `v${PKG_VERSION}`)}`);
   if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：将同时更新保留文件')}`);
   console.log('');
 
   let toolsToUpdate = [];
 
+  // 优先检测用户级安装，其次项目级
+  const detectUserTools = () => Object.keys(GLOBAL_RULES).filter(key =>
+    isRealDir(path.join(HOME_DIR, GLOBAL_RULES[key].targetDir || path.join(HOME_DIR, '.' + key)))
+  );
+  const userTools = Object.keys(GLOBAL_RULES).filter(key =>
+    isRealDir(GLOBAL_RULES[key].targetDir)
+  );
+
   if (!selectedTool || selectedTool === 'all') {
-    // 无参数 或 all：只更新已检测到的工具（不主动创建新目录）
-    toolsToUpdate = detectInstalledTools();
+    // 先尝试用户级，再尝试项目级
+    toolsToUpdate = userTools.length > 0 ? userTools : detectInstalledTools();
     if (toolsToUpdate.length === 0) {
-      console.log(fmt('yellow', '⚠  当前目录未检测到已安装的 AI 工具配置。'));
-      console.log(`   请先运行: ${fmt('bold', hintCmd('--tool claude'))}\n`);
+      console.log(fmt('yellow', '⚠  未检测到已安装的 AI 工具配置。'));
+      console.log(`   请先运行: ${fmt('bold', hintCmd('install --tool claude'))}\n`);
       process.exit(1);
     }
     console.log(`  检测到已安装: ${fmt('bold', toolsToUpdate.join(', '))}`);
-    if (selectedTool === 'all') {
-      console.log(`  ${fmt('yellow', '提示')}：--tool all 只更新已安装工具，如需初始化新工具请用 --tool <name>`);
-    }
   } else {
-    // 指定单个工具
-    if (!UPDATE_RULES[selectedTool]) {
+    if (!GLOBAL_RULES[selectedTool]) {
       console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
-      process.exit(1);
-    }
-    if (!isRealDir(path.join(targetDir, UPDATE_RULES[selectedTool].detect))) {
-      console.log(fmt('yellow', `⚠  ${selectedTool} 未在当前目录初始化，请先运行：`));
-      console.log(`   ${fmt('bold', hintCmd(`--tool ${selectedTool}`))}\n`);
       process.exit(1);
     }
     toolsToUpdate = [selectedTool];
   }
 
+  // 判断是否有用户级安装
+  const isUserLevel = userTools.length > 0;
+  console.log(`  更新模式: ${fmt('bold', isUserLevel ? '用户级' : '项目级')}`);
   console.log('');
   console.log(fmt('bold', '正在更新框架文件...'));
   console.log('');
 
   let totalUpdated = 0, totalFailed = 0, totalPreserved = 0;
   for (let i = 0; i < toolsToUpdate.length; i++) {
-    const { updated, failed, preserved } = updateTool(toolsToUpdate[i]);
-    totalUpdated   += updated;
-    totalFailed    += failed;
-    totalPreserved += preserved;
+    if (isUserLevel) {
+      // 用户级更新：使用全局安装逻辑
+      const { installed, failed } = globalInstallTool(toolsToUpdate[i]);
+      totalUpdated += installed;
+      totalFailed  += failed;
+    } else {
+      // 项目级更新：旧逻辑
+      const { updated, failed, preserved } = updateTool(toolsToUpdate[i]);
+      totalUpdated   += updated;
+      totalFailed    += failed;
+      totalPreserved += preserved;
+    }
     if (i < toolsToUpdate.length - 1) console.log('');
+  }
+
+  // 更新安装元数据
+  if (isUserLevel) {
+    writeInstallMeta(buildInstallMeta(toolsToUpdate));
   }
 
   console.log('');
@@ -769,7 +875,7 @@ function runUpdate(selectedTool) {
   console.log('  重启 Claude Code / Cursor 使新技能生效');
   console.log(`  ${fmt('yellow', '注意')}：update 只新增/覆盖文件，不删除旧版本已移除的文件`);
   if (!force && totalPreserved > 0) {
-    console.log(`  强制更新保留文件: ${fmt('bold', hintCmd('update --force'))}`);
+    console.log(`  强制更新保留文件: ${fmt('bold', 'npx leniu-dev update --force')}`);
   }
   console.log('');
   showJenkinsHint();
@@ -958,7 +1064,7 @@ function submitGitHubIssue(changes, allDiffText) {
   const body = [
     '## 技能修改反馈',
     '',
-    `> 由 \`npx ai-engineering-init sync-back --submit\` 自动生成`,
+    `> 由 \`npx leniu-dev sync-back --submit\` 自动生成`,
     '',
     '### 修改的技能',
     '',
@@ -2086,7 +2192,7 @@ function runMcp() {
       if (tools.length === 0) {
         if (scope === 'global') {
           console.log(fmt('yellow', '⚠  全局目录未检测到 ~/.claude/ 或 ~/.cursor/ 配置目录。'));
-          console.log(`   请先运行: ${fmt('bold', 'npx ai-engineering-init global --tool claude')}`);
+          console.log(`   请先运行: ${fmt('bold', 'npx leniu-dev global --tool claude')}`);
         } else {
           console.log(fmt('yellow', '⚠  当前目录未检测到 .claude/ 或 .cursor/ 配置目录。'));
           console.log(`   请先运行: ${fmt('bold', hintCmd('init --tool claude'))}`);
@@ -2348,74 +2454,585 @@ async function mcpRecommend(tools, ask, scope = 'project') {
   }
 }
 
-// ── 工具选择菜单（init 用）─────────────────────────────────────────────────
-function showToolMenu() {
-  if (!process.stdin.isTTY) {
-    console.error(fmt('red', '错误：非交互环境下必须指定 --tool 参数'));
-    console.error(`  示例: ${fmt('bold', hintCmd('init --tool claude'))}`);
+// ── 角色→技能映射 ─────────────────────────────────────────────────────────
+
+const SKILL_ROLES = {
+  // 通用技能（所有角色都安装）
+  common: [
+    'brainstorm', 'tech-decision', 'git-workflow', 'project-navigator',
+    'task-tracker', 'codex-code-review', 'analyze-requirements',
+    'bug-detective', 'fix-bug', 'code-patterns', 'architecture-design',
+    'start', 'next', 'progress', 'sync', 'update-status', 'add-todo',
+    'init-docs', 'sync-back-merge', 'add-skill', 'skill-creator',
+    'yunxiao-task-management', 'collaborating-with-codex',
+    // OpenSpec 系列
+    'openspec-apply-change', 'openspec-archive-change', 'openspec-bulk-archive-change',
+    'openspec-continue-change', 'openspec-explore', 'openspec-ff-change',
+    'openspec-new-change', 'openspec-onboard', 'openspec-sync-specs', 'openspec-verify-change',
+    // leniu 通用
+    'leniu-brainstorm', 'leniu-code-patterns',
+  ],
+  // 后端研发专属
+  backend: [
+    'crud-development', 'crud', 'dev', 'check', 'api-development',
+    'database-ops', 'backend-annotations', 'utils-toolkit',
+    'error-handler', 'performance-doctor', 'data-permission',
+    'security-guard', 'redis-cache', 'scheduled-jobs', 'json-serialization',
+    'file-oss-management', 'test-development', 'auto-test',
+    'sms-mail', 'social-login', 'tenant-management', 'websocket-sse',
+    'workflow-engine', 'jenkins-deploy', 'mysql-debug', 'loki-log-query',
+    'collaborating-with-gemini',
+    // leniu 后端专属
+    'leniu-api-development', 'leniu-architecture-design', 'leniu-backend-annotations',
+    'leniu-crud-development', 'leniu-customization-location', 'leniu-data-permission',
+    'leniu-database-ops', 'leniu-error-handler', 'leniu-java-amount-handling',
+    'leniu-java-code-style', 'leniu-java-concurrent', 'leniu-java-entity',
+    'leniu-java-export', 'leniu-java-logging', 'leniu-java-mq',
+    'leniu-java-mybatis', 'leniu-java-report-query-param', 'leniu-java-task',
+    'leniu-java-total-line', 'leniu-marketing-price-rule-customizer',
+    'leniu-marketing-recharge-rule-customizer', 'leniu-mealtime',
+    'leniu-redis-cache', 'leniu-report-customization',
+    'leniu-report-standard-customization', 'leniu-security-guard',
+    'leniu-utils-toolkit',
+  ],
+  // 前端研发专属
+  frontend: [
+    'ui-pc', 'store-pc', 'collaborating-with-gemini', 'dev', 'check',
+    'chrome-cdp',
+  ],
+  // 产品经理专属
+  product: [
+    'banana-image', 'lanhu-design',
+  ],
+};
+
+/** 获取指定角色应安装的技能列表 */
+function getSkillsForRole(role) {
+  if (role === 'all') {
+    // 全部 = 所有已知技能（不过滤）
+    return null; // null 表示不过滤，安装所有
+  }
+  const skills = new Set(SKILL_ROLES.common);
+  if (role === 'backend' || role === 'fullstack') {
+    SKILL_ROLES.backend.forEach(s => skills.add(s));
+  }
+  if (role === 'frontend' || role === 'fullstack') {
+    SKILL_ROLES.frontend.forEach(s => skills.add(s));
+  }
+  if (role === 'product') {
+    SKILL_ROLES.product.forEach(s => skills.add(s));
+  }
+  return skills;
+}
+
+/** 按角色过滤复制技能目录（只复制匹配的技能） */
+function copyDirFiltered(src, dest, allowedSkills) {
+  let written = 0;
+  try {
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  } catch (e) {
+    console.log(`  ${fmt('red', '✗')}  无法创建目录 ${dest}: ${e.message}`);
+    return written;
+  }
+  let entries;
+  try { entries = fs.readdirSync(src); } catch { return written; }
+  for (const entry of entries) {
+    const s = path.join(src, entry);
+    const d = path.join(dest, entry);
+    try {
+      if (fs.statSync(s).isDirectory()) {
+        // 如果是 skills 目录的直接子目录，检查是否在允许列表中
+        if (allowedSkills && src.endsWith('/skills') && !allowedSkills.has(entry)) {
+          continue; // 跳过不在角色列表中的技能
+        }
+        written += copyDir(s, d);
+      } else {
+        fs.copyFileSync(s, d);
+        written++;
+      }
+    } catch { /* 跳过 */ }
+  }
+  return written;
+}
+
+// ── 安装元数据 ────────────────────────────────────────────────────────────
+const INSTALL_META_FILE = '.leniu-install-meta.json';
+
+/** 读取安装元数据 */
+function readInstallMeta() {
+  const paths = [
+    path.join(HOME_DIR, '.claude', INSTALL_META_FILE),
+    path.join(HOME_DIR, '.cursor', INSTALL_META_FILE),
+  ];
+  for (const p of paths) {
+    try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { /* continue */ }
+  }
+  return null;
+}
+
+/** 写入安装元数据 */
+function writeInstallMeta(meta) {
+  const metaPath = path.join(HOME_DIR, '.claude', INSTALL_META_FILE);
+  try {
+    fs.mkdirSync(path.dirname(metaPath), { recursive: true });
+    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + '\n');
+  } catch { /* 静默失败 */ }
+}
+
+/** 构建安装元数据对象 */
+function buildInstallMeta(toolsInstalled) {
+  const existing = readInstallMeta() || {};
+  return {
+    ...existing,
+    version: PKG_VERSION,
+    installedAt: existing.installedAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tools: toolsInstalled,
+    role: existing.role || 'all',
+  };
+}
+
+// ── install 命令（用户级安装）────────────────────────────────────────────────
+// install = 原 global 命令逻辑，固定安装到用户目录
+
+function runInstall(selectedTool, role) {
+  role = role || 'all';
+  const validKeys = Object.keys(GLOBAL_RULES);
+  const toolsToInstall = (!selectedTool || selectedTool === 'all')
+    ? validKeys
+    : [selectedTool];
+
+  if (selectedTool && selectedTool !== 'all' && !GLOBAL_RULES[selectedTool]) {
+    console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
     process.exit(1);
   }
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  console.log(fmt('cyan', '请选择要初始化的工具：'));
+
+  const allowedSkills = getSkillsForRole(role);
+  const roleLabels = { backend: '后端研发', frontend: '前端研发', product: '产品经理', all: '全部' };
+
+  console.log(`  安装模式: ${fmt('green', fmt('bold', '用户级安装（当前用户所有项目生效）'))}`);
+  console.log(`  安装角色: ${fmt('bold', roleLabels[role] || role)}`);
+  console.log(`  安装工具: ${fmt('bold', toolsToInstall.join(', '))}`);
+  if (allowedSkills) {
+    console.log(`  技能数量: ${fmt('bold', String(allowedSkills.size))} 个`);
+  }
+  if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：强制覆盖已有文件')}`);
   console.log('');
-  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — .claude/ + CLAUDE.md`);
-  console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — .cursor/（Skills + Agents）`);
-  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — .codex/ + AGENTS.md`);
-  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时初始化 Claude + Cursor + Codex`);
+  console.log(fmt('bold', '正在安装到系统目录...'));
   console.log('');
-  rl.question(fmt('bold', '请输入选项 [1-4]: '), (answer) => {
-    rl.close();
-    const map = { '1': 'claude', '2': 'cursor', '3': 'codex', '4': 'all' };
-    const selected = map[answer.trim()];
-    console.log('');
-    if (selected) {
-      run(selected);
+
+  let totalInstalled = 0, totalFailed = 0;
+  for (let i = 0; i < toolsToInstall.length; i++) {
+    showCowProgress(i, toolsToInstall.length, `安装 ${GLOBAL_RULES[toolsToInstall[i]].label}...`);
+    const { installed, failed } = globalInstallTool(toolsToInstall[i], allowedSkills);
+    totalInstalled += installed;
+    totalFailed    += failed;
+    if (i < toolsToInstall.length - 1) console.log('');
+  }
+  showCowProgress(toolsToInstall.length, toolsToInstall.length, '安装完成！');
+
+  // 写入安装元数据
+  const meta = buildInstallMeta(toolsToInstall);
+  meta.role = role;
+  if (allowedSkills) meta.skillCount = allowedSkills.size;
+  writeInstallMeta(meta);
+
+  console.log('');
+  console.log(fmt('green', fmt('bold', '✅ 安装完成！')));
+  console.log('');
+  console.log(`  ${fmt('green', `✓ 安装文件: ${totalInstalled} 个`)}`);
+  if (totalFailed > 0) {
+    console.log(`  ${fmt('red', `✗ 失败文件: ${totalFailed} 个`)}（请检查目录权限）`);
+  }
+  console.log('');
+  console.log(fmt('cyan', '安装位置说明：'));
+  for (const key of toolsToInstall) {
+    const rule = GLOBAL_RULES[key];
+    console.log(`  ${fmt('bold', rule.label + ':')} ${rule.note}`);
+  }
+  console.log('');
+  console.log(fmt('yellow', '提示：'));
+  console.log(`  更新: ${fmt('bold', 'npx leniu-dev@latest update')}`);
+  console.log(`  推送修改: ${fmt('bold', 'npx leniu-dev syncback --submit')}`);
+  console.log(`  诊断: ${fmt('bold', 'npx leniu-dev doctor')}`);
+  console.log('');
+
+  if (totalFailed > 0) process.exitCode = 1;
+}
+
+// ── doctor 命令（诊断安装状态）──────────────────────────────────────────────
+
+function runDoctor() {
+  console.log(fmt('bold', '🔍 诊断安装状态...\n'));
+
+  let issues = 0;
+
+  // 1. 检查安装元数据
+  const meta = readInstallMeta();
+  if (meta) {
+    console.log(`  ${fmt('green', '✓')} 安装版本: v${meta.version}（安装于 ${meta.installedAt}）`);
+    if (meta.version !== PKG_VERSION) {
+      console.log(`  ${fmt('yellow', '⚠')} 当前包版本 v${PKG_VERSION} 与安装版本 v${meta.version} 不一致`);
+      console.log(`    运行 ${fmt('bold', 'npx leniu-dev@latest update')} 更新`);
+      issues++;
+    }
+  } else {
+    console.log(`  ${fmt('yellow', '⚠')} 未找到安装元数据（可能是旧版安装）`);
+    issues++;
+  }
+
+  // 2. 检查工具目录
+  const toolChecks = [
+    { name: 'Claude Code', dir: path.join(HOME_DIR, '.claude'), subDirs: ['skills', 'commands', 'hooks'] },
+    { name: 'Cursor',      dir: path.join(HOME_DIR, '.cursor'), subDirs: ['skills'] },
+    { name: 'Codex',       dir: path.join(HOME_DIR, '.codex'),  subDirs: ['skills'] },
+  ];
+
+  console.log('');
+  for (const tc of toolChecks) {
+    if (isRealDir(tc.dir)) {
+      const missing = tc.subDirs.filter(d => !isRealDir(path.join(tc.dir, d)));
+      if (missing.length === 0) {
+        const skillCount = countSkills(path.join(tc.dir, 'skills'));
+        console.log(`  ${fmt('green', '✓')} ${tc.name}: ${tc.dir} (${skillCount} 个技能)`);
+      } else {
+        console.log(`  ${fmt('yellow', '⚠')} ${tc.name}: 缺少 ${missing.join(', ')}`);
+        issues++;
+      }
     } else {
-      console.error(fmt('red', '无效选项，退出。'));
+      console.log(`  ${fmt('yellow', '○')} ${tc.name}: 未安装`);
+    }
+  }
+
+  // 3. 检查配置文件
+  console.log('');
+  const configChecks = [
+    { name: 'MySQL 配置',   file: path.join(HOME_DIR, '.claude', 'mysql-config.json') },
+    { name: 'Loki 配置',    file: path.join(HOME_DIR, '.claude', 'loki-config.json') },
+    { name: 'Jenkins 配置', file: path.join(HOME_DIR, '.claude', 'jenkins-config.json') },
+  ];
+  for (const cc of configChecks) {
+    if (fs.existsSync(cc.file)) {
+      console.log(`  ${fmt('green', '✓')} ${cc.name}: 已配置`);
+    } else {
+      console.log(`  ${fmt('yellow', '○')} ${cc.name}: 未配置`);
+    }
+  }
+
+  // 4. 检查 MCP 服务器
+  console.log('');
+  const claudeSettings = path.join(HOME_DIR, '.claude', 'settings.json');
+  if (fs.existsSync(claudeSettings)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(claudeSettings, 'utf8'));
+      const mcpCount = data.mcpServers ? Object.keys(data.mcpServers).length : 0;
+      console.log(`  ${fmt('green', '✓')} MCP 服务器: ${mcpCount} 个已配置`);
+    } catch {
+      console.log(`  ${fmt('yellow', '⚠')} MCP 配置文件解析失败`);
+      issues++;
+    }
+  } else {
+    console.log(`  ${fmt('yellow', '○')} MCP: 无 settings.json`);
+  }
+
+  // 结论
+  console.log('');
+  if (issues === 0) {
+    console.log(fmt('green', fmt('bold', '✅ 一切正常！')));
+  } else {
+    console.log(fmt('yellow', fmt('bold', `⚠  发现 ${issues} 个问题，建议运行 npx leniu-dev@latest install --force 修复`)));
+  }
+  console.log('');
+}
+
+/** 统计 skills 目录下的技能数量 */
+function countSkills(skillsDir) {
+  try {
+    return fs.readdirSync(skillsDir).filter(d =>
+      isRealDir(path.join(skillsDir, d))
+    ).length;
+  } catch { return 0; }
+}
+
+// ── uninstall 命令 ──────────────────────────────────────────────────────────
+
+function runUninstall() {
+  const meta = readInstallMeta();
+  if (!meta) {
+    console.log(fmt('yellow', '⚠  未检测到 leniu-dev 安装记录。'));
+    console.log(`   如需手动清理，请删除以下目录中的 skills/commands/hooks/agents 子目录：`);
+    console.log(`     ~/.claude/    ~/.cursor/    ~/.codex/`);
+    console.log('');
+    return;
+  }
+
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：uninstall 命令需要交互式终端'));
+    process.exit(1);
+  }
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  console.log(fmt('red', fmt('bold', '⚠  将删除以下已安装内容：')));
+  console.log('');
+
+  const dirsToRemove = [];
+  const tools = meta.tools || ['claude', 'cursor', 'codex'];
+  for (const toolKey of tools) {
+    const rule = GLOBAL_RULES[toolKey];
+    if (!rule) continue;
+    for (const item of rule.files) {
+      const destPath = path.join(rule.targetDir, item.dest);
+      if (fs.existsSync(destPath)) {
+        console.log(`  ${fmt('red', '✗')} ${destPath}`);
+        dirsToRemove.push(destPath);
+      }
+    }
+  }
+
+  if (dirsToRemove.length === 0) {
+    console.log(fmt('yellow', '  没有找到需要删除的文件。'));
+    rl.close();
+    return;
+  }
+
+  console.log('');
+  rl.question(fmt('bold', '确认删除？输入 yes 继续: '), (answer) => {
+    rl.close();
+    if (answer.trim().toLowerCase() !== 'yes') {
+      console.log('已取消。');
+      return;
+    }
+    console.log('');
+    let removed = 0;
+    for (const p of dirsToRemove) {
+      try {
+        if (fs.statSync(p).isDirectory()) {
+          fs.rmSync(p, { recursive: true });
+        } else {
+          fs.unlinkSync(p);
+        }
+        console.log(`  ${fmt('green', '✓')} 已删除 ${p}`);
+        removed++;
+      } catch (e) {
+        console.log(`  ${fmt('red', '✗')} 删除失败 ${p}: ${e.message}`);
+      }
+    }
+
+    // 删除安装元数据
+    const metaPath = path.join(HOME_DIR, '.claude', INSTALL_META_FILE);
+    try { fs.unlinkSync(metaPath); } catch { /* ignore */ }
+
+    console.log('');
+    console.log(fmt('green', fmt('bold', `✅ 已卸载 ${removed} 个文件/目录。`)));
+    console.log('');
+  });
+}
+
+// ── 交互式安装向导 ──────────────────────────────────────────────────────────
+
+function showInstallMenu() {
+  if (!process.stdin.isTTY) {
+    console.error(fmt('red', '错误：非交互环境下必须指定 --tool 参数'));
+    console.error(`  示例: ${fmt('bold', 'npx leniu-dev install --tool claude')}`);
+    process.exit(1);
+  }
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const ask = (q) => new Promise((resolve) => rl.question(q, (a) => resolve(a.trim())));
+
+  (async () => {
+    try {
+      // ── 步骤 1：角色选择 ──
+      console.log(fmt('cyan', fmt('bold', '📋 步骤 1/5：选择你的角色')));
+      console.log('');
+      console.log(`  ${fmt('bold', '1')}) ${fmt('green',  '🖥️  后端研发')}   — Java/Spring Boot 全栈技能包（${SKILL_ROLES.common.length + SKILL_ROLES.backend.length} 个技能）`);
+      console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',   '🎨  前端研发')}   — Vue/Element UI 组件技能包（${SKILL_ROLES.common.length + SKILL_ROLES.frontend.length} 个技能）`);
+      console.log(`  ${fmt('bold', '3')}) ${fmt('yellow', '📋  产品经理')}   — 需求分析/任务管理/原型解读（${SKILL_ROLES.common.length + SKILL_ROLES.product.length} 个技能）`);
+      console.log(`  ${fmt('bold', '4')}) ${fmt('blue',   '🔧  全部安装')}   — 安装所有技能和工具（91 个技能）`);
+      console.log('');
+      const roleAnswer = await ask(fmt('bold', '请输入选项 [1-4，默认 4]: ')) || '4';
+      const roleMap = { '1': 'backend', '2': 'frontend', '3': 'product', '4': 'all' };
+      const role = roleMap[roleAnswer];
+      if (!role) {
+        console.error(fmt('red', '无效选项，退出。'));
+        process.exit(1);
+      }
+      console.log('');
+
+      // ── 步骤 2：AI 工具选择 ──
+      console.log(fmt('cyan', fmt('bold', '📋 步骤 2/5：选择 AI 工具')));
+      console.log('');
+      console.log(`  ${fmt('bold', '1')}) ${fmt('green',   'Claude Code')}   — Skills + Commands + Hooks + Agents`);
+      console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    'Cursor')}        — Skills + Agents + Hooks`);
+      console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  'OpenAI Codex')}  — Skills`);
+      console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '全部工具')}       — 同时安装 Claude + Cursor + Codex`);
+      console.log('');
+      const toolAnswer = await ask(fmt('bold', '请输入选项 [1-4，默认 1]: ')) || '1';
+      const toolMap = { '1': 'claude', '2': 'cursor', '3': 'codex', '4': 'all' };
+      const selectedTool = toolMap[toolAnswer];
+      if (!selectedTool) {
+        console.error(fmt('red', '无效选项，退出。'));
+        process.exit(1);
+      }
+      console.log('');
+
+      // ── 步骤 3：服务配置选择 ──
+      console.log(fmt('cyan', fmt('bold', '📋 步骤 3/5：配置服务（可跳过）')));
+      console.log('');
+      const configOptions = [
+        { key: 'mysql', label: 'MySQL 数据库连接', desc: '用于 mysql-debug 技能查库排查', forRoles: ['backend', 'all'] },
+        { key: 'loki',  label: 'Loki 日志查询',   desc: '用于线上日志排查',             forRoles: ['backend', 'all'] },
+      ];
+      const availableConfigs = configOptions.filter(c => c.forRoles.includes(role));
+      const selectedConfigs = [];
+
+      if (availableConfigs.length > 0) {
+        for (const cfg of availableConfigs) {
+          const cfgAnswer = await ask(`  配置 ${fmt('bold', cfg.label)}？（${cfg.desc}）[y/N]: `) || 'n';
+          if (cfgAnswer.toLowerCase() === 'y') selectedConfigs.push(cfg.key);
+        }
+      } else {
+        console.log(`  ${fmt('yellow', '当前角色无需配置服务，跳过。')}`);
+      }
+      console.log('');
+
+      // ── 步骤 4：MCP 服务器选择 ──
+      console.log(fmt('cyan', fmt('bold', '📋 步骤 4/5：MCP 服务器（可跳过）')));
+      console.log('');
+      const mcpChoices = MCP_REGISTRY.filter(e => e.recommended);
+      let installMcp = false;
+      if (mcpChoices.length > 0) {
+        console.log('  推荐安装的 MCP 服务器：');
+        for (const mcp of mcpChoices) {
+          console.log(`    ${fmt('green', '●')} ${fmt('bold', mcp.name)} — ${mcp.description}`);
+        }
+        console.log('');
+        const mcpAnswer = await ask(fmt('bold', '  一键安装推荐 MCP 服务器？[Y/n]: ')) || 'y';
+        installMcp = mcpAnswer.toLowerCase() !== 'n';
+      }
+      console.log('');
+
+      // ── 步骤 5：确认安装 ──
+      const roleLabels = { backend: '🖥️  后端研发', frontend: '🎨  前端研发', product: '📋  产品经理', all: '🔧  全部' };
+      const toolLabels = { claude: 'Claude Code', cursor: 'Cursor', codex: 'OpenAI Codex', all: '全部工具' };
+      const skillSet = getSkillsForRole(role);
+      const skillCountStr = skillSet ? `${skillSet.size} 个技能` : '全部技能';
+
+      console.log(fmt('cyan', fmt('bold', '📋 步骤 5/5：确认安装')));
+      console.log('');
+      console.log(`  角色:   ${fmt('bold', roleLabels[role])}`);
+      console.log(`  工具:   ${fmt('bold', toolLabels[selectedTool])}`);
+      console.log(`  技能:   ${fmt('bold', skillCountStr)}`);
+      console.log(`  配置:   ${fmt('bold', selectedConfigs.length > 0 ? selectedConfigs.join(', ') : '无')}`);
+      console.log(`  MCP:    ${fmt('bold', installMcp ? '推荐服务器' : '跳过')}`);
+      console.log(`  位置:   ${fmt('bold', '~/.claude/ (用户级)')}`);
+      console.log('');
+      const confirm = await ask(fmt('bold', '确认安装？[Y/n]: ')) || 'y';
+      if (confirm.toLowerCase() === 'n') {
+        console.log('已取消安装。');
+        rl.close();
+        return;
+      }
+      console.log('');
+
+      // ── 执行安装 ──
+      rl.close();
+      runInstall(selectedTool, role);
+
+      // ── 执行配置 ──
+      if (selectedConfigs.length > 0) {
+        console.log('');
+        console.log(fmt('bold', '正在配置服务...'));
+        console.log('');
+        const cfgRl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const cfgAsk = (q) => new Promise((resolve) => cfgRl.question(q, (a) => resolve(a.trim())));
+        try {
+          if (selectedConfigs.includes('mysql')) {
+            await runMysqlConfig(cfgAsk, true);
+            console.log('');
+          }
+          if (selectedConfigs.includes('loki')) {
+            await runLokiConfig(cfgAsk, true);
+            console.log('');
+          }
+        } finally {
+          cfgRl.close();
+        }
+      }
+
+      // ── 执行 MCP 安装 ──
+      if (installMcp) {
+        console.log('');
+        console.log(fmt('bold', '正在安装推荐 MCP 服务器...'));
+        console.log('');
+        const tools = detectMcpTools('global');
+        if (tools.length > 0) {
+          const installed = getInstalledMcpNames(tools, 'global');
+          const toInstall = MCP_REGISTRY.filter(e => e.recommended && !installed.has(e.name));
+          if (toInstall.length > 0) {
+            for (const toolName of tools) {
+              const configPath = resolveMcpConfigPath(toolName, 'global');
+              const servers = getMcpServers(toolName, configPath);
+              for (const entry of toInstall) {
+                servers[entry.name] = buildMcpServerConfig(entry);
+              }
+              setMcpServers(toolName, servers, configPath);
+              console.log(`  ${fmt('green', '✓')}  ${toolName}: 已安装 ${toInstall.map(e => e.name).join(', ')}`);
+            }
+            console.log('');
+            console.log(fmt('green', `✅ 已安装 ${toInstall.length} 个推荐 MCP 服务器！`));
+          } else {
+            console.log(`  ${fmt('green', '✓')} 所有推荐 MCP 服务器已安装，无需操作。`);
+          }
+        }
+      }
+    } catch (e) {
+      rl.close();
+      console.error(fmt('red', `安装向导异常: ${e.message}`));
       process.exit(1);
     }
-  });
+  })();
 }
 
 // ── 主菜单（无命令时展示）──────────────────────────────────────────────────
 function showMainMenu() {
   if (!process.stdin.isTTY) {
     console.error(fmt('red', '错误：非交互环境下必须指定命令'));
-    console.error(`  示例: ${fmt('bold', hintCmd('init --tool claude'))}`);
-    console.error(`  运行 ${fmt('bold', hintCmd('--help'))} 查看所有命令`);
+    console.error(`  示例: ${fmt('bold', 'npx leniu-dev install --tool claude')}`);
+    console.error(`  运行 ${fmt('bold', 'npx leniu-dev help')} 查看所有命令`);
     process.exit(1);
   }
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   console.log(fmt('cyan', '请选择操作：'));
   console.log('');
-  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   '初始化')}         — 安装 AI 工具配置到当前项目`);
+  console.log(`  ${fmt('bold', '1')}) ${fmt('green',   '安装')}           — 安装 AI 工具到用户目录`);
   console.log(`  ${fmt('bold', '2')}) ${fmt('cyan',    '更新')}           — 更新已安装的框架文件`);
-  console.log(`  ${fmt('bold', '3')}) ${fmt('yellow',  '全局安装')}       — 安装到 ~/.claude 等，对所有项目生效`);
-  console.log(`  ${fmt('bold', '4')}) ${fmt('magenta', '技能同步反馈')}   — 对比本地技能修改，生成 diff`);
-  console.log(`  ${fmt('bold', '5')}) ${fmt('blue',    '环境配置')}       — 初始化数据库连接 / Loki 日志查询配置`);
-  console.log(`  ${fmt('bold', '6')}) ${fmt('green',   'MCP 管理')}       — MCP 服务器安装/卸载/状态检查`);
+  console.log(`  ${fmt('bold', '3')}) ${fmt('magenta', '推送修改')}       — 对比并推送本地技能修改`);
+  console.log(`  ${fmt('bold', '4')}) ${fmt('blue',    '环境配置')}       — 数据库连接 / Loki 日志配置`);
+  console.log(`  ${fmt('bold', '5')}) ${fmt('green',   'MCP 管理')}       — MCP 服务器安装/卸载/状态`);
+  console.log(`  ${fmt('bold', '6')}) ${fmt('cyan',    '诊断')}           — 检查安装状态`);
   console.log('');
   rl.question(fmt('bold', '请输入选项 [1-6]: '), (answer) => {
     rl.close();
     console.log('');
     switch (answer.trim()) {
       case '1':
-        showToolMenu();
+        showInstallMenu();
         break;
       case '2':
         runUpdate(tool);
         break;
       case '3':
-        runGlobal(tool || 'all');
-        break;
-      case '4':
         runSyncBack(tool, skillFilter, submitIssue);
         break;
-      case '5':
+      case '4':
         runConfig();
         break;
-      case '6':
+      case '5':
         runMcp();
+        break;
+      case '6':
+        runDoctor();
         break;
       default:
         console.error(fmt('red', '无效选项，退出。'));
@@ -2425,26 +3042,27 @@ function showMainMenu() {
 }
 
 // ── 主入口 ────────────────────────────────────────────────────────────────
-if (command === 'init') {
-  // 显式 init 子命令
+if (command === 'install') {
   if (tool) {
-    run(tool);
+    runInstall(tool, installRole || 'all');
   } else {
-    showToolMenu();
+    showInstallMenu();
   }
 } else if (command === 'update') {
   runUpdate(tool);
-} else if (command === 'global') {
-  runGlobal(tool);
-} else if (command === 'sync-back') {
+} else if (command === 'syncback') {
   runSyncBack(tool, skillFilter, submitIssue);
 } else if (command === 'config') {
   runConfig();
 } else if (command === 'mcp') {
   runMcp();
+} else if (command === 'doctor') {
+  runDoctor();
+} else if (command === 'uninstall') {
+  runUninstall();
 } else if (tool) {
-  // 向后兼容：无 command 但有 --tool，当作 init 执行
-  run(tool);
+  // 向后兼容：无 command 但有 --tool，当作 install 执行
+  runInstall(tool);
 } else {
   // 无命令无参数：显示主菜单
   showMainMenu();

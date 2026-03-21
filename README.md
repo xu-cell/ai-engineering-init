@@ -1,47 +1,67 @@
-# AI Engineering Init
+# leniu-dev
 
-> 一键初始化 AI 工程化配置，支持 Claude Code、Cursor、OpenAI Codex 等主流 AI 开发工具。
+> 🐂 AI 工程化开发工具 — 一键安装 Skills、Commands、Hooks 到 Claude Code / Cursor / Codex
 
-[![npm version](https://img.shields.io/npm/v/ai-engineering-init)](https://www.npmjs.com/package/ai-engineering-init)
+[![npm version](https://img.shields.io/npm/v/leniu-dev)](https://www.npmjs.com/package/leniu-dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 ## 快速开始
 
 ```bash
-npx ai-engineering-init
+# 交互式安装向导（推荐）
+npx leniu-dev install
+
+# 或直接指定工具和角色
+npx leniu-dev install --tool claude --role backend
 ```
 
-交互式选择工具，或直接指定：
-
-```bash
-npx ai-engineering-init --tool claude   # Claude Code
-npx ai-engineering-init --tool cursor   # Cursor
-npx ai-engineering-init --tool codex    # OpenAI Codex
-npx ai-engineering-init --tool all      # 全部
-```
+安装向导会引导你完成 5 个步骤：
+1. **选择角色** — 后端研发 / 前端研发 / 产品经理 / 全部
+2. **选择工具** — Claude Code / Cursor / Codex / 全部
+3. **配置服务** — MySQL / Loki（可跳过）
+4. **安装 MCP** — 推荐 MCP 服务器一键安装
+5. **确认安装** — 查看摘要后开始
 
 ## 命令一览
 
 | 命令 | 说明 |
 |------|------|
-| `npx ai-engineering-init` | 交互式初始化到当前项目 |
-| `npx ai-engineering-init@latest update` | 更新已安装的框架文件 |
-| `npx ai-engineering-init@latest global` | 全局安装到 `~/.claude` 等，所有项目生效 |
-| `npx ai-engineering-init config` | 初始化数据库连接 / Loki 日志配置（支持全局/本地/追加） |
-| `npx ai-engineering-init mcp` | MCP 服务器管理（安装/卸载/状态） |
-| `npx ai-engineering-init sync-back` | 对比本地技能修改，反馈回源仓库 |
+| `npx leniu-dev install` | 交互式安装向导 |
+| `npx leniu-dev@latest update` | 更新已安装的框架文件 |
+| `npx leniu-dev syncback` | 推送本地技能修改到源仓库 |
+| `npx leniu-dev config` | 环境配置（MySQL / Loki） |
+| `npx leniu-dev mcp` | MCP 服务器管理 |
+| `npx leniu-dev doctor` | 诊断安装状态 |
+| `npx leniu-dev uninstall` | 卸载已安装文件 |
+| `npx leniu-dev help` | 显示帮助 |
 
-> 所有命令均支持 `--tool <claude|cursor|codex|all>` 指定工具。运行 `--help` 查看全部选项。
+> 运行 `npx leniu-dev help` 查看全部选项和示例。
+
+## 角色化安装
+
+不同角色安装不同的技能包，通用技能（导航/Git/审查/云效等）所有角色都有：
+
+| 角色 | 技能数 | 包含内容 |
+|------|--------|---------|
+| 🖥️ 后端研发 | 89 | CRUD/API/数据库/异常/日志/MQ/Redis/部署/测试... |
+| 🎨 前端研发 | 41 | UI组件/Vuex/Gemini协作/Git... |
+| 📋 产品经理 | 37 | 需求分析/蓝湖/图片生成/任务管理... |
+| 🔧 全部 | 91 | 所有技能 |
+
+```bash
+npx leniu-dev install --tool claude --role backend   # 后端研发
+npx leniu-dev install --tool claude --role frontend  # 前端研发
+npx leniu-dev install --tool claude --role product   # 产品经理
+```
 
 ## 3 分钟上手
 
 ```bash
 # 第一步：安装
-npx ai-engineering-init --tool claude
+npx leniu-dev install --tool claude
 
-# 第二步：修改配置（⚠️ 必做！）
-# CLAUDE.md 和 AGENTS.md 是示例模板，包含 [你的xxx] 占位符
-# 把它们替换为你的项目实际信息（包名、技术栈、架构规范等）
+# 第二步：修改配置（必做！）
+# CLAUDE.md 是示例模板，把 [你的xxx] 占位符替换为项目实际信息
 
 # 第三步：验证
 # 在 Claude Code 中输入 /start，AI 会扫描并介绍你的项目
@@ -57,30 +77,23 @@ npx ai-engineering-init --tool claude
 
 **更多命令**：`/crud`（生成增删改查）、`/progress`（项目进度）、`/sync`（代码状态同步）
 
-> **包含内容**：80 个 Skills 技能 + 20 个快捷命令 + 9 个多模型分层 Agent + 自动化 Hooks。详见 [参考文档](./docs/reference.md)。
+> **包含内容**：91 个 Skills 技能 + 20 个快捷命令 + 9 个多模型分层 Agent + 自动化 Hooks
 
-## 初始化后使用
+## 从 v1 迁移
 
-### Claude Code
+v2 简化了命令结构，旧命令自动兼容：
 
-1. **必做**：修改 `CLAUDE.md` — 将 `[你的xxx]` 占位符替换为项目实际信息
-2. 输入 `/start` 验证 AI 是否正确理解你的项目
-3. MCP 工具已自动配置（`sequential-thinking`、`context7`），无需额外设置
-
-### Cursor
-
-1. **必做**：检查 `.cursor/mcp.json` 中的 MCP 服务器配置
-2. 在 Chat 中输入 `/` 查看可用 Skills，或 `@技能名` 手动调用
-3. 在 Settings → MCP 中确认 MCP 服务器已连接
-
-### OpenAI Codex
-
-1. **必做**：修改 `AGENTS.md` — 将模板内容替换为你的项目规范
-2. 使用 `.codex/skills/` 下的技能辅助开发
+| v1 命令 | v2 命令 | 说明 |
+|---------|---------|------|
+| `npx ai-engineering-init` | `npx leniu-dev install` | 改为用户级安装 |
+| `npx ai-engineering-init global` | `npx leniu-dev install` | 不再区分项目/全局 |
+| `npx ai-engineering-init sync-back` | `npx leniu-dev syncback` | 命令简化 |
+| `npx ai-engineering-init config` | `npx leniu-dev config` | 不变 |
+| `npx ai-engineering-init mcp` | `npx leniu-dev mcp` | 不变 |
 
 ## 更多信息
 
-[参考文档](./docs/reference.md) — Skills 列表、包含内容、命令详情、其他安装方式、全部选项
+[参考文档](./docs/reference.md) — Skills 列表、包含内容、命令详情
 
 [更新日志](./CHANGELOG.md) — 完整版本变更记录
 
