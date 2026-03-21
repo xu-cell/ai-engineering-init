@@ -2108,6 +2108,13 @@ const MCP_REGISTRY = [
     env: { EXA_API_KEY: '<YOUR_KEY>' },
     recommended: false,
   },
+  {
+    name: 'chrome-devtools',
+    package: '@anthropic-ai/mcp-chrome-devtools',
+    description: 'Chrome DevTools — 浏览器截图、导航、点击、执行JS（需本地 Chrome）',
+    env: {},
+    recommended: false,
+  },
 ];
 
 /** MCP 配置文件路径映射 */
