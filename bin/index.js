@@ -804,25 +804,28 @@ function runUpdate(selectedTool) {
   if (force) console.log(`  ${fmt('yellow', '⚠  --force 模式：将同时更新保留文件')}`);
   console.log('');
 
+  // 读取安装元数据，恢复之前的角色和工具选择
+  const meta = readInstallMeta();
   let toolsToUpdate = [];
 
-  // 优先检测用户级安装，其次项目级
-  const detectUserTools = () => Object.keys(GLOBAL_RULES).filter(key =>
-    isRealDir(path.join(HOME_DIR, GLOBAL_RULES[key].targetDir || path.join(HOME_DIR, '.' + key)))
-  );
+  // 优先从元数据恢复，其次自动检测
   const userTools = Object.keys(GLOBAL_RULES).filter(key =>
     isRealDir(GLOBAL_RULES[key].targetDir)
   );
 
   if (!selectedTool || selectedTool === 'all') {
-    // 先尝试用户级，再尝试项目级
-    toolsToUpdate = userTools.length > 0 ? userTools : detectInstalledTools();
-    if (toolsToUpdate.length === 0) {
-      console.log(fmt('yellow', '⚠  未检测到已安装的 AI 工具配置。'));
-      console.log(`   请先运行: ${fmt('bold', hintCmd('install --tool claude'))}\n`);
-      process.exit(1);
+    if (meta && meta.tools && meta.tools.length > 0) {
+      toolsToUpdate = meta.tools.filter(k => GLOBAL_RULES[k]);
+      console.log(`  从安装记录恢复: ${fmt('bold', toolsToUpdate.join(', '))}`);
+    } else {
+      toolsToUpdate = userTools.length > 0 ? userTools : detectInstalledTools();
+      if (toolsToUpdate.length === 0) {
+        console.log(fmt('yellow', '⚠  未检测到已安装的 AI 工具配置。'));
+        console.log(`   请先运行: ${fmt('bold', hintCmd('install --tool claude'))}\n`);
+        process.exit(1);
+      }
+      console.log(`  检测到已安装: ${fmt('bold', toolsToUpdate.join(', '))}`);
     }
-    console.log(`  检测到已安装: ${fmt('bold', toolsToUpdate.join(', '))}`);
   } else {
     if (!GLOBAL_RULES[selectedTool]) {
       console.error(fmt('red', `无效工具: "${selectedTool}"。有效选项: claude | cursor | codex | all`));
@@ -831,9 +834,18 @@ function runUpdate(selectedTool) {
     toolsToUpdate = [selectedTool];
   }
 
+  // 恢复角色过滤（使用安装时选择的角色，或 --role 参数覆盖）
+  const role = installRole || (meta && meta.role) || 'all';
+  const allowedSkills = getSkillsForRole(role);
+  const roleLabels = { backend: '后端研发', frontend: '前端研发', product: '产品经理', all: '全部' };
+
   // 判断是否有用户级安装
   const isUserLevel = userTools.length > 0;
   console.log(`  更新模式: ${fmt('bold', isUserLevel ? '用户级' : '项目级')}`);
+  console.log(`  安装角色: ${fmt('bold', roleLabels[role] || role)}${meta && meta.role ? '' : '（未记录，默认全部）'}`);
+  if (allowedSkills) {
+    console.log(`  技能数量: ${fmt('bold', String(allowedSkills.size))} 个`);
+  }
   console.log('');
   console.log(fmt('bold', '正在更新框架文件...'));
   console.log('');
@@ -841,8 +853,8 @@ function runUpdate(selectedTool) {
   let totalUpdated = 0, totalFailed = 0, totalPreserved = 0;
   for (let i = 0; i < toolsToUpdate.length; i++) {
     if (isUserLevel) {
-      // 用户级更新：使用全局安装逻辑
-      const { installed, failed } = globalInstallTool(toolsToUpdate[i]);
+      // 用户级更新：使用全局安装逻辑 + 角色过滤
+      const { installed, failed } = globalInstallTool(toolsToUpdate[i], allowedSkills);
       totalUpdated += installed;
       totalFailed  += failed;
     } else {
@@ -2051,7 +2063,7 @@ const MCP_REGISTRY = [
     package: 'alibabacloud-devops-mcp-server',
     description: '阿里云效 — DevOps 项目管理、代码仓库、流水线集成',
     env: { YUNXIAO_ACCESS_TOKEN: '<YOUR_TOKEN>' },
-    recommended: false,
+    recommended: true,
   },
   {
     name: 'yuque',
@@ -2066,6 +2078,34 @@ const MCP_REGISTRY = [
     args: ['--from', 'git+https://github.com/GuDaStudio/codexmcp.git', 'codexmcp'],
     description: 'Codex 协作 — 代码审查、算法分析、生成补丁（需安装 uv）',
     env: {},
+    recommended: false,
+  },
+  {
+    name: 'lanhu',
+    package: '@anthropic-ai/mcp-lanhu',
+    description: '蓝湖 — 读取 Axure 原型页面、UI 设计图、切图资源',
+    env: { LANHU_TOKEN: '<YOUR_TOKEN>' },
+    recommended: true,
+  },
+  {
+    name: 'apifox',
+    package: '@anthropic-ai/mcp-apifox',
+    description: 'Apifox — 接口文档读取，API 自动化测试联动',
+    env: { APIFOX_TOKEN: '<YOUR_TOKEN>' },
+    recommended: true,
+  },
+  {
+    name: 'firecrawl',
+    package: 'firecrawl-mcp',
+    description: 'Firecrawl — 网页爬取、结构化提取（比 fetch 更强）',
+    env: { FIRECRAWL_API_KEY: '<YOUR_KEY>' },
+    recommended: false,
+  },
+  {
+    name: 'exa',
+    package: 'exa-mcp-server',
+    description: 'Exa — AI 搜索引擎，语义搜索技术文档和代码',
+    env: { EXA_API_KEY: '<YOUR_KEY>' },
     recommended: false,
   },
 ];
@@ -2925,7 +2965,11 @@ function showInstallMenu() {
       console.log(`  技能:   ${fmt('bold', skillCountStr)}`);
       console.log(`  配置:   ${fmt('bold', selectedConfigs.length > 0 ? selectedConfigs.join(', ') : '无')}`);
       console.log(`  MCP:    ${fmt('bold', installMcp ? '推荐服务器' : '跳过')}`);
-      console.log(`  位置:   ${fmt('bold', '~/.claude/ (用户级)')}`);
+      const locationStr = selectedTool === 'all' ? '~/.claude/ ~/.cursor/ ~/.codex/'
+        : selectedTool === 'claude' ? '~/.claude/'
+        : selectedTool === 'cursor' ? '~/.cursor/'
+        : '~/.codex/';
+      console.log(`  位置:   ${fmt('bold', locationStr + ' (用户级)')}`);
       console.log('');
       const confirm = await ask(fmt('bold', '确认安装？[Y/n]: ')) || 'y';
       if (confirm.toLowerCase() === 'n') {
